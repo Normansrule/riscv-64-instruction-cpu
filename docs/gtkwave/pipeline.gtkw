@@ -1,0 +1,72 @@
+[*] GTKWave save file for the RV64IM 6-stage pipeline
+[*] make wave PROG=05_fibonacci   (writes build/05_fibonacci.vcd and opens this view)
+[timestart] 0
+@28
+tb_soc.clk
+tb_soc.rst
+@200
+-Fetch (IF) and prediction
+@22
+tb_soc.dut.core.pc[63:0]
+@28
+tb_soc.dut.core.bp_taken
+@22
+tb_soc.dut.core.bp_target[63:0]
+tb_soc.dut.core.bp_idx[7:0]
+tb_soc.dut.core.u_bp.ghr[7:0]
+@200
+-Decode (ID)
+@28
+tb_soc.dut.core.if_id_valid
+@22
+tb_soc.dut.core.if_id_pc[63:0]
+tb_soc.dut.core.if_id_instr[31:0]
+@200
+-Register read (RR)
+@28
+tb_soc.dut.core.id_rr_valid
+@22
+tb_soc.dut.core.id_rr_pc[63:0]
+tb_soc.dut.core.id_rr_rs1[4:0]
+tb_soc.dut.core.id_rr_rs2[4:0]
+@200
+-Execute (EX): forwarding, ALU, branch resolution
+@28
+tb_soc.dut.core.rr_ex_valid
+@22
+tb_soc.dut.core.rr_ex_pc[63:0]
+tb_soc.dut.core.fwd_a[1:0]
+tb_soc.dut.core.fwd_b[1:0]
+tb_soc.dut.core.alu_a[63:0]
+tb_soc.dut.core.alu_b[63:0]
+tb_soc.dut.core.alu_y[63:0]
+@28
+tb_soc.dut.core.actual_taken
+tb_soc.dut.core.rr_ex_pred_taken
+tb_soc.dut.core.mispredict
+@200
+-Memory (MEM)
+@28
+tb_soc.dut.core.ex_mem_valid
+@22
+tb_soc.dut.core.ex_mem_pc[63:0]
+tb_soc.dut.core.dmem_addr[63:0]
+@28
+tb_soc.dut.core.dmem_we
+@200
+-Write back (WB)
+@28
+tb_soc.dut.core.mem_wb_valid
+@22
+tb_soc.dut.core.mem_wb_pc[63:0]
+tb_soc.dut.core.mem_wb_rd[4:0]
+tb_soc.dut.core.mem_wb_wb_val[63:0]
+@200
+-Hazard control
+@28
+tb_soc.dut.core.stall
+tb_soc.dut.core.flush
+tb_soc.dut.core.halted
+@22
+tb_soc.dut.core.cycle_count[63:0]
+tb_soc.dut.core.mispredict_count[63:0]

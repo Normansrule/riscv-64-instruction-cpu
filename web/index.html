@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RV64IM 6-stage pipeline simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="title">
+    <h1>RV64IM, six stages, one instruction per clock</h1>
+    <p>Load a program, press <kbd>Step</kbd>, and watch each instruction move from fetch to write-back. This page runs the same cycle-exact model the Verilog is tested against.</p>
+  </div>
+  <div class="controls" role="toolbar" aria-label="Simulation controls">
+    <label class="field">Program
+      <select id="prog"></select>
+    </label>
+    <button id="back" title="Step back one cycle (←)">◀ Back</button>
+    <button id="step" class="primary" title="Advance one clock cycle (→ or space)">Step ▶</button>
+    <button id="run" title="Run / pause (R)">Run</button>
+    <label class="field speed">Speed <input id="speed" type="range" min="1" max="60" value="8"></label>
+    <button id="reset" title="Back to cycle 0">Reset</button>
+    <label class="toggle"><input id="bp" type="checkbox" checked> gshare predictor</label>
+  </div>
+</header>
+
+<main>
+  <section class="pipe" aria-label="Pipeline">
+    <div class="cyclebar"><span>cycle</span> <strong id="cycle">0</strong><span id="status" class="status"></span></div>
+    <div id="stages" class="stages"></div>
+    <ol id="narration" class="narration" aria-live="polite"></ol>
+  </section>
+
+  <section class="card chartcard">
+    <h2>Pipeline chart</h2>
+    <p class="hint">Rows are instructions in fetch order, columns are clock cycles. Hatched cells are stalled, grey rows were fetched down a wrong path and flushed, a ring marks an operand forwarded into EX.</p>
+    <div class="chartwrap"><table id="chart" class="chart"></table></div>
+  </section>
+
+  <div class="grid">
+    <section class="card code">
+      <h2>Program and machine code</h2>
+      <div class="tabs" role="tablist">
+        <button role="tab" aria-selected="true" data-tab="listing">Listing</button>
+        <button role="tab" aria-selected="false" data-tab="edit">Edit source</button>
+      </div>
+      <div id="tab-listing" class="tabpanel"><div class="listwrap"><table id="listing" class="listing"></table></div>
+        <div id="bits" class="bits"></div></div>
+      <div id="tab-edit" class="tabpanel" hidden>
+        <textarea id="src" spellcheck="false" aria-label="Assembly source"></textarea>
+        <div class="row"><button id="assemble" class="primary">Assemble and load</button><span id="asmerr" class="err"></span></div>
+      </div>
+    </section>
+
+    <section class="card regs">
+      <h2>Registers</h2>
+      <div id="regs" class="reggrid"></div>
+      <h2 class="mt">Output</h2>
+      <pre id="output" class="output"></pre>
+    </section>
+
+    <section class="card bpcard">
+      <h2>gshare branch predictor</h2>
+      <p class="hint">256 two-bit counters, indexed by <code>PC[9:2] xor GHR</code>. Colour = state, outline = read in IF this cycle, fill ring = updated by the branch in EX.</p>
+      <div class="bpstate">
+        <div><div class="lbl">Global history register (newest on the right)</div><div id="ghr" class="ghr"></div></div>
+        <div class="legend4"><span class="c0">00 strong NT</span><span class="c1">01 weak NT</span><span class="c2">10 weak T</span><span class="c3">11 strong T</span></div>
+      </div>
+      <div id="pht" class="pht"></div>
+      <div class="lbl mt">Branch target buffer (valid entries)</div>
+      <table id="btb" class="btb"></table>
+    </section>
+
+    <section class="card stats">
+      <h2>Performance</h2>
+      <dl id="stats" class="statlist"></dl>
+      <p class="hint">cycles = instructions + 5 (pipeline fill) + 1 per load-use stall + 3 per misprediction. The page checks this identity when the program halts.</p>
+    </section>
+  </div>
+</main>
+<footer>RTL, model and tests: see the repository README. Keyboard: → or space step, ← back, R run/pause.</footer>
+<script type="module" src="app.js"></script>
+</body>
+</html>

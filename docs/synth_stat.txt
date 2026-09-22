@@ -1,0 +1,231 @@
+
+11. Printing statistics.
+
+=== $paramod$7ce94ddca503ddf56cb0e94beb78bc18044fd48f\branch_predictor ===
+
+   Number of wires:              11792
+   Number of wire bits:          15910
+   Number of public wires:         115
+   Number of public wire bits:    3722
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:              15693
+     $_ANDNOT_                    2187
+     $_AND_                          2
+     $_DFFE_PP_                   2880
+     $_MUX_                       4610
+     $_NAND_                         8
+     $_NOR_                          9
+     $_NOT_                       2137
+     $_ORNOT_                       41
+     $_OR_                        3223
+     $_SDFFE_PP0P_                 296
+     $_SDFFE_PP1P_                 256
+     $_XNOR_                        10
+     $_XOR_                         34
+
+=== alu ===
+
+   Number of wires:             102900
+   Number of wire bits:         103606
+   Number of public wires:          19
+   Number of public wire bits:     725
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:             102945
+     $_ANDNOT_                   35611
+     $_AND_                       5609
+     $_MUX_                       9972
+     $_NAND_                      2009
+     $_NOR_                       7051
+     $_NOT_                       4987
+     $_ORNOT_                     2966
+     $_OR_                       11139
+     $_XNOR_                      8484
+     $_XOR_                      15117
+
+=== branch_unit ===
+
+   Number of wires:               1297
+   Number of wire bits:           1677
+   Number of public wires:          12
+   Number of public wire bits:     392
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:               1351
+     $_ANDNOT_                     361
+     $_AND_                         67
+     $_MUX_                         66
+     $_NAND_                        79
+     $_NOR_                        142
+     $_NOT_                          4
+     $_ORNOT_                       97
+     $_OR_                         217
+     $_XNOR_                       176
+     $_XOR_                        142
+
+=== decoder ===
+
+   Number of wires:                299
+   Number of wire bits:            434
+   Number of public wires:          28
+   Number of public wire bits:     163
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                300
+     $_ANDNOT_                      95
+     $_AND_                         11
+     $_MUX_                         15
+     $_NAND_                        10
+     $_NOR_                         23
+     $_NOT_                          7
+     $_ORNOT_                       25
+     $_OR_                         112
+     $_XNOR_                         1
+     imm_gen                         1
+
+=== forward_unit ===
+
+   Number of wires:                 38
+   Number of wire bits:             51
+   Number of public wires:          10
+   Number of public wire bits:      23
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                 30
+     $_ANDNOT_                       4
+     $_NAND_                         2
+     $_NOR_                          1
+     $_ORNOT_                        1
+     $_OR_                          12
+     $_XOR_                         10
+
+=== hazard_unit ===
+
+   Number of wires:                 42
+   Number of wire bits:             54
+   Number of public wires:          12
+   Number of public wire bits:      24
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                 32
+     $_ANDNOT_                       4
+     $_NAND_                         3
+     $_NOR_                          4
+     $_NOT_                          1
+     $_OR_                          10
+     $_XOR_                         10
+
+=== imm_gen ===
+
+   Number of wires:                196
+   Number of wire bits:            292
+   Number of public wires:           4
+   Number of public wire bits:     100
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                224
+     $_ANDNOT_                     146
+     $_AND_                          2
+     $_NAND_                         4
+     $_NOR_                          1
+     $_NOT_                          1
+     $_ORNOT_                       15
+     $_OR_                          55
+
+=== regfile ===
+
+   Number of wires:               6048
+   Number of wire bits:           8300
+   Number of public wires:          42
+   Number of public wire bits:    2294
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:               8182
+     $_ANDNOT_                     229
+     $_AND_                          1
+     $_DFFE_PP_                   1984
+     $_MUX_                       5888
+     $_NAND_                         2
+     $_NOR_                          2
+     $_NOT_                          4
+     $_ORNOT_                        4
+     $_OR_                          58
+     $_XOR_                         10
+
+=== rv64_core ===
+
+   Number of wires:               1673
+   Number of wire bits:           5185
+   Number of public wires:         158
+   Number of public wire bits:    3166
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:               3677
+     $_ANDNOT_                     269
+     $_AND_                        141
+     $_DFFE_PP_                   1186
+     $_MUX_                        759
+     $_NAND_                       185
+     $_NOR_                         19
+     $_NOT_                         11
+     $_ORNOT_                       41
+     $_OR_                         291
+     $_SDFFE_PP0N_                  64
+     $_SDFFE_PP0P_                 263
+     $_SDFF_PP0_                     1
+     $_XNOR_                        94
+     $_XOR_                        345
+     $paramod$7ce94ddca503ddf56cb0e94beb78bc18044fd48f\branch_predictor      1
+     alu                             1
+     branch_unit                     1
+     decoder                         1
+     forward_unit                    2
+     hazard_unit                     1
+     regfile                         1
+
+=== design hierarchy ===
+
+   rv64_core                         1
+     $paramod$7ce94ddca503ddf56cb0e94beb78bc18044fd48f\branch_predictor      1
+     alu                             1
+     branch_unit                     1
+     decoder                         1
+       imm_gen                       1
+     forward_unit                    2
+     hazard_unit                     1
+     regfile                         1
+
+   Number of wires:             124323
+   Number of wire bits:         135560
+   Number of public wires:         410
+   Number of public wire bits:   10632
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:             132455
+     $_ANDNOT_                   38910
+     $_AND_                       5833
+     $_DFFE_PP_                   6050
+     $_MUX_                      21310
+     $_NAND_                      2304
+     $_NOR_                       7253
+     $_NOT_                       7152
+     $_ORNOT_                     3191
+     $_OR_                       15129
+     $_SDFFE_PP0N_                  64
+     $_SDFFE_PP0P_                 559
+     $_SDFFE_PP1P_                 256
+     $_SDFF_PP0_                     1
+     $_XNOR_                      8765
+     $_XOR_                      15678
+

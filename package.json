@@ -1,0 +1,11 @@
+{
+  "name": "rv64-6stage",
+  "version": "1.0.0",
+  "description": "An educational 6-stage RV64IM RISC-V CPU: Verilog RTL, cycle-accurate simulator, and an interactive pipeline visualizer",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "test": "node tools/test.mjs",
+    "docs": "node tools/gendocs.mjs"
+  }
+}

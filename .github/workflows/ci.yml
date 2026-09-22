@@ -1,0 +1,22 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Verilog tools
+        run: sudo apt-get update && sudo apt-get install -y iverilog verilator
+      - name: Lint RTL
+        run: make lint
+      - name: Regression (RTL vs model, cycle-exact, predictor on and off)
+        run: make test
+      - name: Verify the cycle equation
+        run: make math
+      - name: Generated docs are up to date
+        run: |
+          make docs
+          git diff --exit-code -- binary docs/img/pipeline docs/img/instructions web/programs.js

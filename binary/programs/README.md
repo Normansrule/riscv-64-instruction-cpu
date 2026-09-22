@@ -1,0 +1,19 @@
+# Assembled programs
+
+Every file in [`programs/`](../../programs) assembled by `sim/asm.js`.
+
+* `.lst` — listing: address, hex word, **binary word**, source line
+* `.hex` — memory image for `$readmemh` (one byte per line, little-endian)
+
+* [00_pipeline_fill.lst](00_pipeline_fill.lst) · [00_pipeline_fill.hex](00_pipeline_fill.hex)
+* [01_hello.lst](01_hello.lst) · [01_hello.hex](01_hello.hex)
+* [02_forwarding.lst](02_forwarding.lst) · [02_forwarding.hex](02_forwarding.hex)
+* [03_load_use.lst](03_load_use.lst) · [03_load_use.hex](03_load_use.hex)
+* [04_branch_penalty.lst](04_branch_penalty.lst) · [04_branch_penalty.hex](04_branch_penalty.hex)
+* [05_fibonacci.lst](05_fibonacci.lst) · [05_fibonacci.hex](05_fibonacci.hex)
+* [06_bubble_sort.lst](06_bubble_sort.lst) · [06_bubble_sort.hex](06_bubble_sort.hex)
+* [07_factorial_recursive.lst](07_factorial_recursive.lst) · [07_factorial_recursive.hex](07_factorial_recursive.hex)
+* [08_gcd_euclid.lst](08_gcd_euclid.lst) · [08_gcd_euclid.hex](08_gcd_euclid.hex)
+* [09_primes_sieve.lst](09_primes_sieve.lst) · [09_primes_sieve.hex](09_primes_sieve.hex)
+* [10_print_numbers.lst](10_print_numbers.lst) · [10_print_numbers.hex](10_print_numbers.hex)
+* [11_gshare_patterns.lst](11_gshare_patterns.lst) · [11_gshare_patterns.hex](11_gshare_patterns.hex)
