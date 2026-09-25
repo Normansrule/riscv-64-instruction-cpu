@@ -1,4 +1,4 @@
-# rv64-6stage: a 64-bit RISC-V CPU you can watch think
+# RISC-V 64 Instruction CPU: a 64-bit RISC-V processor you can watch think
 
 A complete, readable **6-stage pipelined RV64IM processor** in Verilog, with a **gshare branch
 predictor**, a cycle-exact software twin, an **interactive browser simulator**, every instruction
@@ -36,8 +36,8 @@ sudo apt update
 sudo apt install -y git make nodejs npm iverilog verilator gtkwave yosys graphviz librsvg2-bin python3
 
 # 2. get the code
-git clone https://github.com/<your-user>/rv64-6stage.git
-cd rv64-6stage
+git clone https://github.com/<your-user>/riscv-64-instruction-cpu.git
+cd riscv-64-instruction-cpu
 
 # 3. prove it works: every program on the model AND the Verilog, cycle by cycle
 make test
@@ -360,7 +360,7 @@ Replace `<your-user>` below. If your machine uses a dedicated SSH host alias for
 (for example an entry in `~/.ssh/config`), use that alias in place of `github.com` in the remote URL.
 
 ```bash
-cd rv64-6stage
+cd riscv-64-instruction-cpu
 make test && make docs                       # everything green and regenerated
 
 git init -b main                             # skip if already a repository
@@ -368,16 +368,16 @@ git add .
 git commit -m "RV64IM 6-stage pipeline with gshare, cycle-exact model, docs and simulator"
 
 # create the empty repo on GitHub first (web UI), or with the GitHub CLI:
-gh repo create <your-user>/rv64-6stage --public --source . --remote origin
+gh repo create <your-user>/riscv-64-instruction-cpu --public --source . --remote origin
 
 # push over SSH (needed to push .github/workflows if your HTTPS token lacks the "workflow" scope)
-git remote set-url origin git@github.com:<your-user>/rv64-6stage.git
+git remote set-url origin git@github.com:<your-user>/riscv-64-instruction-cpu.git
 git push -u origin main
 ```
 
 Turn on the live simulator: GitHub, **Settings → Pages → Build and deployment → Deploy from a
 branch → `main` / `/ (root)` → Save**. After a minute it is at
-`https://<your-user>.github.io/rv64-6stage/` (the root page forwards to `web/`).
+`https://<your-user>.github.io/riscv-64-instruction-cpu/` (the root page forwards to `web/`).
 
 The included workflow (`.github/workflows/ci.yml`) runs lint and the full regression on every push.
 

@@ -1,5 +1,5 @@
 {
-  "name": "rv64-6stage",
+  "name": "riscv-64-instruction-cpu",
   "version": "1.0.0",
   "description": "An educational 6-stage RV64IM RISC-V CPU: Verilog RTL, cycle-accurate simulator, and an interactive pipeline visualizer",
   "type": "module",
