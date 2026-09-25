@@ -1,9 +1,9 @@
 # =============================================================================
-# 00_pipeline_fill.s — watch an empty pipeline fill up
+# 00_pipeline_fill.s: watch an empty pipeline fill up
 #
 # Four INDEPENDENT instructions: no instruction needs another's result, so
-# nothing ever waits. Instruction 1 enters IF in cycle 1 and leaves WB in
-# cycle 6; after that one instruction finishes every cycle.
+# nothing ever waits. Instruction 1 enters FETCH1 in cycle 1 and leaves
+# WRITEBACK in cycle 6; after that one instruction finishes every cycle.
 #
 #   What to look for:  the diagonal "staircase" in the pipeline chart,
 #                      and that the first result needs 6 cycles (latency)
@@ -17,4 +17,4 @@
     addi a1, zero, 20
     addi a2, zero, 30
     addi a3, zero, 40
-    ecall                   # halt: the simulator stops when this reaches WB
+    halt                     # write 1 to the tohost CSR (PASS) and stop

@@ -1,5 +1,5 @@
 # =============================================================================
-# 08_gcd_euclid.s — greatest common divisor with REM (M extension)
+# 08_gcd_euclid.s: greatest common divisor with REM (M extension)
 #
 #   while (b != 0) { t = a % b; a = b; b = t; }
 #
@@ -14,4 +14,4 @@ loop:
     mv   a1, t0
     j    loop
 done:
-    ecall
+    halt

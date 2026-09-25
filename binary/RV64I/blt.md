@@ -1,4 +1,4 @@
-# `blt` — Branch if Less Than (signed)
+# `blt`: Branch if Less Than (signed)
 
 [← all instructions](../README.md) · extension **RV64I** · format **B** · category *Branch*
 
@@ -16,7 +16,7 @@ bit:  31                              0
 ```
 
 Fixed bits are `0`/`1`. Letters are filled in by the assembler:
-`d` = rd, `s` = rs1, `t` = rs2, `i` = immediate, `h` = shift amount, `f` = funct3, `m/p/u` = fence fields.
+`d` = rd, `s` = rs1, `t` = rs2, `i` = immediate, `h` = shift amount, `c` = CSR address, `z` = 5-bit CSR immediate, `f` = funct3, `m/p/u` = fence fields.
 
 ## Example
 
@@ -40,25 +40,31 @@ node tools/rv.mjs encode "blt a0, a1, 256"   # use a label or a number for the o
 node tools/rv.mjs decode 10b54063
 ```
 
-## Control signals set by the decoder (`rtl/decoder.v`)
+## Control signals from the Control Unit ([`src/Control_Unit.sv`](../../src/Control_Unit.sv))
+
+These are the exact values the RTL produces for the example word above (computed by the
+bit-exact twin in `model/core.js`, which `make test` checks against the RTL every cycle).
 
 | signal | value | | signal | value |
 |---|---|---|---|---|
-| `use_rs1` | 1 | | `is_load` | 0 |
-| `use_rs2` | 1 | | `is_store` | 0 |
-| `reg_write` | 0 | | `is_branch` | 1 |
-| `alu_op` | — (unused) | | `is_jal` / `is_jalr` | 0 / 0 |
-| `a_sel` | RS1 | | `wb_pc4` | 0 |
-| `b_imm` | 0 | | `is_halt` | 0 |
-| `is_word` | 0 | | | |
+| `REGISTER_WRITE_ENABLE` | `0` | | `IS_A_MULTIPLY_DIVIDE_INSTRUCTION` | `0` |
+| `MEMORY_READ_ENABLE` | `0` | | `IS_A_BRANCH_INSTRUCTION` | `1` |
+| `MEMORY_WRITE_ENABLE` | `0` | | `IS_A_JAL_INSTRUCTION` | `0` |
+| `CSR_WRITE_ENABLE` | `0` | | `IS_A_JALR_INSTRUCTION` | `0` |
+| `CSR_WRITE_USING_IMMEDIATE` | `0` | | `IMMEDIATE_TYPE_SELECT` | `IMMEDIATE_B` |
+| `ALU_INPUT_A_IS_PC` | `1` | | `WRITEBACK_SELECT` | `WRITEBACK_ALU` |
+| `ALU_INPUT_B_IS_IMMEDIATE` | `1` | | `ALU_OPERATION` | `ALU_ADD` |
+| `ALU_IS_WORD_OPERATION` | `0` | |  |  |
 
 ## Journey through the 6-stage pipeline
 
 | stage | what happens to `blt` |
 |---|---|
-| **IF** | Fetch the 32-bit word at `PC` from instruction memory; predict not-taken: `PC ← PC + 4`. |
-| **ID** | Decoder recognises `blt` from opcode `1100011`, funct3 `100`; the immediate generator builds the B-type immediate. |
-| **RR** | Read `rs1` and `rs2` from the register file (write-first bypass if WB is writing the same register). |
-| **EX** | Branch unit compares `rs1` and `rs2` ((rs1 <s rs2)); target = `PC + imm`. If taken, redirect PC and flush IF/ID/RR (3-cycle penalty). Operands may be replaced by forwarded values from EX/MEM or MEM/WB. |
-| **MEM** | No memory access: the result passes through to MEM/WB. |
-| **WB** | Nothing is written. |
+| **FETCH1** | The PC is sent to the instruction memory. At the same time the **GSharePredictor** reads the 2-bit counter at `PC[5:2] XOR GLOBAL_HISTORY_REGISTER` (it does not know yet what instruction this is). |
+| **FETCH2** | The 32-bit word arrives. Opcode `1100011` = branch: the B-immediate is unscrambled and `FETCH2_PC_TARGET = PC + imm` is precomputed. If the counter said **taken**, FETCH1 is redirected to the target and the instruction fetched behind the branch is squashed (1 bubble). The predicted direction is shifted into the global history. |
+| **DECODE** | **ControlUnit** + **ALUdec** recognise `blt` from opcode `1100011`, funct3 `100`; the **ImmediateGenerator** builds the B-type immediate. The **RegisterFile** is read for `rs1` and `rs2`, and the forwarding muxes replace a stale value with a newer one from EXECUTE, MEMORY or WRITEBACK. |
+| **EXECUTE** | **BranchComparator** checks `(rs1 <s rs2)`. **BranchControl** compares that with the prediction: right -> nothing happens; wrong -> `FLUSH_FETCH1_FETCH2_DECODE` squashes 3 instructions and FETCH1 restarts at the correct address. The gshare counter is trained either way. |
+| **MEMORY** | No memory work. **WriteControl** picks the result value. |
+| **WRITEBACK** | Nothing to write. The instruction retires (`instret` + 1). |
+
+See the whole datapath in the [block diagram](../../docs/ARCHITECTURE.md) and step through a program in the [web simulator](../../web/index.html).

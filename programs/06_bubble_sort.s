@@ -1,5 +1,5 @@
 # =============================================================================
-# 06_bubble_sort.s — sort 10 signed 64-bit numbers in memory
+# 06_bubble_sort.s: sort 10 signed 64-bit numbers in memory
 #
 # Lots of loads, stores, compares and branches: a realistic mix to study
 # CPI. Afterwards a0 = 1 if the array is sorted ascending, and a1 is a
@@ -49,7 +49,7 @@ next:
     addi t1, t1, 1
     j    check
 finished:
-    ecall
+    halt
 
     .align 3
 array:

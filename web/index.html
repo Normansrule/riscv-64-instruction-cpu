@@ -12,7 +12,7 @@
 <header class="top">
   <div class="title">
     <h1>RISC-V 64 Instruction CPU: six stages, one instruction per clock</h1>
-    <p>Load a program, press <kbd>Step</kbd>, and watch each instruction move from fetch to write-back. This page runs the same cycle-exact model the Verilog is tested against.</p>
+    <p>Load a program, press <kbd>Step</kbd>, and watch each instruction move FETCH1 → FETCH2 → DECODE → EXECUTE → MEMORY → WRITEBACK. This page runs the same cycle-exact model the SystemVerilog in <code>src/</code> is tested against.</p>
   </div>
   <div class="controls" role="toolbar" aria-label="Simulation controls">
     <label class="field">Program
@@ -24,6 +24,7 @@
     <label class="field speed">Speed <input id="speed" type="range" min="1" max="60" value="8"></label>
     <button id="reset" title="Back to cycle 0">Reset</button>
     <label class="toggle"><input id="bp" type="checkbox" checked> gshare predictor</label>
+    <label class="field">History <select id="hist"></select></label>
   </div>
 </header>
 
@@ -36,7 +37,7 @@
 
   <section class="card chartcard">
     <h2>Pipeline chart</h2>
-    <p class="hint">Rows are instructions in fetch order, columns are clock cycles. Hatched cells are stalled, grey rows were fetched down a wrong path and flushed, a ring marks an operand forwarded into EX.</p>
+    <p class="hint">Rows are instructions in fetch order, columns are clock cycles. Hatched cells are held by LOAD_STALL, grey rows were fetched down a wrong path and squashed, a ring marks an operand forwarded into DECODE.</p>
     <div class="chartwrap"><table id="chart" class="chart"></table></div>
   </section>
 
@@ -63,21 +64,20 @@
     </section>
 
     <section class="card bpcard">
-      <h2>gshare branch predictor</h2>
-      <p class="hint">256 two-bit counters, indexed by <code>PC[9:2] xor GHR</code>. Colour = state, outline = read in IF this cycle, fill ring = updated by the branch in EX.</p>
+      <h2>GSharePredictor</h2>
+      <p class="hint" id="bpinfo"></p>
       <div class="bpstate">
-        <div><div class="lbl">Global history register (newest on the right)</div><div id="ghr" class="ghr"></div></div>
+        <div><div class="lbl">GLOBAL_HISTORY_REGISTER (newest on the right)</div><div id="ghr" class="ghr"></div><div class="hint" id="ghrnote"></div></div>
         <div class="legend4"><span class="c0">00 strong NT</span><span class="c1">01 weak NT</span><span class="c2">10 weak T</span><span class="c3">11 strong T</span></div>
       </div>
       <div id="pht" class="pht"></div>
-      <div class="lbl mt">Branch target buffer (valid entries)</div>
-      <table id="btb" class="btb"></table>
+      <p class="hint mt">No branch target buffer is needed: FETCH2 already has the instruction bits and computes <code>FETCH2_PC_TARGET = PC + imm</code>. The price is the 1-cycle redirect bubble.</p>
     </section>
 
     <section class="card stats">
       <h2>Performance</h2>
       <dl id="stats" class="statlist"></dl>
-      <p class="hint">cycles = instructions + 5 (pipeline fill) + 1 per load-use stall + 3 per misprediction. The page checks this identity when the program halts.</p>
+      <p class="hint">cycles = instructions + 5 (pipeline fill) + 1 per load stall + 3 per flush + 1 per surviving FETCH2 redirect. The page checks this identity when the program halts (docs/MATH.md).</p>
     </section>
   </div>
 </main>

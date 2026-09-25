@@ -1,14 +1,15 @@
 #!/usr/bin/env node
 // =============================================================================
-// tools/test.mjs — regression suite.
+// tools/test.mjs: regression suite.
 //
 // For every program in programs/ and tests/:
-//   1. assemble it                                   (sim/asm.js)
-//   2. run it on the cycle-accurate model            (sim/core.js)
+//   1. assemble it                                   (model/asm.js)
+//   2. run it on the cycle-exact model               (model/core.js)
 //   3. check the "# EXPECT:" lines in its header     (register values, output)
-//   4. run the SAME image on the Verilog RTL         (iverilog + tb/tb_soc.v)
+//      and that the program reported PASS through the tohost CSR
+//   4. run the SAME image on the SystemVerilog RTL   (iverilog, src/sources.f + tb/riscv64_testbench.sv)
 //   5. demand the RTL and the model agree on EVERY cycle's pipeline contents,
-//      the cycle count, the program output and all 32 registers.
+//      the cycle count, the program output, tohost and all 32 registers.
 //
 //   node tools/test.mjs              everything
 //   node tools/test.mjs --no-rtl     model only (no Icarus Verilog needed)
@@ -20,9 +21,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { assemble, toHex, toListing } from '../sim/asm.js';
-import { Core } from '../sim/core.js';
-import { regNum, ABI } from '../sim/isa.js';
+import { assemble, toHex, toListing } from '../model/asm.js';
+import { Core } from '../model/core.js';
+import { regNum, ABI } from '../model/isa.js';
 
 const args = process.argv.slice(2);
 const noRtl = args.includes('--no-rtl');
@@ -38,15 +39,19 @@ const files = ['programs', 'tests'].flatMap(d => fs.readdirSync(d).filter(f => f
 fs.mkdirSync('build', { recursive: true });
 let haveRtl = false;
 if (!noRtl) {
-  const r = spawnSync('iverilog', ['-g2012', '-I', 'rtl', '-o', 'build/sim.vvp', 'tb/tb_soc.v', ...fs.readdirSync('rtl').filter(f => f.endsWith('.v')).map(f => 'rtl/' + f)], { encoding: 'utf8' });
+  const sources = fs.readFileSync('src/sources.f', 'utf8').split('\n').filter(Boolean);
+  const r = spawnSync('iverilog', ['-g2012', '-o', 'build/sim.vvp', ...sources, 'tb/riscv64_testbench.sv'], { encoding: 'utf8' });
   if (r.error) console.log('iverilog not found: skipping RTL comparison (sudo apt install iverilog)');
   else if (r.status !== 0) { console.log(red('RTL failed to compile:\n') + r.stderr); process.exit(1); }
   else haveRtl = true;
 }
 
-function parseExpect(src) {
+// "# EXPECT: a0 = 5" always; "# EXPECT[gshare]: ..." / "# EXPECT[bp-off]: ..." only in that predictor mode
+// (timing measured with rdcycle legitimately differs between the two modes).
+function parseExpect(src, bp) {
   const regs = [], out = [];
-  for (const m of src.matchAll(/^#\s*EXPECT:\s*(\w+)\s*=\s*(-?\w+)\s*$/gm)) regs.push([m[1], BigInt.asUintN(64, BigInt(m[2]))]);
+  for (const m of src.matchAll(/^#\s*EXPECT(?:\[(gshare|bp-off)\])?:\s*(\w+)\s*=\s*(-?\w+)\s*$/gm))
+    if (!m[1] || (m[1] === 'gshare') === bp) regs.push([m[2], BigInt.asUintN(64, BigInt(m[3]))]);
   for (const m of src.matchAll(/^#\s*EXPECT-OUTPUT:\s?(.*)$/gm)) out.push(m[1].replace(/\\n/g, '\n'));
   return { regs, output: out.length ? out.join('') : null };
 }
@@ -64,18 +69,18 @@ for (const f of files) {
   const problems = [];
   const tag = bp ? 'gshare' : 'no-bp ';
   // ---------------- model ----------------
-  const core = new Core(img.bytes, { bp });
+  const core = new Core(img, { bp });
   const trace = [];
   while (!core.halted && core.cycle < 2000000) trace.push(Core.traceLine(core.step()));
   if (!core.halted) problems.push('model did not halt');
   fs.writeFileSync(`build/${name}.${bp ? 'bp' : 'nobp'}.model.trace`, trace.join('\n') + '\n');
-  const exp = parseExpect(src);
+  const exp = parseExpect(src, bp);
   for (const [r, v] of exp.regs) {
     const got = core.regs[regNum(r)];
     if (got !== v) problems.push(`model: ${r} = ${BigInt.asIntN(64, got)} (0x${got.toString(16)}), expected ${BigInt.asIntN(64, v)}`);
   }
   if (exp.output !== null && core.output !== exp.output) problems.push(`model: output ${JSON.stringify(core.output)}, expected ${JSON.stringify(exp.output)}`);
-  if (core.illegal) problems.push('model halted on an illegal instruction');
+  if (core.halted && core.csr.tohost !== 1n) problems.push(`model: tohost = ${core.csr.tohost}: FAIL in test ${core.csr.tohost >> 1n}`);
 
   // ---------------- RTL ----------------
   let rtlNote = '';
@@ -96,11 +101,13 @@ for (const f of files) {
       for (let i = 0; i < n; i++) if (rt[i] !== trace[i]) {
         problems.push(`pipeline trace differs at line ${i + 1}:\n      RTL:   ${rt[i]}\n      model: ${trace[i]}`); break;
       }
+      const th = stdout.match(/TOHOST = (\d+)/);
+      if (!th || BigInt(th[1]) !== core.csr.tohost) problems.push(`RTL tohost ${th ? th[1] : '?'} != model ${core.csr.tohost}`);
       rtlNote = ' | RTL ✓ cycle-exact';
     }
   }
   const s = core.stats;
-  const info = `${String(s.cycles).padStart(6)} cycles, CPI ${(s.cycles / s.retired).toFixed(2)}, ${String(s.mispredicts).padStart(4)} redirects`;
+  const info = `${String(s.cycles).padStart(6)} cycles, CPI ${(s.cycles / s.retired).toFixed(2)}, ${String(s.flushes).padStart(4)} flushes`;
   if (problems.length) { fail++; console.log(`${red('FAIL')} ${tag} ${f}  (${info})`); problems.slice(0, 8).forEach(p => console.log('   - ' + p)); }
   else { pass++; console.log(`${green('PASS')} ${tag} ${f.padEnd(34)} ${info}${rtlNote}`); }
   }

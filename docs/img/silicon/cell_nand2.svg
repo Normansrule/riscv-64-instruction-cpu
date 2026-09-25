@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 427 844" width="427">
+<rect width="100%" height="100%" rx="10" fill="#FBFCF8" stroke="#D5DBD0"/>
+<text x="20" y="28" font-family="Helvetica,Arial,sans-serif" font-size="16" font-weight="600" fill="#17251D">NAND2: the universal gate</text>
+<text x="20" y="44" font-family="Helvetica,Arial,sans-serif" font-size="11" fill="#4A5A50">sky130_fd_sc_hd__nand2_1 · 1.76 um x 3.20 um · SkyWater SKY130 (Apache-2.0)</text>
+<g transform="translate(20,754.0) scale(220,-220) translate(0.19,0.24)">
+<polygon points="-0.190,1.305 1.570,1.305 1.570,2.910 -0.190,2.910" fill="#E8E0C8" fill-opacity="0.55" stroke="#E8E0C8" stroke-width="0.004"/>
+<polygon points="0.155,1.485 1.245,1.485 1.245,2.485 0.155,2.485" fill="#4CAF50" fill-opacity="0.7" stroke="#4CAF50" stroke-width="0.004"/>
+<polygon points="0.155,0.235 1.245,0.235 1.245,0.885 0.155,0.885" fill="#4CAF50" fill-opacity="0.7" stroke="#4CAF50" stroke-width="0.004"/>
+<polygon points="1.275,1.325 0.985,1.325 0.985,2.615 0.835,2.615 0.835,0.105 0.985,0.105 0.985,0.995 1.275,0.995" fill="#D32F2F" fill-opacity="0.75" stroke="#D32F2F" stroke-width="0.004"/>
+<polygon points="0.565,2.615 0.415,2.615 0.415,1.325 0.105,1.325 0.105,0.995 0.415,0.995 0.415,0.105 0.565,0.105" fill="#D32F2F" fill-opacity="0.75" stroke="#D32F2F" stroke-width="0.004"/>
+<polygon points="1.035,0.295 1.205,0.295 1.205,0.465 1.035,0.465" fill="#212121" fill-opacity="0.9" stroke="#212121" stroke-width="0.004"/>
+<polygon points="1.035,0.635 1.205,0.635 1.205,0.805 1.035,0.805" fill="#212121" fill-opacity="0.9" stroke="#212121" stroke-width="0.004"/>
+<polygon points="0.195,2.255 0.365,2.255 0.365,2.425 0.195,2.425" fill="#212121" fill-opacity="0.9" stroke="#212121" stroke-width="0.004"/>
+<polygon points="0.195,1.915 0.365,1.915 0.365,2.085 0.195,2.085" fill="#212121" fill-opacity="0.9" stroke="#212121" stroke-width="0.004"/>
+<polygon points="0.195,1.575 0.365,1.575 0.365,1.745 0.195,1.745" fill="#212121" fill-opacity="0.9" stroke="#212121" stroke-width="0.004"/>
+<polygon points="0.195,0.635 0.365,0.635 0.365,0.805 0.195,0.805" fill="#212121" fill-opacity="0.9" stroke="#212121" stroke-width="0.004"/>
+<polygon points="0.195,0.295 0.365,0.295 0.365,0.465 0.195,0.465" fill="#212121" fill-opacity="0.9" stroke="#212121" stroke-width="0.004"/>
+<polygon points="0.615,2.255 0.785,2.255 0.785,2.425 0.615,2.425" fill="#212121" fill-opacity="0.9" stroke="#212121" stroke-width="0.004"/>
+<polygon points="0.615,1.915 0.785,1.915 0.785,2.085 0.615,2.085" fill="#212121" fill-opacity="0.9" stroke="#212121" stroke-width="0.004"/>
+<polygon points="0.615,1.575 0.785,1.575 0.785,1.745 0.615,1.745" fill="#212121" fill-opacity="0.9" stroke="#212121" stroke-width="0.004"/>
+<polygon points="1.020,1.075 1.190,1.075 1.190,1.245 1.020,1.245" fill="#212121" fill-opacity="0.9" stroke="#212121" stroke-width="0.004"/>
+<polygon points="1.035,2.255 1.205,2.255 1.205,2.425 1.035,2.425" fill="#212121" fill-opacity="0.9" stroke="#212121" stroke-width="0.004"/>
+<polygon points="0.180,1.075 0.350,1.075 0.350,1.245 0.180,1.245" fill="#212121" fill-opacity="0.9" stroke="#212121" stroke-width="0.004"/>
+<polygon points="1.035,1.915 1.205,1.915 1.205,2.085 1.035,2.085" fill="#212121" fill-opacity="0.9" stroke="#212121" stroke-width="0.004"/>
+<polygon points="1.035,1.575 1.205,1.575 1.205,1.745 1.035,1.745" fill="#212121" fill-opacity="0.9" stroke="#212121" stroke-width="0.004"/>
+<polygon points="1.380,0.085 0.395,0.085 0.395,0.885 0.085,0.885 0.085,0.085 0.000,0.085 0.000,-0.085 1.380,-0.085" fill="#1976D2" fill-opacity="0.45" stroke="#1976D2" stroke-width="0.004"/>
+<polygon points="1.380,2.805 0.000,2.805 0.000,2.635 0.085,2.635 0.085,1.495 0.365,1.495 0.365,2.635 1.035,2.635 1.035,1.495 1.295,1.495 1.295,2.635 1.380,2.635" fill="#1976D2" fill-opacity="0.45" stroke="#1976D2" stroke-width="0.004"/>
+<polygon points="0.095,1.055 0.430,1.055 0.430,1.325 0.095,1.325" fill="#1976D2" fill-opacity="0.45" stroke="#1976D2" stroke-width="0.004"/>
+<polygon points="0.940,1.075 1.275,1.075 1.275,1.325 0.940,1.325" fill="#1976D2" fill-opacity="0.45" stroke="#1976D2" stroke-width="0.004"/>
+<polygon points="1.295,0.885 0.770,0.885 0.770,1.485 0.865,1.485 0.865,2.465 0.535,2.465 0.535,1.485 0.600,1.485 0.600,0.255 1.295,0.255" fill="#1976D2" fill-opacity="0.45" stroke="#1976D2" stroke-width="0.004"/>
+<polygon points="1.065,2.635 1.235,2.635 1.235,2.805 1.065,2.805" fill="#0D47A1" fill-opacity="0.95" stroke="#0D47A1" stroke-width="0.004"/>
+<polygon points="0.145,2.635 0.315,2.635 0.315,2.805 0.145,2.805" fill="#0D47A1" fill-opacity="0.95" stroke="#0D47A1" stroke-width="0.004"/>
+<polygon points="0.145,-0.085 0.315,-0.085 0.315,0.085 0.145,0.085" fill="#0D47A1" fill-opacity="0.95" stroke="#0D47A1" stroke-width="0.004"/>
+<polygon points="0.605,2.635 0.775,2.635 0.775,2.805 0.605,2.805" fill="#0D47A1" fill-opacity="0.95" stroke="#0D47A1" stroke-width="0.004"/>
+<polygon points="0.605,-0.085 0.775,-0.085 0.775,0.085 0.605,0.085" fill="#0D47A1" fill-opacity="0.95" stroke="#0D47A1" stroke-width="0.004"/>
+<polygon points="1.065,-0.085 1.235,-0.085 1.235,0.085 1.065,0.085" fill="#0D47A1" fill-opacity="0.95" stroke="#0D47A1" stroke-width="0.004"/>
+<polygon points="0.000,2.960 0.000,2.480 1.380,2.480 1.380,2.960" fill="#8E24AA" fill-opacity="0.35" stroke="#8E24AA" stroke-width="0.004"/>
+<polygon points="0.000,0.240 0.000,-0.240 1.380,-0.240 1.380,0.240" fill="#8E24AA" fill-opacity="0.35" stroke="#8E24AA" stroke-width="0.004"/>
+</g>
+<rect x="20.0" y="765.0" width="14" height="14" fill="#E8E0C8" fill-opacity="0.55" stroke="#E8E0C8"/>
+<text x="40.0" y="776.0" font-family="Helvetica,Arial,sans-serif" font-size="11" fill="#17251D">nwell (64/20)</text>
+<rect x="116.8" y="765.0" width="14" height="14" fill="#4CAF50" fill-opacity="0.7" stroke="#4CAF50"/>
+<text x="136.8" y="776.0" font-family="Helvetica,Arial,sans-serif" font-size="11" fill="#17251D">diff (65/20)</text>
+<rect x="213.6" y="765.0" width="14" height="14" fill="#2E7D32" fill-opacity="0.7" stroke="#2E7D32"/>
+<text x="233.6" y="776.0" font-family="Helvetica,Arial,sans-serif" font-size="11" fill="#17251D">tap (65/44)</text>
+<rect x="310.4" y="765.0" width="14" height="14" fill="#D32F2F" fill-opacity="0.75" stroke="#D32F2F"/>
+<text x="330.4" y="776.0" font-family="Helvetica,Arial,sans-serif" font-size="11" fill="#17251D">poly (66/20)</text>
+<rect x="20.0" y="787.0" width="14" height="14" fill="#212121" fill-opacity="0.9" stroke="#212121"/>
+<text x="40.0" y="798.0" font-family="Helvetica,Arial,sans-serif" font-size="11" fill="#17251D">licon1 (66/44)</text>
+<rect x="116.8" y="787.0" width="14" height="14" fill="#1976D2" fill-opacity="0.45" stroke="#1976D2"/>
+<text x="136.8" y="798.0" font-family="Helvetica,Arial,sans-serif" font-size="11" fill="#17251D">li1 (67/20)</text>
+<rect x="213.6" y="787.0" width="14" height="14" fill="#0D47A1" fill-opacity="0.95" stroke="#0D47A1"/>
+<text x="233.6" y="798.0" font-family="Helvetica,Arial,sans-serif" font-size="11" fill="#17251D">mcon (67/44)</text>
+<rect x="310.4" y="787.0" width="14" height="14" fill="#8E24AA" fill-opacity="0.35" stroke="#8E24AA"/>
+<text x="330.4" y="798.0" font-family="Helvetica,Arial,sans-serif" font-size="11" fill="#17251D">met1 (68/20)</text>
+</svg>

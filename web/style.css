@@ -2,7 +2,7 @@
    cool paper, dark green ink, one colour per pipeline stage. */
 :root {
   --paper: #FBFCF8; --panel: #FFFFFF; --ink: #17251D; --sub: #4A5A50; --rule: #D5DBD0; --tint: #EEF2EA;
-  --IF: #3C8DBC; --ID: #6A5ACD; --RR: #9B59B6; --EX: #E08E0B; --MEM: #27AE60; --WB: #C0392B;
+  --FETCH1: #2E86C1; --FETCH2: #17A2B8; --DECODE: #6A5ACD; --EXECUTE: #E08E0B; --MEMORY: #27AE60; --WRITEBACK: #C0392B;
   --pred: #138A8A; --redirect: #C2185B; --stall: #B8860B; --fwd: #E07B00;
   --c0: #C9D3CC; --c1: #9FC3D6; --c2: #E9B872; --c3: #D96C2C;
   --sans: 'IBM Plex Sans', 'Segoe UI', Helvetica, Arial, sans-serif;
@@ -29,7 +29,7 @@ button, select, input { font: inherit; color: inherit; }
 button { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: .4rem .8rem; cursor: pointer; }
 button:hover { border-color: var(--sub); }
 button.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); font-weight: 600; }
-button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--IF); outline-offset: 2px; }
+button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--FETCH1); outline-offset: 2px; }
 select { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: .35rem .5rem; }
 
 .top { display: flex; flex-wrap: wrap; gap: 1rem 2rem; align-items: end; justify-content: space-between; padding: 1.4rem 1.5rem 1rem; border-bottom: 1px solid var(--rule); }
@@ -46,7 +46,7 @@ main { padding: 1rem 1.5rem 2rem; max-width: 1500px; margin: 0 auto; }
 .cyclebar { display: flex; align-items: baseline; gap: .5rem; margin-bottom: .5rem; color: var(--sub); }
 .cyclebar strong { font: 600 2.2rem/1 var(--mono); color: var(--ink); min-width: 4ch; }
 .status { font-weight: 600; }
-.status.stall { color: var(--stall); } .status.flush { color: var(--redirect); } .status.halt { color: var(--WB); }
+.status.stall { color: var(--stall); } .status.flush { color: var(--redirect); } .status.halt { color: var(--WRITEBACK); }
 .stages { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0; border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; background: var(--panel); }
 .stage { position: relative; padding: .6rem .6rem .8rem; min-height: 9.5rem; border-right: 1px solid var(--rule); }
 .stage:last-child { border-right: 0; }
@@ -85,7 +85,7 @@ main { padding: 1rem 1.5rem 2rem; max-width: 1500px; margin: 0 auto; }
 .chart td.c { width: 2.4rem; height: 1.3rem; text-align: center; color: #fff; font-weight: 700; border-radius: 3px; font-size: .62rem; position: relative; }
 .chart td.c.sq { opacity: .35; }
 .chart td.c.st { background-image: repeating-linear-gradient(45deg, rgba(0,0,0,.25) 0 3px, transparent 3px 6px); }
-.chart td.c.fw::after { content: ''; position: absolute; top: 1px; right: 1px; width: 6px; height: 6px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px var(--EX); }
+.chart td.c.fw::after { content: ''; position: absolute; top: 1px; right: 1px; width: 6px; height: 6px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px var(--EXECUTE); }
 .chart td.now { outline: 2px solid var(--ink); }
 .chart tr.hz td { height: 1.1rem; font-size: .6rem; font-weight: 700; color: #fff; text-align: center; border-radius: 3px; }
 
@@ -116,7 +116,7 @@ textarea { width: 100%; min-height: 20rem; font: .82rem/1.45 var(--mono); backgr
 .reggrid div { display: flex; gap: .5rem; padding: 0 .25rem; border-radius: 3px; }
 .reggrid .n { color: var(--sub); min-width: 5.5ch; }
 .reggrid .z { color: var(--sub); opacity: .55; }
-.reggrid .w { background: color-mix(in srgb, var(--WB) 18%, transparent); }
+.reggrid .w { background: color-mix(in srgb, var(--WRITEBACK) 18%, transparent); }
 .output { min-height: 3rem; max-height: 8rem; overflow: auto; background: var(--tint); border-radius: 6px; padding: .5rem; margin: 0; font: .8rem var(--mono); white-space: pre-wrap; }
 
 /* predictor */
@@ -132,8 +132,8 @@ textarea { width: 100%; min-height: 20rem; font: .82rem/1.45 var(--mono); backgr
 .pht { display: grid; grid-template-columns: repeat(16, minmax(0, 1fr)); gap: 2px; max-width: 26rem; }
 .pht i { aspect-ratio: 1; border-radius: 2px; background: var(--c0); position: relative; }
 .pht i.s1 { background: var(--c1); } .pht i.s2 { background: var(--c2); } .pht i.s3 { background: var(--c3); }
-.pht i.rd { outline: 2px solid var(--IF); outline-offset: 1px; z-index: 1; }
-.pht i.up { box-shadow: inset 0 0 0 3px var(--EX); }
+.pht i.rd { outline: 2px solid var(--FETCH1); outline-offset: 1px; z-index: 1; }
+.pht i.up { box-shadow: inset 0 0 0 3px var(--EXECUTE); }
 .btb { border-collapse: collapse; font: .74rem var(--mono); }
 .btb td, .btb th { padding: .05rem .6rem .05rem 0; text-align: left; }
 .btb th { font: 500 .7rem var(--sans); color: var(--sub); }

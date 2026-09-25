@@ -10,13 +10,13 @@ jobs:
           node-version: 20
       - name: Install Verilog tools
         run: sudo apt-get update && sudo apt-get install -y iverilog verilator
-      - name: Lint RTL
+      - name: Lint the SystemVerilog
         run: make lint
       - name: Regression (RTL vs model, cycle-exact, predictor on and off)
         run: make test
       - name: Verify the cycle equation
         run: make math
-      - name: Generated docs are up to date
+      - name: Generated docs and charts are up to date
         run: |
-          make docs
-          git diff --exit-code -- binary docs/img/pipeline docs/img/instructions web/programs.js
+          make docs charts diagram
+          git diff --exit-code -- binary docs/img/pipeline docs/img/instructions docs/img/formats docs/img/charts docs/img/cpu_block_diagram.svg web/programs.js

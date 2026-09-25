@@ -1,5 +1,5 @@
 # =============================================================================
-# 05_fibonacci.s — iterative Fibonacci, fib(50) in a 64-bit register
+# 05_fibonacci.s: iterative Fibonacci, fib(50) in a 64-bit register
 #
 #   fib(0)=0, fib(1)=1, fib(n)=fib(n-1)+fib(n-2)
 # fib(50) = 12,586,269,025 does NOT fit in 32 bits: this needs RV64.
@@ -17,4 +17,4 @@ loop:
     addi a1, a1, -1
     j    loop
 done:
-    ecall
+    halt

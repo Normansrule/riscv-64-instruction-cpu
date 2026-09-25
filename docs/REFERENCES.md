@@ -9,7 +9,7 @@ published source; this page says which.
 Unprivileged Architecture*, RISC-V International. Source and releases:
 https://github.com/riscv/riscv-isa-manual (ratified release `20240411`:
 https://github.com/riscv/riscv-isa-manual/releases/tag/20240411).
-Used for: every encoding in `sim/isa.js` and `binary/`, RV64 "W" semantics, M-extension
+Used for: every encoding in `model/isa.js` and `binary/`, the Zicsr instructions and the `cycle`/`instret` counters, RV64 "W" semantics, M-extension
 division-by-zero and overflow results, the placement of the immediate sign bit.
 
 ## Textbooks
@@ -42,7 +42,7 @@ Research Laboratory, Technical Note TN-36, June 1993.
 https://inst.eecs.berkeley.edu/~cs252/sp17/papers/McFarling-WRL-TN-36.pdf
 (mirror: https://www.ece.ucdavis.edu/~akella/270W05/mcfarling93combining.pdf).
 Introduces **gshare** (global history XOR address) and the combined (tournament) predictor.
-This is the predictor in `rtl/branch_predictor.v`.
+This is the predictor in `src/GShare_Branch_Predictor.sv`.
 
 **[8]** A. Seznec, P. Michaud, "A case for (partially) TAgged GEometric history length branch
 prediction," *Journal of Instruction-Level Parallelism*, vol. 8, 2006.
@@ -54,7 +54,7 @@ predictor that is a small neural network: one perceptron per branch, trained onl
 
 **[10]** K. Skadron, M. Martonosi, D. W. Clark, "Speculative Updates of Local and Global Branch
 History: A Quantitative Analysis," *Journal of Instruction-Level Parallelism*, vol. 2, 2000.
-Why real machines update history at prediction time and repair it (see docs/MATH.md §5f).
+Why real machines update history at prediction time and repair it: the checkpoint scheme in `GSharePredictor` (see ARCHITECTURE.md, FETCH2).
 
 ## Real RISC-V cores and chips to compare with
 
@@ -80,7 +80,9 @@ https://boom-core.org/boom-publications/. What an out-of-order RV64 core adds be
 **[15]** K. Asanović et al., "The Rocket Chip Generator," Technical Report UCB/EECS-2016-17,
 UC Berkeley, 2016. Rocket: the classic 5-stage in-order RV64 core.
 
-## Courses (MIT)
+## Learning resources
+
+All in English.
 
 **[16]** C. Terman, *6.004 Computation Structures*, MIT OpenCourseWare, Spring 2017.
 https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/ . Pipelining, hazards,
@@ -92,7 +94,28 @@ https://www.youtube.com/playlist?list=PL0MxyGPHXXYIPmeYPTyPwqNAl6cgkl3d3 (Englis
 
 **[18]** Arvind et al., *6.175 Constructive Computer Architecture*, MIT. Builds pipelined RISC-V
 processors with branch target buffers and branch history tables step by step:
-http://csg.csail.mit.edu/6.175/ .
+http://csg.csail.mit.edu/6.175/ . The original Riscv151 cites its 6-stage pipeline lab:
+https://csg.csail.mit.edu/6.175/labs/lab6-riscv-pipeline.html .
+
+**[21]** UC Berkeley EECS 151/251A, *Introduction to Digital Design and Integrated Circuits*,
+https://inst.eecs.berkeley.edu/~eecs151/ . The course whose ASIC project this CPU started from
+(RTL, synthesis, place and route with Hammer on sky130).
+
+**[22]** UC Berkeley CS 61C, *Great Ideas in Computer Architecture (Machine Structures)*,
+https://cs61c.org/ . RISC-V assembly, the single-cycle and pipelined datapath (English lectures and labs).
+
+**[23]** UCSD CSE 141L branch prediction tutorial, https://cseweb.ucsd.edu/classes/fa04/cse141L/bp_tutorial.pdf ,
+and the OpenRISC mor1kx gshare predictor,
+https://github.com/openrisc/mor1kx/blob/master/rtl/verilog/mor1kx_branch_predictor_gshare.v .
+Both are cited by the original `GShare_Branch_Predictor.sv`.
+
+## Adders (the critical path)
+
+**[24]** P. M. Kogge, H. S. Stone, "A Parallel Algorithm for the Efficient Solution of a General
+Class of Recurrence Equations," *IEEE Transactions on Computers*, vol. C-22, no. 8, 1973.
+
+**[25]** R. P. Brent, H. T. Kung, "A Regular Layout for Parallel Adders," *IEEE Transactions on
+Computers*, vol. C-31, no. 3, 1982. The two classic parallel-prefix adders for Lab 8.
 
 ## Tools
 
@@ -104,3 +127,13 @@ Yosys (https://yosyshq.net/yosys/).
 OpenLane RTL-to-GDSII flow, https://github.com/The-OpenROAD-Project/OpenLane ; Tiny Tapeout,
 https://tinytapeout.com/ . How an RTL design like this one becomes real silicon; see
 [SILICON.md](SILICON.md).
+
+**[26]** sky130 high-density standard-cell library (layouts used in SILICON.md, Apache-2.0):
+https://github.com/google/skywater-pdk-libs-sky130_fd_sc_hd (mirror used by `make synth`: the
+OpenROAD-flow-scripts `sky130hd` platform). sram22 SRAM generator:
+https://github.com/rahulk29/sram22 . sv2v SystemVerilog-to-Verilog converter:
+https://github.com/zachjs/sv2v . Hammer VLSI flow: https://github.com/ucb-bar/hammer .
+OpenROAD-flow-scripts: https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts .
+
+**[27]** riscv-tests (the tohost PASS/FAIL convention used here):
+https://github.com/riscv-software-src/riscv-tests .

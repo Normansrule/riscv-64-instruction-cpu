@@ -1,0 +1,217 @@
+Path 1: MET (0.163 ns) Setup Check with Pin cpu/EXECUTE_REGISTER2_DATA_reg[20]/CK->D
+               View: ss_100C_1v60.setup_view
+              Group: reg2reg
+         Startpoint: (R) cpu/EXECUTE_ALU_OPERATION_reg[0]/CK
+              Clock: (R) clk
+           Endpoint: (R) cpu/EXECUTE_REGISTER2_DATA_reg[20]/D
+              Clock: (R) clk
+
+                       Capture       Launch
+         Clock Edge:+   26.000        0.000
+        Src Latency:+   -2.113       -2.113
+        Net Latency:+    2.087 (P)    2.115 (P)
+            Arrival:=   25.974        0.002
+
+              Setup:-    0.148
+        Uncertainty:-    0.100
+        Cppr Adjust:+    0.000
+      Required Time:=   25.725
+       Launch Clock:=    0.002
+          Data Path:+   25.561
+              Slack:=    0.163
+     Timing Path:
+
+#-------------------------------------------------------------------------------------------------------------------------------------------
+# Timing Point                                                                Flags  Arc     Edge  Cell       Fanout  Trans   Delay  Arrival  
+#                                                                                                                      (ns)    (ns)     (ns)  
+#-------------------------------------------------------------------------------------------------------------------------------------------
+  clk                                                                         -      clk     R     (arrival)       1  0.003   0.004   -2.109  
+  clk                                                                         -      -       R     (net)           1      -       -        -  
+  CTS_ccl_buf_00229/Y                                                         -      A->Y    R     CLKBUFX8        1  0.006   0.198   -1.912  
+  CTS_37                                                                      -      -       R     (net)           1      -       -        -  
+  CTS_ccl_buf_00228/Y                                                         -      A->Y    R     CLKBUFX8        1  0.139   0.319   -1.592  
+  CTS_36                                                                      -      -       R     (net)           1      -       -        -  
+  CTS_ccl_a_buf_00227/Y                                                       -      A->Y    R     CLKBUFX8        2  0.208   0.346   -1.247  
+  CTS_35                                                                      -      -       R     (net)           2      -       -        -  
+  CTS_ccl_buf_00225/Y                                                         -      A->Y    R     CLKBUFX8        2  0.202   0.259   -0.988  
+  CTS_34                                                                      -      -       R     (net)           2      -       -        -  
+  CTS_ccl_buf_00223/Y                                                         -      A->Y    R     CLKBUFX8        2  0.094   0.231   -0.757  
+  CTS_33                                                                      -      -       R     (net)           2      -       -        -  
+  CTS_ccl_a_buf_00220/Y                                                       -      A->Y    R     CLKBUFX8        4  0.124   0.233   -0.525  
+  CTS_32                                                                      -      -       R     (net)           4      -       -        -  
+  cpu/CTS_ccl_a_buf_00214/Y                                                   -      A->Y    R     CLKBUFX8        9  0.104   0.264   -0.261  
+  cpu/CTS_48                                                                  -      -       R     (net)           9      -       -        -  
+  cpu/CTS_ccl_a_buf_00087/Y                                                   -      A->Y    R     CLKBUFX4       10  0.159   0.263    0.002  
+  cpu/CTS_47                                                                  -      -       R     (net)          10      -       -        -  
+  cpu/EXECUTE_ALU_OPERATION_reg[0]/Q                                          -      CK->Q   R     DFFX1           5  0.125   0.771    0.774  
+  cpu/EXECUTE_ALU_OPERATION[0]                                                -      -       R     (net)           5      -       -        -  
+  cpu/alu/FE_OFC3924_EXECUTE_ALU_OPERATION_0/Y                                -      A->Y    F     CLKINVX1        2  0.409   0.195    0.968  
+  cpu/alu/FE_OFN3981_EXECUTE_ALU_OPERATION_0                                  -      -       F     (net)           2      -       -        -  
+  cpu/alu/g2903__8428/Y                                                       -      B->Y    R     NOR2X1          1  0.127   0.266    1.234  
+  cpu/alu/n_308                                                               -      -       R     (net)           1      -       -        -  
+  cpu/alu/FE_OFC7412_n_308/Y                                                  -      A->Y    F     CLKINVX1        4  0.230   0.201    1.434  
+  cpu/alu/FE_RN_0_0                                                           -      -       F     (net)           4      -       -        -  
+  cpu/alu/FE_RC_151_0/Y                                                       -      B->Y    R     NOR2X1          1  0.131   0.141    1.575  
+  cpu/alu/FE_RN_1_0                                                           -      -       R     (net)           1      -       -        -  
+  cpu/alu/FE_RC_148_0/Y                                                       -      A->Y    F     NOR2X1          1  0.143   0.125    1.700  
+  cpu/alu/FE_RN_3_0                                                           -      -       F     (net)           1      -       -        -  
+  cpu/alu/FE_OFC7089_FE_RN_3_0/Y                                              -      A->Y    R     CLKINVX2        9  0.073   0.257    1.957  
+  cpu/alu/n_441                                                               -      -       R     (net)           9      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g1024__2398/Y   -      A->Y    F     CLKXOR2X1       1  0.311   0.487    2.445  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_31            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g1021__7410/CO  -      CI->CO  F     ADDFX1          1  0.086   0.375    2.820  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_34            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g1020__1666/CO  -      CI->CO  F     ADDFX1          1  0.102   0.389    3.208  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_36            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g1019__2346/CO  -      CI->CO  F     ADDFX1          1  0.108   0.393    3.602  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_38            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g1018__2883/CO  -      CI->CO  F     ADDFX1          1  0.110   0.390    3.992  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_40            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g1017__9945/CO  -      CI->CO  F     ADDFX1          1  0.107   0.454    4.446  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_42            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g1016__9315/CO  -      CI->CO  F     ADDFX1          1  0.147   0.415    4.861  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_44            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g1015__6161/CO  -      CI->CO  F     ADDFX1          1  0.114   0.390    5.252  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_46            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g1014__4733/CO  -      CI->CO  F     ADDFX1          1  0.106   0.412    5.664  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_48            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g1013__7482/CO  -      CI->CO  F     ADDFX1          1  0.124   0.406    6.070  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_50            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g1012__5115/CO  -      CI->CO  F     ADDFX1          1  0.114   0.545    6.614  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_52            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g1011__1881/CO  -      CI->CO  F     ADDFX1          1  0.211   0.438    7.052  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_54            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g1010__6131/CO  -      CI->CO  F     ADDFX1          1  0.112   0.502    7.554  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_56            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g1009__7098/CO  -      CI->CO  F     ADDFX1          1  0.177   0.471    8.025  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_58            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g1008__8246/CO  -      CI->CO  F     ADDFX1          1  0.140   0.420    8.445  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_60            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g1007__5122/CO  -      CI->CO  F     ADDFX1          1  0.119   0.419    8.864  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_62            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g1006__1705/CO  -      CI->CO  F     ADDFX1          1  0.123   0.410    9.274  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_64            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g1005__2802/CO  -      CI->CO  F     ADDFX1          1  0.117   0.398    9.672  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_66            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g1004__1617/CO  -      CI->CO  F     ADDFX1          1  0.111   0.395   10.066  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_68            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g1003__3680/CO  -      CI->CO  F     ADDFX1          1  0.110   0.384   10.450  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_70            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g1002__6783/CO  -      CI->CO  F     ADDFX1          1  0.102   0.501   10.952  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_72            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g1001__5526/CO  -      CI->CO  F     ADDFX1          1  0.177   0.460   11.412  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_74            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g1000__8428/CO  -      CI->CO  F     ADDFX1          1  0.136   0.411   11.823  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_76            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g999__4319/CO   -      CI->CO  F     ADDFX1          1  0.115   0.473   12.296  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_78            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g998__6260/CO   -      CI->CO  F     ADDFX1          1  0.158   0.403   12.698  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_80            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g997__5107/CO   -      CI->CO  F     ADDFX1          1  0.101   0.444   13.142  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_82            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g996__2398/CO   -      CI->CO  F     ADDFX1          1  0.143   0.496   13.639  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_84            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g995__5477/CO   -      CI->CO  F     ADDFX1          1  0.168   0.412   14.051  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_86            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g994__6417/CO   -      CI->CO  F     ADDFX1          1  0.106   0.387   14.437  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_88            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g993__7410/CO   -      CI->CO  F     ADDFX1          1  0.105   0.383   14.820  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_90            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g992__1666/CO   -      CI->CO  F     ADDFX1          1  0.102   0.516   15.336  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_92            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g991__2346/CO   -      CI->CO  F     ADDFX1          1  0.189   0.512   15.848  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_94            -      -       F     (net)           1      -       -        -  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_g990__2883/CO   -      CI->CO  F     ADDFX1          2  0.163   0.450   16.297  
+  cpu/alu/SUB_TC_OP_2_Y_SUB_TC_OP_1_Y_SUB_TC_OP22_Y_ADD_TC_OP_n_96            -      -       F     (net)           2      -       -        -  
+  cpu/alu/FE_RC_161_0/Y                                                       -      B->Y    R     NOR2X1          1  0.133   0.279   16.577  
+  cpu/alu/FE_RN_8_0                                                           -      -       R     (net)           1      -       -        -  
+  cpu/alu/FE_RC_159_0/Y                                                       -      B->Y    F     NOR2X1          1  0.290   0.169   16.746  
+  cpu/alu/FE_RN_9_0                                                           -      -       F     (net)           1      -       -        -  
+  cpu/alu/FE_OFC5846_FE_RN_9_0/Y                                              -      A->Y    R     INVX2           1  0.105   0.200   16.945  
+  cpu/alu/n_440                                                               -      -       R     (net)           1      -       -        -  
+  cpu/alu/g5889__5122/Y                                                       -      C->Y    R     AND3X2          1  0.170   0.352   17.297  
+  cpu/alu/n_119                                                               -      -       R     (net)           1      -       -        -  
+  cpu/alu/g5724__4319/Y                                                       -      A1->Y   F     AOI221X1        1  0.082   0.127   17.424  
+  cpu/alu/n_283                                                               -      -       F     (net)           1      -       -        -  
+  cpu/alu/FE_OFC9537_n_283/Y                                                  -      A->Y    R     CLKINVX1        1  0.167   0.105   17.529  
+  cpu/alu/FE_OFN7101_n_283                                                    -      -       R     (net)           1      -       -        -  
+  cpu/alu/FE_OFC9804_n_283/Y                                                  -      A->Y    F     CLKINVX1        1  0.082   0.155   17.684  
+  cpu/alu/FE_OFN7102_n_283                                                    -      -       F     (net)           1      -       -        -  
+  cpu/alu/g5688__2346/Y                                                       -      B->Y    R     NAND2X4         5  0.138   0.298   17.981  
+  cpu/EXECUTE_ALU_RESULT[0]                                                   -      -       R     (net)           5      -       -        -  
+  cpu/store_control/g1611/Y                                                   -      B->Y    F     NAND2X1         1  0.281   0.163   18.144  
+  cpu/store_control/n_3                                                       -      -       F     (net)           1      -       -        -  
+  cpu/store_control/FE_PSBC12450_n_3/Y                                        -      A->Y    F     CLKBUFX4        3  0.108   0.252   18.396  
+  cpu/store_control/FE_PSBN8514_n_3                                           -      -       F     (net)           3      -       -        -  
+  cpu/store_control/g1605/Y                                                   -      B->Y    F     AND2X2          9  0.074   0.319   18.715  
+  cpu/store_control/n_9                                                       -      -       F     (net)           9      -       -        -  
+  cpu/store_control/g1597/Y                                                   -      B->Y    F     OR2X1           1  0.159   0.379   19.094  
+  cpu/EXECUTE_STORE_MASK[2]                                                   -      -       F     (net)           1      -       -        -  
+  cpu/g8763/Y                                                                 -      A->Y    F     AND2X2          3  0.119   0.323   19.417  
+  dcache_we[2]                                                                -      -       F     (net)           3      -       -        -  
+  mem/g35/Y                                                                   -      C->Y    F     OR4X1           2  0.122   0.764   20.181  
+  mem/n_301                                                                   -      -       F     (net)           2      -       -        -  
+  mem/dcache/g25015/Y                                                         -      A->Y    R     INVX2           3  0.262   0.209   20.390  
+  mem/dcache/n_523                                                            -      -       R     (net)           3      -       -        -  
+  mem/dcache/FE_RC_153_0/Y                                                    -      A0->Y   F     OAI221X2        1  0.165   0.318   20.708  
+  mem/dcache/n_961                                                            -      -       F     (net)           1      -       -        -  
+  mem/dcache/g24320/Y                                                         -      B->Y    R     NOR2X2          5  0.224   0.278   20.986  
+  mem/dcache/n_501                                                            -      -       R     (net)           5      -       -        -  
+  mem/dcache/FE_OFC9789_n_501/Y                                               -      A->Y    F     CLKINVX1        1  0.262   0.125   21.111  
+  mem/dcache/n_1076                                                           -      -       F     (net)           1      -       -        -  
+  mem/dcache/g24311/Y                                                         -      B->Y    R     NAND2X1         2  0.079   0.112   21.223  
+  mem/dcache/n_1071                                                           -      -       R     (net)           2      -       -        -  
+  mem/dcache/g24310/Y                                                         -      B->Y    R     OR2X1           1  0.164   0.353   21.576  
+  mem/d_stall_n                                                               -      -       R     (net)           1      -       -        -  
+  mem/g24/Y                                                                   -      B->Y    F     NAND2X1         1  0.191   0.211   21.787  
+  stall                                                                       -      -       F     (net)           1      -       -        -  
+  cpu/FE_OFC5678_stall/Y                                                      -      A->Y    R     CLKINVX4        4  0.177   0.344   22.130  
+  cpu/FE_OFN3801_n                                                            -      -       R     (net)           4      -       -        -  
+  cpu/g10492/Y                                                                -      B->Y    F     NAND2X2         1  0.299   0.262   22.392  
+  cpu/n_1442                                                                  -      -       F     (net)           1      -       -        -  
+  cpu/FE_OFC9752_n_1442/Y                                                     -      A->Y    F     BUFX8          26  0.169   0.417   22.809  
+  cpu/FE_OFN2508_n_1442                                                       -      -       F     (net)          26      -       -        -  
+  cpu/FE_OFC9753_n_1442/Y                                                     -      A->Y    R     CLKINVX4        4  0.220   0.155   22.964  
+  cpu/FE_DBTN1_n_1442                                                         -      -       R     (net)           4      -       -        -  
+  cpu/g12807/Y                                                                -      B->Y    R     AND2X1          1  0.122   0.441   23.406  
+  cpu/n_121                                                                   -      -       R     (net)           1      -       -        -  
+  cpu/FE_OFC3698_n_121/Y                                                      -      A->Y    F     INVX2           3  0.269   0.296   23.701  
+  cpu/FE_OFN2855_n_121                                                        -      -       F     (net)           3      -       -        -  
+  cpu/FE_OFC5649_n_121/Y                                                      -      A->Y    R     INVX16         74  0.211   0.444   24.145  
+  cpu/FE_OFN3763_n_121                                                        -      -       R     (net)          74      -       -        -  
+  cpu/FE_OFC9724_FE_OFN3763_n_121/Y                                           -      A->Y    F     CLKINVX1        1  0.447   0.156   24.300  
+  cpu/FE_OFN5684_n                                                            -      -       F     (net)           1      -       -        -  
+  cpu/FE_OFC11501_n/Y                                                         -      A->Y    F     CLKBUFX4        1  0.104   0.267   24.567  
+  cpu/FE_OFN7565_n                                                            -      -       F     (net)           1      -       -        -  
+  cpu/FE_OFC9725_FE_OFN3763_n_121/Y                                           -      A->Y    R     INVX8          40  0.093   0.282   24.849  
+  cpu/FE_OFN2857_n_121                                                        -      -       R     (net)          40      -       -        -  
+  cpu/g11493/Y                                                                -      S0->Y   R     MX2X1           1  0.317   0.455   25.303  
+  cpu/n_1106                                                                  -      -       R     (net)           1      -       -        -  
+  cpu/g11427/Y                                                                -      B->Y    R     AND2X1          1  0.180   0.260   25.563  
+  cpu/n_1140                                                                  -      -       R     (net)           1      -       -        -  
+  cpu/EXECUTE_REGISTER2_DATA_reg[20]/D                                        -      D       R     DFFX4           1  0.084   0.000   25.563  
+#-------------------------------------------------------------------------------------------------------------------------------------------
+     Other End Path:
+
+#----------------------------------------------------------------------------------------------------
+# Timing Point                           Flags  Arc   Edge  Cell       Fanout  Trans   Delay  Arrival  
+#                                                                               (ns)    (ns)     (ns)  
+#----------------------------------------------------------------------------------------------------
+  clk                                    -      clk   R     (arrival)       1  0.003   0.004   23.891  
+  clk                                    -      -     R     (net)           1      -       -        -  
+  CTS_ccl_buf_00229/Y                    -      A->Y  R     CLKBUFX8        1  0.006   0.198   24.088  
+  CTS_37                                 -      -     R     (net)           1      -       -        -  
+  CTS_ccl_buf_00228/Y                    -      A->Y  R     CLKBUFX8        1  0.139   0.319   24.408  
+  CTS_36                                 -      -     R     (net)           1      -       -        -  
+  CTS_ccl_a_buf_00227/Y                  -      A->Y  R     CLKBUFX8        2  0.208   0.344   24.752  
+  CTS_35                                 -      -     R     (net)           2      -       -        -  
+  CTS_ccl_buf_00224/Y                    -      A->Y  R     CLKBUFX8        3  0.202   0.383   25.135  
+  CTS_11                                 -      -     R     (net)           3      -       -        -  
+  CTS_ccl_a_buf_00217/Y                  -      A->Y  R     CLKBUFX8        4  0.259   0.314   25.449  
+  CTS_10                                 -      -     R     (net)           4      -       -        -  
+  cpu/CTS_ccl_a_buf_00207/Y              -      A->Y  R     CLKBUFX8        9  0.135   0.277   25.726  
+  cpu/CTS_4                              -      -     R     (net)           9      -       -        -  
+  cpu/CTS_ccl_a_buf_00077/Y              -      A->Y  R     CLKBUFX4       10  0.156   0.248   25.974  
+  cpu/CTS_3                              -      -     R     (net)          10      -       -        -  
+  cpu/EXECUTE_REGISTER2_DATA_reg[20]/CK  -      CK    R     DFFX4          10  0.108   0.000   25.974  
+#----------------------------------------------------------------------------------------------------

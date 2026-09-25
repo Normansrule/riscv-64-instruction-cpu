@@ -1,9 +1,9 @@
 # Assembled programs
 
-Every file in [`programs/`](../../programs) assembled by `sim/asm.js`.
+Every file in [`programs/`](../../programs) assembled by `model/asm.js` (code starts at the reset PC `0x2000`).
 
-* `.lst` — listing: address, hex word, **binary word**, source line
-* `.hex` — memory image for `$readmemh` (one byte per line, little-endian)
+* `.lst`: listing with address, hex word, **binary word**, source line
+* `.hex`: memory image for `$readmemh` (one byte per line, little-endian)
 
 * [00_pipeline_fill.lst](00_pipeline_fill.lst) · [00_pipeline_fill.hex](00_pipeline_fill.hex)
 * [01_hello.lst](01_hello.lst) · [01_hello.hex](01_hello.hex)
@@ -17,3 +17,6 @@ Every file in [`programs/`](../../programs) assembled by `sim/asm.js`.
 * [09_primes_sieve.lst](09_primes_sieve.lst) · [09_primes_sieve.hex](09_primes_sieve.hex)
 * [10_print_numbers.lst](10_print_numbers.lst) · [10_print_numbers.hex](10_print_numbers.hex)
 * [11_gshare_patterns.lst](11_gshare_patterns.lst) · [11_gshare_patterns.hex](11_gshare_patterns.hex)
+* [12_measure_cpi.lst](12_measure_cpi.lst) · [12_measure_cpi.hex](12_measure_cpi.hex)
+* [13_function_call_cost.lst](13_function_call_cost.lst) · [13_function_call_cost.hex](13_function_call_cost.hex)
+* [14_false_load_stall.lst](14_false_load_stall.lst) · [14_false_load_stall.hex](14_false_load_stall.hex)

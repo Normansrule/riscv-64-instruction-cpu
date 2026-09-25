@@ -1,4 +1,4 @@
-# `jal` — Jump And Link
+# `jal`: Jump And Link
 
 [← all instructions](../README.md) · extension **RV64I** · format **J** · category *Jump*
 
@@ -16,7 +16,7 @@ bit:  31                              0
 ```
 
 Fixed bits are `0`/`1`. Letters are filled in by the assembler:
-`d` = rd, `s` = rs1, `t` = rs2, `i` = immediate, `h` = shift amount, `f` = funct3, `m/p/u` = fence fields.
+`d` = rd, `s` = rs1, `t` = rs2, `i` = immediate, `h` = shift amount, `c` = CSR address, `z` = 5-bit CSR immediate, `f` = funct3, `m/p/u` = fence fields.
 
 ## Example
 
@@ -37,25 +37,31 @@ node tools/rv.mjs encode "jal ra, 2048"   # use a label or a number for the offs
 node tools/rv.mjs decode 001000ef
 ```
 
-## Control signals set by the decoder (`rtl/decoder.v`)
+## Control signals from the Control Unit ([`src/Control_Unit.sv`](../../src/Control_Unit.sv))
+
+These are the exact values the RTL produces for the example word above (computed by the
+bit-exact twin in `model/core.js`, which `make test` checks against the RTL every cycle).
 
 | signal | value | | signal | value |
 |---|---|---|---|---|
-| `use_rs1` | 0 | | `is_load` | 0 |
-| `use_rs2` | 0 | | `is_store` | 0 |
-| `reg_write` | 1 (if rd≠x0) | | `is_branch` | 0 |
-| `alu_op` | — (unused) | | `is_jal` / `is_jalr` | 1 / 0 |
-| `a_sel` | RS1 | | `wb_pc4` | 1 |
-| `b_imm` | 0 | | `is_halt` | 0 |
-| `is_word` | 0 | | | |
+| `REGISTER_WRITE_ENABLE` | `1` | | `IS_A_MULTIPLY_DIVIDE_INSTRUCTION` | `0` |
+| `MEMORY_READ_ENABLE` | `0` | | `IS_A_BRANCH_INSTRUCTION` | `0` |
+| `MEMORY_WRITE_ENABLE` | `0` | | `IS_A_JAL_INSTRUCTION` | `1` |
+| `CSR_WRITE_ENABLE` | `0` | | `IS_A_JALR_INSTRUCTION` | `0` |
+| `CSR_WRITE_USING_IMMEDIATE` | `0` | | `IMMEDIATE_TYPE_SELECT` | `IMMEDIATE_J` |
+| `ALU_INPUT_A_IS_PC` | `1` | | `WRITEBACK_SELECT` | `WRITEBACK_PC_ADD_4` |
+| `ALU_INPUT_B_IS_IMMEDIATE` | `1` | | `ALU_OPERATION` | `ALU_ADD` |
+| `ALU_IS_WORD_OPERATION` | `0` | |  |  |
 
 ## Journey through the 6-stage pipeline
 
 | stage | what happens to `jal` |
 |---|---|
-| **IF** | Fetch the 32-bit word at `PC` from instruction memory; predict not-taken: `PC ← PC + 4`. |
-| **ID** | Decoder recognises `jal` from opcode `1101111`; the immediate generator builds the J-type immediate. |
-| **RR** | Nothing to read: this instruction has no register sources. |
-| **EX** | Target `PC + imm`: always redirect and flush IF/ID/RR. The link value `PC + 4` is sent down the pipe. |
-| **MEM** | No memory access: the result passes through to MEM/WB. |
-| **WB** | Write `rd` ← `PC + 4`. |
+| **FETCH1** | The PC is sent to the instruction memory. At the same time the **GSharePredictor** reads the 2-bit counter at `PC[5:2] XOR GLOBAL_HISTORY_REGISTER` (it does not know yet what instruction this is). |
+| **FETCH2** | The word arrives. Opcode `1101111` = JAL: the target `PC + imm` is computed right here and FETCH1 is **always** redirected (the jump is never wrong), squashing the one instruction fetched behind it (1 bubble). |
+| **DECODE** | **ControlUnit** + **ALUdec** recognise `jal` from opcode `1101111`; the **ImmediateGenerator** builds the J-type immediate. No registers are needed. |
+| **EXECUTE** | The ALU computes `PC + imm` (not needed any more) and `PC + 4` becomes the link value. BranchControl sees a JAL: it was already redirected in FETCH2, so **no flush**. |
+| **MEMORY** | No memory work. **WriteControl** picks the `WRITEBACK_PC_ADD_4` value, which can be forwarded back to DECODE. |
+| **WRITEBACK** | The **RegisterFile** writes `rd` at the clock edge (ignored if `rd` is `x0`). The instruction is now **retired** and the `instret` counter goes up by one. |
+
+See the whole datapath in the [block diagram](../../docs/ARCHITECTURE.md) and step through a program in the [web simulator](../../web/index.html).

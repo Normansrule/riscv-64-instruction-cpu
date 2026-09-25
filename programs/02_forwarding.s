@@ -1,21 +1,22 @@
 # =============================================================================
-# 02_forwarding.s — a chain of dependent instructions with ZERO stalls
+# 02_forwarding.s: a chain of dependent instructions with ZERO stalls
 #
 # Each instruction needs the result of the one right before it. Without
-# forwarding the pipeline would wait until the producer reached WB (3 extra
-# cycles per instruction). The forward unit instead routes the value from the
-# EX/MEM latch (1 instruction back) or the MEM/WB latch (2 back) straight
-# into the ALU inputs.
+# forwarding, DECODE would have to wait until the producer had written the
+# register file in WRITEBACK. This core forwards INTO DECODE (like the EECS 151
+# Riscv151 design): the value is taken from EXECUTE (1 instruction back),
+# MEMORY (2 back) or WRITEBACK (3 back), nearest first, and latched into
+# EXECUTE together with the instruction.
 #
-#   What to look for: "fwd A: MEM" / "fwd A: WB" markers in the EX stage,
-#                     and CPI = cycles / instructions staying low.
+#   What to look for: "fwd rs1: EXECUTE" / "fwd rs2: MEMORY" in the DECODE
+#                     stage of the web simulator, and CPI staying low.
 # EXPECT: a0 = 26
 # EXPECT: a1 = 7
 # =============================================================================
     li   a0, 1
-    addi a0, a0, 2       # a0 = 3     needs a0 from 1 instr ago -> fwd from EX/MEM
-    add  a0, a0, a0      # a0 = 6     again EX/MEM
+    addi a0, a0, 2       # a0 = 3     needs a0 from 1 instr ago -> forwarded from EXECUTE
+    add  a0, a0, a0      # a0 = 6     again from EXECUTE
     li   a1, 7           # independent
-    add  a0, a0, a1      # a0 = 13    a1 from EX/MEM, a0 from MEM/WB
+    add  a0, a0, a1      # a0 = 13    a1 from EXECUTE, a0 from MEMORY
     slli a0, a0, 1       # a0 = 26
-    ecall
+    halt

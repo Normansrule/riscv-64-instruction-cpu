@@ -1,5 +1,5 @@
 # =============================================================================
-# 11_gshare_patterns.s — a branch that ALTERNATES taken / not-taken
+# 11_gshare_patterns.s: a branch that ALTERNATES taken / not-taken
 #
 # A per-branch 2-bit counter ("bimodal", Smith 1981) cannot learn T,N,T,N:
 # the counter just wobbles between weak states and guesses wrong about half
@@ -25,4 +25,4 @@ even:
 next:
     addi t0, t0, -1
     bnez t0, loop        # taken 199 times, then falls through
-    ecall
+    halt

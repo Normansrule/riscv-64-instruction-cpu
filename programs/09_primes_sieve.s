@@ -1,5 +1,5 @@
 # =============================================================================
-# 09_primes_sieve.s — Sieve of Eratosthenes: count primes below 1000
+# 09_primes_sieve.s: Sieve of Eratosthenes: count primes below 1000
 #
 # Uses a 1000-byte array (SB/LBU), nested loops and MUL for p*p.
 # EXPECT: a0 = 168
@@ -36,7 +36,7 @@ skip:
     addi t0, t0, 1
     j    count_loop
 done:
-    ecall
+    halt
 
 sieve:
     .zero 1000

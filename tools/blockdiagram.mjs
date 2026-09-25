@@ -1,33 +1,38 @@
+#!/usr/bin/env node
 // =============================================================================
-// tools/blockdiagram.mjs — draws docs/img/cpu_block_diagram.svg
+// tools/blockdiagram.mjs: draws docs/img/cpu_block_diagram.svg
 //
-// The full datapath of rtl/rv64_core.v: every latch, mux, unit and feedback
-// path, colour-coded by what kind of signal it carries.
+// The datapath of src/Riscv64.sv with the module and signal names of the RTL:
+// every pipeline register, mux, unit and feedback path, colour-coded by what
+// kind of signal it carries.
 // =============================================================================
+import fs from 'node:fs';
+import path from 'node:path';
+
 const FONT = "font-family=\"'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif\"";
 const MONO = "font-family=\"'IBM Plex Mono',Consolas,monospace\"";
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 export const COL = {
   ink: '#17251D', sub: '#4A5A50', paper: '#FBFCF8', box: '#FFFFFF', edge: '#2B3A31',
-  data: '#2B3A31', ctrl: '#6A4FC8', pred: '#138A8A', redirect: '#C2185B', fwdMem: '#E07B00',
-  wb: '#C62828', hold: '#B8860B',
-  IF: '#3C8DBC', ID: '#6A5ACD', RR: '#9B59B6', EX: '#E08E0B', MEM: '#27AE60', WB: '#C0392B',
+  data: '#2B3A31', fwdE: '#E08E0B', fwdM: '#27AE60', fwdW: '#C0392B', flush: '#C2185B', redirect: '#17A2B8',
+  pred: '#00796B', hold: '#B8860B', ctrl: '#6A4FC8',
+  FETCH1: '#2E86C1', FETCH2: '#17A2B8', DECODE: '#6A5ACD', EXECUTE: '#E08E0B', MEMORY: '#27AE60', WRITEBACK: '#C0392B',
 };
 
 export function blockDiagramSVG() {
-  const W = 1640, H = 900;
+  const W = 1840, H = 1010;
   const out = [];
   const add = s => out.push(s);
-  const markers = Object.entries({ data: COL.data, ctrl: COL.ctrl, pred: COL.pred, redirect: COL.redirect, fwdMem: COL.fwdMem, wb: COL.wb, hold: COL.hold })
-    .map(([k, c]) => `<marker id="a-${k}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${c}"/></marker>`).join('');
-  const text = (x, y, s, { size = 12, weight = 400, fill = COL.ink, anchor = 'start', mono = false, italic = false } = {}) =>
-    add(`<text x="${x}" y="${y}" ${mono ? MONO : FONT} font-size="${size}" font-weight="${weight}" fill="${fill}" text-anchor="${anchor}"${italic ? ' font-style="italic"' : ''}>${esc(s)}</text>`);
-  const lines = (x, y, arr, o = {}) => arr.forEach((s, i) => text(x, y + i * ((o.size || 12) + 3), s, o));
-  const box = (x, y, w, h, title, sub = [], { fill = COL.box, stroke = COL.edge, tsize = 13 } = {}) => {
+  const kinds = ['data', 'fwdE', 'fwdM', 'fwdW', 'flush', 'redirect', 'pred', 'hold', 'ctrl'];
+  const markers = kinds.map(k => `<marker id="a-${k}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${COL[k]}"/></marker>`).join('');
+  const text = (x, y, s, { size = 12, weight = 400, fill = COL.ink, anchor = 'start', mono = false } = {}) =>
+    add(`<text x="${x}" y="${y}" ${mono ? MONO : FONT} font-size="${size}" font-weight="${weight}" fill="${fill}" text-anchor="${anchor}">${esc(s)}</text>`);
+  const box = (x, y, w, h, title, sub = [], { fill = COL.box, stroke = COL.edge, tsize = 13, mod = null } = {}) => {
     add(`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="${fill}" stroke="${stroke}" stroke-width="1.6"/>`);
     text(x + w / 2, y + 18, title, { size: tsize, weight: 600, anchor: 'middle' });
-    sub.forEach((s, i) => text(x + w / 2, y + 34 + i * 14, s, { size: 10.5, fill: COL.sub, anchor: 'middle' }));
+    if (mod) text(x + w / 2, y + 32, mod, { size: 9.5, fill: COL.ctrl, anchor: 'middle', mono: true });
+    sub.forEach((s, i) => text(x + w / 2, y + (mod ? 47 : 34) + i * 13.5, s, { size: 10.5, fill: COL.sub, anchor: 'middle' }));
   };
   const wire = (pts, kind = 'data', { width = 2, dash = null, arrow = true } = {}) => {
     const d = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0]},${p[1]}`).join(' ');
@@ -35,174 +40,173 @@ export function blockDiagramSVG() {
   };
   const dot = (x, y, kind = 'data') => add(`<circle cx="${x}" cy="${y}" r="3.2" fill="${COL[kind]}"/>`);
   const mux = (x, y, w, h, label, inputs = []) => {
-    add(`<polygon points="${x},${y} ${x + w},${y + h * 0.18} ${x + w},${y + h * 0.82} ${x},${y + h}" fill="#F3F5F0" stroke="${COL.edge}" stroke-width="1.6"/>`);
-    if (label) text(x + w / 2, y - 6, label, { size: 10, fill: COL.sub, anchor: 'middle' });
-    inputs.forEach(([yy, s]) => text(x + 3, yy + 3.5, s, { size: 8.5, fill: COL.sub, mono: true }));
+    add(`<polygon points="${x},${y} ${x + w},${y + h * 0.2} ${x + w},${y + h * 0.8} ${x},${y + h}" fill="#F3F5F0" stroke="${COL.edge}" stroke-width="1.6"/>`);
+    if (label) text(x + w / 2, y - 6, label, { size: 9.5, fill: COL.sub, anchor: 'middle' });
+    inputs.forEach(([yy, s]) => text(x + 3, yy + 3.5, s, { size: 8, fill: COL.sub, mono: true }));
   };
-  const lbl = (x, y, s, kind = 'data', anchor = 'start') => text(x, y, s, { size: 10, fill: COL[kind] === COL.data ? COL.sub : COL[kind], anchor, mono: true });
+  const lbl = (x, y, s, kind = 'data', anchor = 'start') => text(x, y, s, { size: 9.5, fill: kind === 'data' ? COL.sub : COL[kind], anchor, mono: true });
 
   add(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`);
   add(`<defs>${markers}</defs>`);
   add(`<rect width="100%" height="100%" rx="12" fill="${COL.paper}" stroke="#D5DBD0"/>`);
-  text(20, 28, 'RV64IM 6-stage pipeline: datapath, gshare branch prediction, forwarding and hazard control', { size: 17, weight: 600 });
+  text(20, 28, 'Riscv64 (src/Riscv64.sv): 6 stage RV64IM pipeline with GShare prediction, forwarding into DECODE and hazard control', { size: 17, weight: 600 });
 
-  // ---------------------------------------------------------------- stages
+  // ---------------------------------------------------------------- stage bands
   const stages = [
-    ['IF', 20, 300, 'instruction fetch + predict'], ['ID', 330, 520, 'decode'], ['RR', 550, 740, 'register read'],
-    ['EX', 770, 1110, 'execute + resolve branches'], ['MEM', 1140, 1370, 'memory access'], ['WB', 1400, 1620, 'write back'],
+    ['FETCH1', 20, 300, 'PC + gshare lookup'], ['FETCH2', 330, 560, 'predecode + redirect'], ['DECODE', 590, 900, 'control, registers, forwarding'],
+    ['EXECUTE', 930, 1300, 'compute + resolve branches'], ['MEMORY', 1330, 1580, 'load data'], ['WRITEBACK', 1610, 1820, 'retire'],
   ];
   for (const [n, x0, x1, sub] of stages) {
     add(`<rect x="${x0}" y="44" width="${x1 - x0}" height="34" rx="6" fill="${COL[n]}"/>`);
-    text(x0 + 10, 66, n, { size: 15, weight: 700, fill: '#FFF' });
-    text(x0 + 52, 66, sub, { size: 11.5, fill: '#FFF' });
-    add(`<rect x="${x0}" y="84" width="${x1 - x0}" height="560" rx="4" fill="${COL[n]}" fill-opacity="0.045"/>`);
+    text(x0 + 10, 66, n, { size: 14, weight: 700, fill: '#FFF' });
+    text(x1 - 8, 66, sub, { size: 10.5, fill: '#FFF', anchor: 'end' });
+    add(`<rect x="${x0}" y="84" width="${x1 - x0}" height="672" rx="4" fill="${COL[n]}" fill-opacity="0.05"/>`);
   }
-  const latches = [[305, 'IF/ID'], [525, 'ID/RR'], [745, 'RR/EX'], [1115, 'EX/MEM'], [1375, 'MEM/WB']];
-  for (const [x, n] of latches) {
-    add(`<rect x="${x}" y="100" width="16" height="540" rx="3" fill="#DDE3D8" stroke="${COL.edge}" stroke-width="1.4"/>`);
-    add(`<text transform="translate(${x + 11.5},${632}) rotate(-90)" ${FONT} font-size="11" font-weight="700" fill="${COL.ink}">${n} pipeline register</text>`);
+  const regs = [[310, 'FETCH2_*'], [570, 'DECODE_*'], [910, 'EXECUTE_*'], [1310, 'MEMORY_*'], [1590, 'WRITEBACK_*']];
+  for (const [x, n] of regs) {
+    add(`<rect x="${x - 5}" y="130" width="10" height="560" rx="2" fill="#2B3A31" fill-opacity="0.82"/>`);
+    add(`<text transform="translate(${x + 4},${700}) rotate(-90)" ${MONO} font-size="10" fill="#2B3A31" text-anchor="start">${n}</text>`);
   }
-  const L = { 1: [305, 321], 2: [525, 541], 3: [745, 761], 4: [1115, 1131], 5: [1375, 1391] };
 
-  // ---------------------------------------------------------------- IF
-  box(30, 100, 130, 88, 'Branch predictor', ['gshare: 256 x 2-bit PHT', 'index = PC[9:2] xor GHR', 'BTB: 32 entries'], { stroke: COL.pred });
-  mux(40, 205, 22, 100, '', [[222, '+4'], [252, 'bp'], [285, 'fix']]);
-  text(51, 322, 'next PC', { size: 10, fill: COL.sub, anchor: 'middle' });
-  box(85, 226, 60, 50, 'PC', [], { tsize: 14 });
-  add(`<circle cx="200" cy="212" r="15" fill="#F3F5F0" stroke="${COL.edge}" stroke-width="1.6"/>`); text(200, 216, '+4', { size: 11, weight: 700, anchor: 'middle' });
-  box(165, 300, 125, 110, 'Instruction', ['memory', '64 KiB, 32-bit read', 'mem[PC]']);
-  wire([[62, 255], [85, 255]]);                                         // mux -> PC
-  wire([[145, 250], [L[1][0], 250]]);                                   // PC -> latch
-  dot(160, 250); wire([[160, 250], [160, 212], [185, 212]]);            // PC -> +4
-  wire([[215, 212], [228, 212], [228, 196], [26, 196], [26, 222], [40, 222]]);   // +4 -> mux
-  dot(175, 250); wire([[175, 250], [175, 300]]);                        // PC -> imem
-  dot(115, 250); wire([[115, 226], [115, 188]], 'pred');               // PC -> predictor (drawn from PC up)
-  wire([[160, 150], [236, 150], [236, 180], [L[1][0], 180]], 'pred');  // prediction -> latch
-  lbl(238, 174, 'pred', 'pred');
-  wire([[95, 188], [95, 200], [34, 200], [34, 252], [40, 252]], 'pred'); // predicted target -> mux
-  wire([[290, 350], [L[1][0], 350]]);                                   // instr -> latch
-  lbl(292, 366, 'instr', 'data', 'end');
-  lbl(250, 244, 'pc');
+  // ---------------------------------------------------------------- FETCH1
+  mux(34, 170, 26, 110, 'next PC', [[186, 'F1+4'], [224, 'F2'], [262, 'EX']]);
+  box(84, 185, 86, 80, 'FETCH1_PC', ['register', 'reset 0x2000'], { tsize: 11.5 });
+  wire([[60, 225], [84, 225]]);
+  add(`<circle cx="232" cy="160" r="15" fill="#FFF" stroke="${COL.edge}" stroke-width="1.6"/>`); text(232, 165, '+4', { size: 12, weight: 700, anchor: 'middle' });
+  wire([[170, 205], [196, 205], [196, 160], [217, 160]]);
+  wire([[247, 160], [262, 160], [262, 140], [24, 140], [24, 186], [34, 186]]);
+  lbl(100, 136, 'FETCH1_PC_ADD_4');
+  box(84, 300, 206, 76, 'Instruction memory', ['address in FETCH1,', 'word latched into FETCH2'], { mod: 'ScratchpadMemory', tsize: 12 });
+  wire([[127, 265], [127, 300]]); dot(127, 280); wire([[127, 280], [300, 280], [300, 250], [305, 250]]);
+  lbl(135, 294, 'icache_addr');
+  wire([[290, 338], [305, 338]]); lbl(212, 392, 'icache_dout', 'data', 'middle');
+  // gshare
+  add(`<rect x="34" y="440" width="258" height="208" rx="8" fill="#E6F4F1" stroke="${COL.pred}" stroke-width="1.8"/>`);
+  text(163, 460, 'GSharePredictor', { size: 13, weight: 700, anchor: 'middle', fill: COL.pred });
+  text(163, 474, 'src/GShare_Branch_Predictor.sv', { size: 9, anchor: 'middle', mono: true, fill: COL.sub });
+  box(46, 486, 96, 40, 'PC[5:2]', [], { tsize: 11 });
+  box(46, 536, 96, 40, 'GLOBAL_HISTORY', [], { tsize: 9.5 });
+  text(94, 568, '4 bits', { size: 9.5, anchor: 'middle', fill: COL.sub });
+  add(`<circle cx="176" cy="531" r="15" fill="#FFF" stroke="${COL.pred}" stroke-width="2"/><path d="M165,520 L187,542 M187,520 L165,542" stroke="${COL.pred}" stroke-width="2"/>`);
+  text(176, 562, 'XOR', { size: 9.5, anchor: 'middle', fill: COL.pred, weight: 700 });
+  wire([[142, 506], [158, 506], [163, 520]], 'pred'); wire([[142, 556], [158, 556], [163, 542]], 'pred');
+  // PHT
+  const px = 212, py = 482;
+  text(px + 32, py - 2, 'PHT: 16 x 2-bit', { size: 9, anchor: 'middle', fill: COL.sub });
+  const states = [2, 2, 3, 1, 2, 0, 2, 3, 2, 2, 1, 2, 3, 2, 0, 2];
+  const sc = ['#C0392B', '#E59866', '#82C99A', '#1E8449'];
+  for (let i = 0; i < 16; i++) add(`<rect x="${px}" y="${py + 4 + i * 9}" width="64" height="8" fill="${sc[states[i]]}" stroke="#FFF" stroke-width="0.8"/>`);
+  wire([[191, 531], [px - 2, 531]], 'pred');
+  wire([[px + 64, 540], [300, 540], [300, 520], [305, 520]], 'pred');
+  lbl(344, 470, 'FETCH1_PREDICTED_BRANCH_TAKEN', 'pred'); lbl(344, 483, 'FETCH1_GSHARE_INDEX', 'pred');
+  text(163, 640, 'index = PC[5:2] xor GHR; taken if counter >= 2', { size: 9.5, anchor: 'middle', fill: COL.pred });
 
-  // ---------------------------------------------------------------- ID
-  wire([[L[1][1], 350], [345, 350]], 'data', { arrow: false });
-  add(`<line x1="345" y1="118" x2="345" y2="528" stroke="${COL.data}" stroke-width="3"/>`);
-  box(365, 104, 140, 64, 'Decoder', ['opcode, funct3, funct7', '-> control signals'], { stroke: COL.ctrl });
-  wire([[345, 136], [365, 136]]);
-  wire([[505, 130], [L[2][0], 130]], 'ctrl', { width: 3 }); lbl(509, 148, 'ctrl', 'ctrl');
-  wire([[345, 300], [L[2][0], 300]]); lbl(352, 294, 'rs1 = instr[19:15]');
-  wire([[345, 380], [L[2][0], 380]]); lbl(352, 374, 'rs2 = instr[24:20]');
-  box(380, 426, 110, 50, 'Imm gen', ['I S B U J / shamt']);
-  wire([[345, 451], [380, 451]]); wire([[490, 451], [L[2][0], 451]]); lbl(494, 445, 'imm');
-  wire([[345, 520], [L[2][0], 520]]); lbl(352, 514, 'rd = instr[11:7]');
-  wire([[L[1][1], 250], [L[2][0], 250]]); lbl(352, 244, 'pc');
-  wire([[L[1][1], 180], [L[2][0], 180]], 'pred'); lbl(352, 174, 'pred taken / target / index', 'pred');
+  // ---------------------------------------------------------------- FETCH2
+  box(344, 170, 204, 64, 'Predecode', ['opcode == OPC_BRANCH ?', 'opcode == OPC_JAL ?'], { tsize: 12 });
+  box(344, 250, 204, 64, 'Target precompute', ['FETCH2_PC_TARGET =', 'FETCH2_PC + B/J immediate'], { tsize: 12 });
+  box(344, 330, 204, 76, 'Redirect', ['JAL or (branch && predicted', 'taken): FETCH2_BRANCH_OFF_', 'OR_CONTINUE, squash FETCH1'], { tsize: 12 });
+  wire([[315, 250], [330, 250], [330, 202], [344, 202]]); wire([[330, 250], [330, 282], [344, 282]]);
+  wire([[315, 520], [338, 520], [338, 390], [344, 390]], 'pred');
+  wire([[446, 234], [446, 250]]); wire([[446, 314], [446, 330]]);
+  // redirect path to next-PC mux
+  wire([[446, 406], [446, 420], [320, 420], [320, 430], [16, 430], [16, 224], [34, 224]], 'redirect', { width: 2.4 });
+  lbl(330, 434, 'redirect: FETCH2_PREDICTED_NEXT_PC', 'redirect');
+  // speculative GHR update
+  wire([[548, 368], [562, 368], [562, 700], [110, 700], [110, 578]], 'pred', { dash: '5 4' });
+  lbl(570, 695, 'speculative history shift (branch predicted direction)', 'pred');
+  wire([[548, 202], [565, 202]]); wire([[548, 282], [565, 282]]);
 
-  // ---------------------------------------------------------------- RR
-  box(582, 272, 130, 150, 'Register file', ['32 x 64-bit', '2 read, 1 write', 'x0 = 0', 'write-first bypass']);
-  wire([[L[2][1], 300], [582, 300]]); wire([[L[2][1], 380], [582, 380]]);
-  wire([[712, 300], [L[3][0], 300]]); lbl(716, 294, 'rs1 val');
-  wire([[712, 380], [L[3][0], 380]]); lbl(716, 374, 'rs2 val');
-  for (const [y, k] of [[130, 'ctrl'], [180, 'pred'], [250, 'data'], [451, 'data'], [520, 'data']]) wire([[L[2][1], y], [L[3][0], y]], k, { width: k === 'ctrl' ? 3 : 2 });
+  // ---------------------------------------------------------------- DECODE
+  box(606, 150, 170, 150, 'RegisterFile', ['x1..x31 (x0 = 0)', '2 async read ports', '1 sync write port', 'READ_ADDRESS1 = [19:15]', 'READ_ADDRESS2 = [24:20]'], { mod: 'src/Register_File.sv', tsize: 13 });
+  box(606, 318, 170, 132, 'ControlUnit + ALUdec', ['REGISTER_WRITE_ENABLE', 'MEMORY_READ/WRITE_ENABLE', 'ALU_OPERATION', 'IMMEDIATE_TYPE_SELECT', 'WRITEBACK_SELECT ...'], { mod: 'src/Control_Unit.sv', tsize: 12 });
+  box(606, 468, 170, 66, 'ImmediateGenerator', ['I S B U J Z, 64-bit', 'sign extension'], { tsize: 12 });
+  wire([[575, 202], [590, 202], [590, 225], [606, 225]]); wire([[590, 225], [590, 384], [606, 384]]); wire([[590, 384], [590, 500], [606, 500]]);
+  mux(806, 150, 32, 104, 'rs1 fwd', [[164, 'E'], [186, 'M'], [208, 'W'], [232, 'RF']]);
+  mux(806, 272, 32, 104, 'rs2 fwd', [[286, 'E'], [308, 'M'], [330, 'W'], [354, 'RF']]);
+  wire([[776, 190], [792, 190], [792, 232], [806, 232]]); wire([[776, 260], [796, 260], [796, 354], [806, 354]]);
+  wire([[838, 202], [905, 202]]); wire([[838, 324], [905, 324]]);
+  text(852, 430, 'priority:', { size: 9.5, fill: COL.sub, anchor: 'middle' });
+  text(852, 443, 'x0 > E > M > W > RF', { size: 9.5, fill: COL.sub, anchor: 'middle', mono: true });
+  wire([[776, 384], [905, 384]]); lbl(784, 378, 'control'); wire([[776, 500], [905, 500]]); lbl(790, 494, 'immediate');
+  box(606, 560, 280, 72, 'LOAD_STALL', ['DECODE_VALID && EXECUTE is a load &&', 'EXECUTE rd == rs1 or rs2 FIELD', '(false stalls possible: Lab 5)'], { fill: '#FFF8E1', stroke: COL.hold, tsize: 12.5 });
+  wire([[886, 596], [910, 596]], 'hold', { dash: '6 4' });
+  const badge = (x, y, t) => { add(`<rect x="${x}" y="${y}" width="${t.length * 6.2 + 10}" height="16" rx="8" fill="#FFF3C4" stroke="${COL.hold}"/>`); text(x + 5, y + 12, t, { size: 9.5, fill: COL.hold, weight: 700 }); };
+  badge(172, 170, 'hold'); badge(286, 136, 'hold'); badge(546, 136, 'hold'); badge(918, 600, 'NOP in');
+  lbl(606, 648, 'LOAD_STALL: hold FETCH1_PC, FETCH2_*, DECODE_*, bubble into EXECUTE', 'hold');
 
-  // ---------------------------------------------------------------- EX
-  mux(785, 282, 20, 72, 'fwd A', [[300, 'r'], [322, 'm'], [340, 'w']]);
-  mux(785, 364, 20, 72, 'fwd B', [[380, 'r'], [402, 'm'], [420, 'w']]);
-  wire([[L[3][1], 300], [785, 300]]); wire([[L[3][1], 380], [785, 380]]);
-  mux(835, 236, 20, 128, 'A sel', [[252, 'pc'], [276, '0'], [336, 'a']]);
-  mux(835, 376, 20, 100, 'B sel', [[396, 'b'], [456, 'i']]);
-  wire([[805, 318], [818, 318], [818, 336], [835, 336]]);
-  wire([[805, 400], [818, 400], [818, 396], [835, 396]]);
-  wire([[L[3][1], 250], [835, 250]]);
-  wire([[L[3][1], 451], [822, 451], [822, 456], [835, 456]]);
-  add(`<text x="826" y="279" ${MONO} font-size="10" fill="${COL.sub}" text-anchor="end">0</text>`); wire([[828, 276], [835, 276]], 'data', { width: 1.5 });
-  // ALU shape
-  add(`<polygon points="900,262 975,300 975,420 900,458 900,380 916,360 900,340" fill="#FFF7E8" stroke="${COL.EX}" stroke-width="2"/>`);
-  text(944, 356, 'ALU', { size: 15, weight: 700, anchor: 'middle' });
-  text(944, 372, '+ - << >> & | ^', { size: 9, fill: COL.sub, anchor: 'middle', mono: true });
-  text(944, 385, 'slt  mul  div', { size: 9, fill: COL.sub, anchor: 'middle', mono: true });
-  wire([[855, 300], [900, 300]]); wire([[855, 426], [900, 426]]);
-  wire([[940, 130], [940, 278]], 'ctrl', { width: 1.6, dash: '5 3' }); lbl(944, 200, 'alu_op', 'ctrl');
-  // branch unit
-  box(990, 150, 115, 100, 'Branch unit', ['taken? (beq ... bgeu)', 'target = pc+imm', 'or (rs1+imm)&~1', 'vs. prediction'], { stroke: COL.redirect });
-  dot(812, 318); wire([[812, 318], [812, 228], [990, 228]], 'data', { width: 1.5 });
-  dot(812, 400); wire([[812, 400], [812, 410], [826, 410], [826, 238], [990, 238]], 'data', { width: 1.5 });
-  wire([[L[3][1], 180], [990, 180]], 'pred');
-  dot(870, 250); wire([[870, 250], [870, 210], [990, 210]], 'data', { width: 1.5 });
-  // wb-select: ALU vs PC+4
-  box(990, 386, 56, 26, 'PC+4', [], { tsize: 11 });
-  dot(980, 250); wire([[980, 250], [980, 399], [990, 399]], 'data', { width: 1.5 });
-  mux(1066, 330, 18, 90, 'link?', [[350, 'y'], [399, 'p']]);
-  wire([[975, 350], [1066, 350]]); wire([[1046, 399], [1066, 399]]);
-  wire([[1084, 375], [L[4][0], 375]]); lbl(1052, 324, '');
-  dot(1030, 350); wire([[1030, 350], [1030, 310], [L[4][0], 310]]); lbl(1036, 304, 'addr');
-  lbl(1088, 369, 'value');
-  dot(826, 470); wire([[826, 410], [826, 490], [L[4][0], 490]], 'data', { width: 2 }); lbl(1040, 484, 'store data');
-  for (const [y, k] of [[130, 'ctrl'], [520, 'data']]) wire([[L[3][1], y], [L[4][0], y]], k, { width: k === 'ctrl' ? 3 : 2 });
-  // redirect + predictor update (top)
-  wire([[1047, 150], [1047, 90], [22, 90], [22, 285], [40, 285]], 'redirect', { width: 2.4 });
-  text(560, 86, 'mispredict: PC <- correct target (fix_pc), flush IF, ID, RR (3 cycles lost)', { size: 11, fill: COL.redirect, weight: 600 });
-  wire([[1070, 150], [1070, 97], [150, 97], [150, 100]], 'pred', { width: 1.6, dash: '6 3' });
-  text(560, 108, 'update PHT counter, GHR, BTB when the branch resolves', { size: 10.5, fill: COL.pred });
+  // ---------------------------------------------------------------- EXECUTE
+  mux(944, 176, 26, 60, 'A', [[190, 'rs1'], [222, 'PC']]);
+  mux(944, 290, 26, 60, 'B', [[304, 'rs2'], [336, 'imm']]);
+  wire([[915, 202], [930, 202], [930, 190], [944, 190]]); wire([[915, 324], [930, 324], [930, 304], [944, 304]]);
+  wire([[915, 500], [936, 500], [936, 336], [944, 336]]);
+  add(`<polygon points="1000,160 1070,190 1070,300 1000,330 1000,262 1014,245 1000,228" fill="#FFF3E0" stroke="${COL.EXECUTE}" stroke-width="2"/>`);
+  text(1040, 235, 'ALU', { size: 14, weight: 700, anchor: 'middle' }); text(1040, 250, '65-bit shared', { size: 9, anchor: 'middle', fill: COL.sub }); text(1040, 261, 'adder, W ops', { size: 9, anchor: 'middle', fill: COL.sub });
+  wire([[970, 206], [1000, 206]]); wire([[970, 320], [1000, 320]]);
+  box(1000, 346, 130, 56, 'MultiplyDivideUnit', ['MUL, DIV, REM (+W)'], { tsize: 11 });
+  mux(1100, 216, 24, 80, 'result', []);
+  wire([[1070, 240], [1100, 240]]); wire([[1130, 374], [1140, 374], [1140, 320], [1124, 320], [1124, 290]], 'data', { arrow: false });
+  wire([[1124, 256], [1305, 256]]); lbl(1136, 250, 'EXECUTE_ALU_RESULT');
+  box(944, 424, 150, 70, 'CSRFile', ['tohost status cycle', 'instret hartid'], { mod: 'Zicsr', tsize: 12 });
+  box(1110, 424, 176, 70, 'StoreControl', ['byte lanes + 8-bit', 'write mask (sb..sd)'], { tsize: 12 });
+  box(944, 530, 150, 60, 'BranchComparator', ['== != < >= (signed', 'and unsigned)'], { tsize: 11.5 });
+  box(1110, 522, 176, 82, 'BranchControl', ['predicted vs actual:', 'wrong or JALR -> FLUSH', 'ADJUST_NEXT_PC'], { tsize: 12, fill: '#FCE4EC', stroke: COL.flush });
+  wire([[1094, 560], [1110, 560]]);
+  box(1346, 512, 220, 72, 'Data memory', ['address + store from EXECUTE,', 'doubleword arrives in MEMORY'], { mod: 'ScratchpadMemory data port', tsize: 12 });
+  wire([[1300, 256], [1300, 530], [1346, 530]]); dot(1300, 256); lbl(1318, 526, 'addr');
+  wire([[1286, 470], [1326, 470], [1326, 562], [1346, 562]]); lbl(1330, 578, 'store');
+  wire([[1456, 512], [1456, 490]]);
+  // forward from EXECUTE
+  mux(1182, 130, 22, 56, 'fwd E', []);
+  wire([[1150, 256], [1150, 170], [1182, 170]], 'data', { arrow: false });
+  wire([[1182, 144], [1182, 112], [822, 112], [822, 161]], 'fwdE', { width: 2.4 });
+  lbl(940, 108, 'EXECUTE_FORWARD_DATA (not loads)', 'fwdE');
+  // flush + restore
+  wire([[1198, 604], [1198, 740], [8, 740], [8, 262], [34, 262]], 'flush', { width: 2.6 });
+  lbl(620, 752, 'FLUSH_FETCH1_FETCH2_DECODE + EXECUTE_ADJUST_NEXT_PC (3 bubbles)', 'flush');
+  wire([[1250, 604], [1250, 726], [84, 726], [84, 648]], 'pred', { dash: '5 4' });
+  lbl(620, 722, 'train PHT counter, restore GLOBAL_HISTORY from checkpoint', 'pred');
 
-  // ---------------------------------------------------------------- MEM
-  box(1172, 386, 128, 120, 'Data memory', ['64 KiB, byte-addressed', 'little-endian', 'lb/lh/lw/ld, sb..sd']);
-  wire([[L[4][1], 310], [1156, 310], [1156, 410], [1172, 410]]); lbl(1160, 404, 'addr');
-  wire([[L[4][1], 490], [1172, 490]]); lbl(1140, 484, 'wdata');
-  box(1172, 530, 128, 40, '0x1000_0000', ['store here = putchar'], { tsize: 11 });
-  add(`<line x1="1236" y1="506" x2="1236" y2="530" stroke="${COL.edge}" stroke-dasharray="3 3"/>`);
-  box(1306, 420, 32, 40, '', [], {}); text(1322, 436, 'ext', { size: 9.5, anchor: 'middle', weight: 600 }); text(1322, 449, 's/z', { size: 9, anchor: 'middle', fill: COL.sub });
-  wire([[1300, 440], [1306, 440]]);
-  mux(1346, 340, 18, 120, 'load?', [[375, 'v'], [440, 'l']]);
-  wire([[L[4][1], 375], [1346, 375]]); wire([[1338, 440], [1346, 440]]);
-  wire([[1364, 400], [L[5][0], 400]]);
-  for (const [y, k] of [[130, 'ctrl'], [520, 'data']]) wire([[L[4][1], y], [L[5][0], y]], k, { width: k === 'ctrl' ? 3 : 2 });
+  // ---------------------------------------------------------------- MEMORY
+  box(1346, 420, 220, 70, 'LoadControl', ['lb lh lw ld lbu lhu lwu:', 'pick lanes, sign/zero extend'], { tsize: 12 });
+  box(1346, 200, 220, 120, 'WriteControl', ['WRITEBACK_SELECT picks', 'ALU | MEMORY | PC+4 | CSR', '= MEMORY_FORWARD_DATA'], { mod: 'src/Write_Control_Unit.sv', tsize: 12.5 });
+  wire([[1315, 256], [1346, 256]]); wire([[1456, 420], [1456, 320]]);
+  wire([[1566, 260], [1585, 260]]);
+  wire([[1576, 260], [1576, 100], [814, 100], [814, 183]], 'fwdM', { width: 2.4 }); dot(1576, 260, 'fwdM');
+  lbl(1340, 97, 'MEMORY_FORWARD_DATA (loads too)', 'fwdM');
 
-  // ---------------------------------------------------------------- WB
-  box(1430, 360, 175, 80, 'Write back', ['regfile[rd] <- value', '(if reg_write and rd != x0)', 'ecall/ebreak here: HALT']);
-  wire([[L[5][1], 400], [1430, 400]]);
-  wire([[L[5][1], 130], [1470, 130], [1470, 360]], 'ctrl', { width: 1.6, dash: '5 3' }); lbl(1476, 200, 'reg_write', 'ctrl');
-  // write-back value & rd back to the register file
-  dot(1408, 400, 'wb'); wire([[1408, 400], [1408, 608], [640, 608], [640, 422]], 'wb', { width: 2.6 });
-  dot(1400, 520, 'wb'); wire([[L[5][1], 520], [1400, 520], [1400, 622], [690, 622], [690, 422]], 'wb', { width: 1.8 });
-  text(830, 603, 'write-back value = MEM/WB forwarding (2 ahead)', { size: 10.5, fill: COL.wb, weight: 600 });
-  text(830, 636, 'rd (write address)', { size: 10.5, fill: COL.wb });
-
-  // ---------------------------------------------------------------- forwarding
-  dot(1136, 375, 'fwdMem'); wire([[1136, 375], [1136, 580], [772, 580], [772, 402], [785, 402]], 'fwdMem', { width: 2.2 });
-  dot(772, 580, 'fwdMem'); wire([[772, 402], [772, 322], [785, 322]], 'fwdMem', { width: 2.2 });
-  text(830, 575, 'EX/MEM forwarding (value of the instruction 1 ahead)', { size: 10.5, fill: COL.fwdMem, weight: 600 });
-  dot(778, 608, 'wb'); wire([[778, 608], [778, 420], [785, 420]], 'wb', { width: 2 });
-  dot(778, 420, 'wb'); wire([[778, 420], [778, 340], [785, 340]], 'wb', { width: 2 });
-
-  // ---------------------------------------------------------------- control units
-  box(560, 690, 200, 86, 'Hazard unit', ['load-use: RR needs rd of a load in EX', '-> stall IF/ID/RR, bubble into EX', 'mispredict or halt in EX -> flush'], { stroke: COL.hold });
-  box(790, 690, 210, 86, 'Forward unit', ['rs1/rs2 of EX == rd in MEM?  -> m', 'else == rd in WB?  -> w', 'else register file value  -> r'], { stroke: COL.fwdMem });
-  wire([[560, 740], [115, 740], [115, 276]], 'hold', { width: 1.8, dash: '6 4' });
-  wire([[313, 740], [313, 640]], 'hold', { width: 1.8, dash: '6 4' });
-  wire([[533, 740], [533, 640]], 'hold', { width: 1.8, dash: '6 4' });
-  wire([[700, 690], [700, 660], [753, 660], [753, 640]], 'hold', { width: 1.8, dash: '6 4' });
-  text(130, 758, 'stall: hold PC, IF/ID, ID/RR  |  flush: clear IF/ID, ID/RR, RR/EX  |  bubble: clear RR/EX', { size: 10.5, fill: COL.hold, weight: 600 });
-  wire([[860, 690], [860, 660], [795, 660], [795, 354]], 'fwdMem', { width: 1.5, dash: '4 3' });
-  wire([[880, 690], [880, 650], [800, 650], [800, 434]], 'fwdMem', { width: 1.5, dash: '4 3' });
-  lbl(864, 676, 'sel A / sel B', 'fwdMem');
-  wire([[1123, 640], [1123, 733], [1000, 733]], 'fwdMem', { width: 1.5, dash: '4 3' }); lbl(1128, 700, 'rd (MEM)', 'fwdMem');
-  wire([[1383, 640], [1383, 753], [1000, 753]], 'fwdMem', { width: 1.5, dash: '4 3' }); lbl(1330, 700, 'rd (WB)', 'fwdMem');
-  wire([[1210, 90], [1210, 90]], 'redirect', { arrow: false });
+  // ---------------------------------------------------------------- WRITEBACK
+  box(1624, 200, 184, 100, 'Retire', ['WRITEBACK_DATA ->', 'RegisterFile write port', 'instret + 1'], { tsize: 13 });
+  wire([[1595, 250], [1624, 250]]);
+  box(1624, 330, 184, 90, 'HALT_NOW', ['the tohost write reached', 'WRITEBACK: PASS if 1,', 'FAIL test n if (n<<1)|1'], { tsize: 12.5, fill: '#FDECEA', stroke: COL.WRITEBACK });
+  wire([[1716, 200], [1716, 88], [806, 88], [806, 205]], 'fwdW', { width: 2.4 });
+  lbl(1340, 85, 'WRITEBACK_DATA: forward + write rd', 'fwdW');
+  wire([[806, 88], [690, 88], [690, 150]], 'fwdW', { width: 2.4 });
 
   // ---------------------------------------------------------------- legend
-  const lx = 1060, ly = 790;
-  add(`<rect x="${lx - 10}" y="${ly - 22}" width="570" height="100" rx="8" fill="#FFF" stroke="#D5DBD0"/>`);
-  const items = [['data', 'data path (64-bit values)'], ['ctrl', 'decoder control signals'], ['pred', 'branch prediction'], ['redirect', 'mispredict redirect'], ['fwdMem', 'EX/MEM forwarding'], ['wb', 'write-back / MEM/WB forwarding'], ['hold', 'stall / flush control']];
-  items.forEach(([k, s], i) => {
-    const x = lx + (i % 2) * 280, y = ly + Math.floor(i / 2) * 20;
-    add(`<line x1="${x}" y1="${y - 4}" x2="${x + 36}" y2="${y - 4}" stroke="${COL[k]}" stroke-width="3"${k === 'hold' ? ' stroke-dasharray="6 4"' : ''}/>`);
-    text(x + 44, y, s, { size: 11 });
+  const ly = 800;
+  add(`<rect x="20" y="${ly - 18}" width="${W - 40}" height="196" rx="8" fill="#FFF" stroke="#D5DBD0"/>`);
+  text(36, ly + 2, 'How to read this diagram', { size: 13, weight: 700 });
+  const leg = [['data', 'data (64-bit values, 32-bit instructions)'], ['fwdE', 'forward from EXECUTE'], ['fwdM', 'forward from MEMORY'], ['fwdW', 'forward / write from WRITEBACK'],
+    ['redirect', 'FETCH2 redirect (1 bubble)'], ['flush', 'EXECUTE flush (3 bubbles)'], ['pred', 'branch predictor state'], ['hold', 'load stall hold']];
+  leg.forEach(([k, s], i) => {
+    const x = 36 + (i % 4) * 440, y = ly + 26 + Math.floor(i / 4) * 24;
+    wire([[x, y - 4], [x + 44, y - 4]], k, { dash: k === 'pred' || k === 'hold' ? '5 4' : null });
+    text(x + 54, y, s, { size: 11.5 });
   });
-  text(20, 812, 'Each pipeline register captures its inputs on the rising clock edge.', { size: 11.5, fill: COL.sub });
-  text(20, 830, 'Everything between two pipeline registers is combinational logic that must settle within one clock period.', { size: 11.5, fill: COL.sub });
-  text(20, 848, 'Muxes: r = register-file value, m = from EX/MEM, w = from MEM/WB, a/b = forwarded operand, i = immediate, y = ALU, p = PC+4, v = value, l = loaded data.', { size: 11.5, fill: COL.sub });
-  text(20, 874, 'Source of truth: rtl/rv64_core.v. Regenerate with: node tools/gendocs.mjs', { size: 11, fill: COL.sub, italic: true });
+  const notes = [
+    'Every clock edge, each thick bar captures the results of the stage to its left: 6 instructions are in flight at once.',
+    'Data hazards are fixed by forwarding INTO DECODE (EECS 151 style): the newest value of rs1/rs2 is latched into EXECUTE with the instruction.',
+    'Branches are guessed twice: FETCH1 reads a gshare counter, FETCH2 redirects predicted-taken branches and every JAL; EXECUTE checks the guess.',
+    'Numbers to remember: pipeline fill 5 cycles, load stall 1, FETCH2 redirect 1, wrong guess or JALR 3. Exact: cycles = N + 5 + L + 3F + R (docs/MATH.md).',
+  ];
+  notes.forEach((s, i) => text(36, ly + 86 + i * 20, s, { size: 11.5, fill: COL.sub }));
   add('</svg>');
-  return out.join('\n') + '\n';
+  return out.join('\n');
+}
+
+const isMain = process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname);
+if (isMain) {
+  fs.mkdirSync('docs/img', { recursive: true });
+  fs.writeFileSync('docs/img/cpu_block_diagram.svg', blockDiagramSVG());
+  console.log('wrote docs/img/cpu_block_diagram.svg');
 }

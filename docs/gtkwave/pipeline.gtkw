@@ -1,72 +1,61 @@
-[*] GTKWave save file for the RV64IM 6-stage pipeline
-[*] make wave PROG=05_fibonacci   (writes build/05_fibonacci.vcd and opens this view)
+[*] GTKWave save file: the Riscv64 pipeline, one group per stage (make wave)
 [timestart] 0
 @28
-tb_soc.clk
-tb_soc.rst
+riscv64_testbench.clk
+riscv64_testbench.reset
 @200
--Fetch (IF) and prediction
+-FETCH1
 @22
-tb_soc.dut.core.pc[63:0]
+riscv64_testbench.dut.cpu.FETCH1_PC[63:0]
 @28
-tb_soc.dut.core.bp_taken
+riscv64_testbench.dut.cpu.FETCH1_PREDICTED_BRANCH_TAKEN
 @22
-tb_soc.dut.core.bp_target[63:0]
-tb_soc.dut.core.bp_idx[7:0]
-tb_soc.dut.core.u_bp.ghr[7:0]
+riscv64_testbench.dut.cpu.FETCH1_GSHARE_INDEX[3:0]
+riscv64_testbench.dut.cpu.GLOBAL_HISTORY[3:0]
 @200
--Decode (ID)
-@28
-tb_soc.dut.core.if_id_valid
+-FETCH2
 @22
-tb_soc.dut.core.if_id_pc[63:0]
-tb_soc.dut.core.if_id_instr[31:0]
+riscv64_testbench.dut.cpu.FETCH2_PC[63:0]
+riscv64_testbench.dut.cpu.FETCH2_INSTRUCTION[31:0]
+@28
+riscv64_testbench.dut.cpu.FETCH2_VALID
+riscv64_testbench.dut.cpu.FETCH2_BRANCH_OFF_OR_CONTINUE
 @200
--Register read (RR)
-@28
-tb_soc.dut.core.id_rr_valid
+-DECODE
 @22
-tb_soc.dut.core.id_rr_pc[63:0]
-tb_soc.dut.core.id_rr_rs1[4:0]
-tb_soc.dut.core.id_rr_rs2[4:0]
+riscv64_testbench.dut.cpu.DECODE_PC[63:0]
+riscv64_testbench.dut.cpu.DECODE_INSTRUCTION[31:0]
+riscv64_testbench.dut.cpu.DECODE_FORWARDED_REGISTER1_DATA[63:0]
+riscv64_testbench.dut.cpu.DECODE_FORWARDED_REGISTER2_DATA[63:0]
+@28
+riscv64_testbench.dut.cpu.DECODE_VALID
+riscv64_testbench.dut.cpu.LOAD_STALL
 @200
--Execute (EX): forwarding, ALU, branch resolution
-@28
-tb_soc.dut.core.rr_ex_valid
+-EXECUTE
 @22
-tb_soc.dut.core.rr_ex_pc[63:0]
-tb_soc.dut.core.fwd_a[1:0]
-tb_soc.dut.core.fwd_b[1:0]
-tb_soc.dut.core.alu_a[63:0]
-tb_soc.dut.core.alu_b[63:0]
-tb_soc.dut.core.alu_y[63:0]
+riscv64_testbench.dut.cpu.EXECUTE_PC[63:0]
+riscv64_testbench.dut.cpu.EXECUTE_ALU_INPUT_A[63:0]
+riscv64_testbench.dut.cpu.EXECUTE_ALU_INPUT_B[63:0]
+riscv64_testbench.dut.cpu.EXECUTE_ALU_RESULT[63:0]
+riscv64_testbench.dut.cpu.EXECUTE_ADJUST_NEXT_PC[63:0]
 @28
-tb_soc.dut.core.actual_taken
-tb_soc.dut.core.rr_ex_pred_taken
-tb_soc.dut.core.mispredict
+riscv64_testbench.dut.cpu.EXECUTE_VALID
+riscv64_testbench.dut.cpu.EXECUTE_BRANCH_TAKEN
+riscv64_testbench.dut.cpu.FLUSH_FETCH1_FETCH2_DECODE
 @200
--Memory (MEM)
-@28
-tb_soc.dut.core.ex_mem_valid
+-MEMORY
 @22
-tb_soc.dut.core.ex_mem_pc[63:0]
-tb_soc.dut.core.dmem_addr[63:0]
+riscv64_testbench.dut.cpu.MEMORY_PC[63:0]
+riscv64_testbench.dut.cpu.MEMORY_LOAD_DATA[63:0]
+riscv64_testbench.dut.cpu.MEMORY_FORWARD_DATA[63:0]
 @28
-tb_soc.dut.core.dmem_we
+riscv64_testbench.dut.cpu.MEMORY_VALID
 @200
--Write back (WB)
-@28
-tb_soc.dut.core.mem_wb_valid
+-WRITEBACK
 @22
-tb_soc.dut.core.mem_wb_pc[63:0]
-tb_soc.dut.core.mem_wb_rd[4:0]
-tb_soc.dut.core.mem_wb_wb_val[63:0]
-@200
--Hazard control
+riscv64_testbench.dut.cpu.WRITEBACK_PC[63:0]
+riscv64_testbench.dut.cpu.WRITEBACK_DATA[63:0]
+riscv64_testbench.dut.cpu.WRITEBACK_DESTINATION_REGISTER_ADDRESS[4:0]
 @28
-tb_soc.dut.core.stall
-tb_soc.dut.core.flush
-tb_soc.dut.core.halted
-@22
-tb_soc.dut.core.cycle_count[63:0]
-tb_soc.dut.core.mispredict_count[63:0]
+riscv64_testbench.dut.cpu.WRITEBACK_VALID
+riscv64_testbench.dut.cpu.HALTED

@@ -1,5 +1,5 @@
 # =============================================================================
-# 10_print_numbers.s — print Fibonacci numbers in decimal using DIVU/REMU
+# 10_print_numbers.s: print Fibonacci numbers in decimal using DIVU/REMU
 #
 # Converting a binary number to text is repeated division by 10: REMU gives
 # the last digit, DIVU drops it. Digits come out backwards, so they are
@@ -28,7 +28,7 @@ next:
 sep:
     sb   t1, 0(s3)
     bne  s2, s4, next
-    ecall
+    halt
 
 # print_u64(a0): print a0 as unsigned decimal
 print_u64:

@@ -1,141 +1,93 @@
-# Experiments
+# Experiments and labs
 
-Each program in [`programs/`](../programs) isolates one idea. For every one you can:
+Each lab changes one thing, predicts the effect with the equation from [MATH.md](MATH.md), then
+measures it. Labs 1 to 3 need no code changes. For labs that change the RTL, change
+[`model/core.js`](../model/core.js) the same way and keep `make test` passing: the model and RTL
+must still agree on every cycle, which is the best proof that you understand your change.
 
-```bash
-make run   PROG=<name>          # result, registers, statistics  (add BP=0 to disable gshare)
-make pipe  PROG=<name>          # coloured pipeline chart in the terminal
-make cycle PROG=<name> C=<n>    # everything that happens in clock cycle n
-make bp    PROG=<name>          # none vs bimodal vs gshare
-make rtl   PROG=<name>          # the same program on the Verilog
-make wave  PROG=<name>          # waveforms in GTKWave
-```
-
-or pick it in the browser simulator (`make serve`, then http://localhost:8000/web/).
-
----
-
-## 00 · Pipeline fill: latency versus throughput
-![](img/pipeline/00_pipeline_fill.svg)
-
-Four independent instructions. The first result needs 6 cycles (latency); after that one
-instruction finishes every cycle (throughput). **Question:** with N independent instructions, how
-many cycles? (Answer: N + 5. See [MATH.md §3](MATH.md).)
-
-## 01 · Hello, world through memory-mapped I/O
-`sb` to `0x1000_0000` prints a character. Each loop iteration has a load-use stall (`lbu` then
-`beqz` on the loaded byte). **Try:** `make run PROG=01_hello BP=0` versus the default: 166 versus
-124 cycles, because gshare learns the loop branch.
-
-## 02 · Forwarding: a dependent chain with zero stalls
-![](img/pipeline/02_forwarding.svg)
-
-Every instruction needs the one before it. Rings mark forwarded operands. **Try:**
-`make cycle PROG=02_forwarding C=6` shows both operands of `add a0, a0, a0` coming from EX/MEM.
-
-## 03 · The load-use hazard, and how a compiler hides it
-![](img/pipeline/03_load_use.svg)
-
-Part A uses each loaded value immediately (2 stalls, hatched cells). Part B does the same loads
-with independent work in between (0 stalls). Same result, fewer cycles.
-
-## 04 · Branch penalty, and gshare's warm-up cost
-![](img/pipeline/04_branch_penalty.svg)
-
-A 10-iteration loop. Without prediction, 9 taken branches x 3 cycles. With gshare it is slightly
-*worse* (10 mispredictions) because each new history value hits an untrained counter.
-[MATH.md §5c](MATH.md) works out every one of those 10 by hand. `make bp PROG=04_branch_penalty`
-shows bimodal gets it down to 2.
-
-## 05 · Fibonacci in 64 bits: what prediction buys
-| predictor off | gshare, trained |
-|---|---|
-| ![](img/pipeline/05_fibonacci_nobp.svg) | ![](img/pipeline/05_fibonacci_warm.svg) |
-
-fib(50) = 12,586,269,025 needs more than 32 bits. CPI drops from 1.52 to 1.04.
-
-## 06 · Bubble sort: a realistic mix
-Loads, stores, compares, data-dependent branches: 72 load-use stalls, and the data-dependent
-`ble` is the hardest branch to predict. CPI 1.69 without prediction, 1.30 with gshare.
-
-## 07 · Recursion: `call`, `ret` and the stack
-`fact(20)` = 2,432,902,008,176,640,000 via 20 nested calls. `ret` is `jalr`: its target
-depends on who called. Here 19 returns go back inside `fact` and the last one returns to the
-top-level caller, so the BTB's remembered target is wrong exactly there. Real cores add a return
-address stack (CVA6 has one **[12]**) because this pattern is everywhere.
-
-## 08 · GCD with `rem`
-The M extension's remainder instruction, used by Euclid's algorithm.
-
-## 09 · Sieve of Eratosthenes: the big benchmark
-14,841 instructions. Without prediction 25,771 cycles; with gshare 17,134 (1.50x faster).
-`make math` shows the equation `N + 5 + L + 3M` predicting both numbers exactly.
-
-## 10 · Printing numbers with `divu` and `remu`
-Binary to decimal by repeated division by 10. Output:
-`0 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610`.
-
-## 11 · Correlated branches: where gshare shines
-| gshare, trained: no flushes | predictor off: a flush every iteration |
-|---|---|
-| ![](img/pipeline/11_gshare_patterns_warm.svg) | ![](img/pipeline/11_gshare_patterns_nobp.svg) |
-
-A branch alternating taken / not taken. Bimodal: 59.4% accuracy. gshare: 97.4%. In the browser,
-watch the predictor heat map: two counters for the same branch turn orange and blue, one per
-history pattern.
-
----
-
-# Hardware labs
-
-These change the RTL. After each change run `make test`: the regression compares the RTL with
-the model, so either change both identically, or treat the failing diff as your debugger.
-
-### Lab 1: resize the predictor
-Change `GHR_BITS` in `rtl/rv64_core.v` (the `branch_predictor` instance) **and** in
-`sim/core.js`. Plot mispredictions of `09_primes_sieve` against table size. When does a bigger
-table stop helping, and why does a *smaller* history sometimes win? (Aliasing versus warm-up.)
-
-### Lab 2: build McFarling's combined predictor
-Add a bimodal table and a table of 2-bit "chooser" counters, as in section 8 of McFarling's paper
-**[7]**. Target: at least bimodal's accuracy on `04` and gshare's on `11`.
-
-### Lab 3: speculative global history
-Update the GHR at prediction time in IF, and restore it from a copy carried down the pipe on a
-misprediction **[10]**. Measure the accuracy change on `06_bubble_sort`.
-
-### Lab 4: a multi-cycle divider
-Replace the combinational divider with a 1-bit-per-cycle restoring divider (64 cycles) and stall
-the pipe while it runs. `make synth`: the ALU should shrink dramatically. Then think about T_clk
-using [MATH.md §2](MATH.md): which is faster overall?
-
-### Lab 5: remove forwarding
-Force both forward selects to `r` and add stalls in the hazard unit until every test passes
-again. Compare CPI with `make math`. This is why every real pipeline forwards.
-
-### Lab 6: resolve jumps earlier
-`jal` targets are known in ID. Redirect from ID for `jal` (1-cycle penalty instead of 3) and
-update the equation in MATH.md: it gains a new term.
-
-### Lab 7: write your own program
-In the browser simulator, open **Edit source**, write assembly, and press **Assemble and load**.
-Supported syntax: all RV64IM instructions, labels, `.byte .half .word .dword .string .zero .align`,
-and pseudo-instructions `li la mv not neg j call ret beqz bnez bgt ble` and more (see the top of
-`sim/asm.js`). Halt with `ecall`.
-
----
-
-# Waveforms with GTKWave
+## Lab 1: history length (no code)
 
 ```bash
-make wave PROG=03_load_use
+make bp PROG=06_bubble_sort
+make bp PROG=09_primes_sieve
 ```
 
-This writes `build/03_load_use.vcd` and opens it with [`docs/gtkwave/pipeline.gtkw`](gtkwave/pipeline.gtkw),
-a pre-arranged view grouped by stage: PC and prediction, every pipeline register's `valid` and
-`pc`, the forward selects, ALU inputs and output, `mispredict`, `stall`, `flush`. Look for the
-cycle where `stall` goes high: `pc` and `if_id_pc` hold their value while `rr_ex_valid` drops to 0.
+![sweep](img/charts/predictor_sweep.svg)
 
-On Windows Subsystem for Linux 2 (WSL2), GTKWave opens through WSLg on Windows 11. If no window
-appears, copy the `.vcd` to Windows and open it with the Windows build of GTKWave, or use the
-browser simulator.
+Measured cycles ([full table](img/charts/predictor_sweep.md)):
+
+| program | off | 2 bits | **4 bits (tape-out)** | 6 bits | 10 bits |
+|---|---:|---:|---:|---:|---:|
+| 06_bubble_sort | **1069** | 1091 | 1124 | 1073 | 1143 |
+| 09_primes_sieve | 20897 | 20152 | **19773** | 19847 | 19876 |
+| 11_gshare_patterns | 2106 | 2006 | 1519 | **1517** | 1520 |
+
+Questions: why is bubble sort *faster* with no predictor at 4 bits? (Hint: its inner branch changes
+behaviour as the array gets sorted, and each extra history bit gives it more counters to train.)
+Combine with the area table in [SILICON.md](SILICON.md): which history length would you tape out?
+
+## Lab 2: counter reset value
+
+Counters reset to `2'b10` (weakly taken), as in the original. Change the reset in
+`GSharePredictor` and `GShare` in `model/core.js` to `2'b01` and compare `make bp` results. Which
+programs care, and why only at the start?
+
+## Lab 3: the real cost of each hazard (no code)
+
+```bash
+make charts
+```
+
+![CPI stack](img/charts/cpi_stack.svg)
+
+For each program, which colour is largest? Predict the new cycle count if that hazard disappeared
+completely, using `cycles = N + 5 + L + 3F + R`.
+
+## Lab 4: a multi-cycle divider
+
+The `MultiplyDivideUnit` is combinational: a 64-bit divide in one cycle is a very long path. Replace
+it with a 1-bit-per-cycle restoring divider (64 cycles) that stalls EXECUTE. You will need a new
+stall source next to `LOAD_STALL` that also holds EXECUTE. Measure CPI on a divide-heavy program.
+
+## Lab 5: remove false load stalls
+
+`LOAD_STALL` compares the rs1/rs2 fields even for instructions that do not read them
+([`14_false_load_stall.s`](../programs/14_false_load_stall.s)). Add `USES_REGISTER1` and
+`USES_REGISTER2` outputs to `ControlUnit` (U-type, JAL and immediate CSR forms do not use rs1;
+only R-type, stores and branches use rs2) and gate the comparison. Expected: `14_false_load_stall`
+goes from 25 to 24 cycles; the model's `falseLoadStalls` counter shows how many remain elsewhere.
+
+## Lab 6: a Return Address Stack
+
+Every `ret` (a JALR) flushes 3 instructions ([`13_function_call_cost.s`](../programs/13_function_call_cost.s):
+7 cycles per call). Add a small stack: push `PC + 4` in FETCH2 when a JAL writes `ra`, pop it in
+FETCH2 for `jalr x0, 0(ra)` and redirect there, then in EXECUTE only flush if the popped address
+was wrong. Expected: about 3 fewer cycles per call.
+
+## Lab 7: predict in FETCH1 with a Branch Target Buffer
+
+A correctly predicted taken branch still costs 1 bubble, because the target is only known in FETCH2.
+A Branch Target Buffer (BTB) indexed by the PC in FETCH1 can supply the target a cycle earlier.
+Measure how much of `R` disappears on `11_gshare_patterns` and what the BTB costs in area (`make synth`).
+
+## Lab 8: attack the critical path
+
+On the original chip, 56% of the 26 ns clock is the ALU's ripple-carry adder
+([critical path](img/silicon/critical_path.svg)). Write a parallel-prefix (Kogge-Stone or
+Brent-Kung) adder module, use it inside `ALU`, and compare depth with Yosys (`make synth` then look
+at the `ALU` cell count and area). Discuss the second half of that path: the stall signal from the
+data cache. How would you move that decision off the path?
+
+## Lab 9: forwarding into EXECUTE instead of DECODE
+
+This design (like the original) forwards into DECODE, which puts `EXECUTE_FORWARD_DATA` (the ALU
+output) in front of the EXECUTE pipeline register: ALU -> forwarding mux -> register in one cycle.
+Textbook pipelines forward into EXECUTE instead. Sketch both paths on the block diagram and explain
+which is longer, and what that means for the clock period.
+
+## Lab 10: put the caches back
+
+The original design used a student-written cache ([`original/eecs151-rv32i/src/cache.sv`](../original/eecs151-rv32i/src/cache.sv))
+with a `stall` input. Add a stall input to `Riscv64` that freezes every pipeline register (the
+original's `CONTINUE_PIPELINE`), model a fixed miss latency in `ScratchpadMemory`, and add a
+`miss` term to the cycle equation.

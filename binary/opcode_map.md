@@ -1,4 +1,4 @@
-# RISC-V major opcode map (RV64IM subset implemented here)
+# RISC-V major opcode map (RV64IM + Zicsr subset implemented here)
 
 The opcode is `inst[6:0]`. For 32-bit instructions `inst[1:0]` is always `11`
 (`00`, `01`, `10` mark 16-bit compressed instructions, not implemented here).
@@ -63,5 +63,5 @@ Rows are `inst[6:5]`, columns are `inst[4:2]`.
 
 ### SYSTEM `1110011`
 
-[`ecall`](RV64I/ecall.md) · [`ebreak`](RV64I/ebreak.md)
+[`ecall`](RV64I/ecall.md) · [`ebreak`](RV64I/ebreak.md) · [`csrrw`](Zicsr/csrrw.md) · [`csrrs`](Zicsr/csrrs.md) · [`csrrc`](Zicsr/csrrc.md) · [`csrrwi`](Zicsr/csrrwi.md) · [`csrrsi`](Zicsr/csrrsi.md) · [`csrrci`](Zicsr/csrrci.md)
 

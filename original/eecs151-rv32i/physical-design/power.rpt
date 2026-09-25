@@ -1,0 +1,63 @@
+*	Power Units = 1mW
+*
+*	Time Units = 1e-09 secs 
+*
+*       report_power -outfile ./timingReports/riscv_top_postRoute.power -leakage
+*
+-----------------------------------------------------------------------------------------
+
+
+Total Power 
+-----------------------------------------------------------------------------------------
+Total Leakage Power:         0.02976038 
+-----------------------------------------------------------------------------------------
+
+
+Group                           Leakage       Percentage 
+                                Power         (%)        
+-----------------------------------------------------------------------------------------
+Sequential                       0.01213       40.75 
+Macro                                  0           0 
+IO                             9.469e-13   3.182e-09 
+Combinational                    0.01729        58.1 
+Clock (Combinational)          0.0003404       1.144 
+Clock (Sequential)                     0           0 
+-----------------------------------------------------------------------------------------
+Total                            0.02976         100 
+-----------------------------------------------------------------------------------------
+
+
+Rail                  Voltage   Leakage       Percentage 
+                                Power         (%)        
+-----------------------------------------------------------------------------------------
+VDD                      1.62    0.02976         100 
+
+
+Clock                           Leakage       Percentage 
+                                Power         (%)        
+-----------------------------------------------------------------------------------------
+clk                            0.0003404       1.144 
+-----------------------------------------------------------------------------------------
+Total (excluding duplicates)   0.0003404       1.144 
+-----------------------------------------------------------------------------------------
+Clock: clk
+Clock Period: 0.026000 usec 
+Clock Toggle Rate:    76.9231 Mhz 
+Clock Static Probability:  0.5000
+
+
+
+-----------------------------------------------------------------------------------------
+*	Power Distribution Summary: 
+*                Highest Average Power:   mem/icache/state_reg[3] (DFFX4):        8.236e-06 
+*                Highest Leakage Power:   mem/icache/state_reg[3] (DFFX4):        8.236e-06 
+*          Total Cap:      6.79075e-10 F
+*          Total instances in design: 16022
+*          Total instances in design with no power:   269
+*          Total instances in design with no activity:   259
+*          Total Fillers and Decap:   259
+-----------------------------------------------------------------------------------------
+
+Total leakage power = 0.0297604 mW
+Cell usage statistics:  
+Library sky130_ss_1.62_125 , 15753 cells ( 100.000000%) , 0.0297604 mW ( 100.000000%  ) 

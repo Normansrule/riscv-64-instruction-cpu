@@ -1,8 +1,9 @@
 # =============================================================================
-# tests/isa_selfcheck.s — AUTO-GENERATED self-checking test of every RV64IM
-# instruction (845 test cases, expected values computed by an independent
-# Python reference model). On success a0 = 0; on failure a0 = the number of
-# the first failing test (search for "t<number>:" below).
+# tests/isa_selfcheck.s: AUTO-GENERATED self-checking test of every RV64IM +
+# Zicsr instruction (859 test cases, expected values computed by an independent
+# Python reference model). Uses the riscv-tests / EECS 151 convention:
+#   PASS: tohost = 1           FAIL: tohost = (test number << 1) | 1
+# so the testbench prints "FAIL in test N": search for "tN:" below.
 #
 # EXPECT: a0 = 0
 # =============================================================================
@@ -7521,11 +7522,140 @@ t845: # fence is a no-op
     beq  a3, t6, t845_ok
     j    fail
 t845_ok:
+t846: # csrrw returns old value
+    li   a0, 846
+    li   t0, 0x5a
+    csrw status, t0
+    li   t1, 0x33
+    csrrw a3, status, t1
+    li   t6, 0x5a
+    beq  a3, t6, t846_ok
+    j    fail
+t846_ok:
+t847: # csrrw wrote new value
+    li   a0, 847
+    csrr a3, status
+    li   t6, 0x33
+    beq  a3, t6, t847_ok
+    j    fail
+t847_ok:
+t848: # csrrs sets bits
+    li   a0, 848
+    li   t0, 0x0c
+    csrrs a3, status, t0
+    csrr a3, status
+    li   t6, 0x3f
+    beq  a3, t6, t848_ok
+    j    fail
+t848_ok:
+t849: # csrrc clears bits
+    li   a0, 849
+    li   t0, 0x0f
+    csrrc a3, status, t0
+    csrr a3, status
+    li   t6, 0x30
+    beq  a3, t6, t849_ok
+    j    fail
+t849_ok:
+t850: # csrrs with x0 does not write
+    li   a0, 850
+    csrrs a3, status, x0
+    csrr a4, status
+    sub  a3, a3, a4
+    li   t6, 0x0
+    beq  a3, t6, t850_ok
+    j    fail
+t850_ok:
+t851: # csrrwi
+    li   a0, 851
+    csrrwi a3, status, 17
+    csrr a3, status
+    li   t6, 0x11
+    beq  a3, t6, t851_ok
+    j    fail
+t851_ok:
+t852: # csrrsi
+    li   a0, 852
+    csrrsi a3, status, 8
+    csrr a3, status
+    li   t6, 0x19
+    beq  a3, t6, t852_ok
+    j    fail
+t852_ok:
+t853: # csrrci
+    li   a0, 853
+    csrrci a3, status, 1
+    csrr a3, status
+    li   t6, 0x18
+    beq  a3, t6, t853_ok
+    j    fail
+t853_ok:
+t854: # csr read then forward to next instruction
+    li   a0, 854
+    csrwi status, 5
+    csrr t0, status
+    addi a3, t0, 1
+    li   t6, 0x6
+    beq  a3, t6, t854_ok
+    j    fail
+t854_ok:
+t855: # hartid reads 0
+    li   a0, 855
+    csrr a3, hartid
+    li   t6, 0x0
+    beq  a3, t6, t855_ok
+    j    fail
+t855_ok:
+t856: # mhartid reads 0
+    li   a0, 856
+    csrr a3, mhartid
+    li   t6, 0x0
+    beq  a3, t6, t856_ok
+    j    fail
+t856_ok:
+t857: # cycle counter moves forward
+    li   a0, 857
+    rdcycle t0
+    nop
+    nop
+    rdcycle t1
+    sltu a3, t0, t1
+    li   t6, 0x1
+    beq  a3, t6, t857_ok
+    j    fail
+t857_ok:
+t858: # instret counts 3 retired instructions between reads (3 nops first so no earlier bubble is still draining)
+    li   a0, 858
+    nop
+    nop
+    nop
+    rdinstret t0
+    nop
+    nop
+    rdinstret t1
+    sub  a3, t1, t0
+    li   t6, 0x3
+    beq  a3, t6, t858_ok
+    j    fail
+t858_ok:
+t859: # cycle counter is read-only
+    li   a0, 859
+    rdcycle t0
+    csrw cycle, zero
+    rdcycle t1
+    sltu a3, t0, t1
+    li   t6, 0x1
+    beq  a3, t6, t859_ok
+    j    fail
+t859_ok:
 pass:
     li   a0, 0
-    ecall
+    halt               # tohost = 1: PASS
 fail:
-    ecall              # a0 still holds the failing test number
+    slli t0, a0, 1     # a0 holds the failing test number
+    ori  t0, t0, 1
+    csrw tohost, t0    # tohost = (n << 1) | 1: FAIL in test n
+    j    .
 
     .align 3
 scratch:

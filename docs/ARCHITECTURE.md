@@ -1,137 +1,128 @@
-# Architecture: a walk through the RTL
+# Architecture reference
 
-![datapath](img/cpu_block_diagram.svg)
+The complete description of `Riscv64` ([`src/Riscv64.sv`](../src/Riscv64.sv)). For a gentler
+introduction read the [learning path](learn/README.md) first.
 
-## Module hierarchy
+![block diagram](img/cpu_block_diagram.svg)
 
-```mermaid
-flowchart TB
-    TB["tb/tb_soc.v<br/>clock, reset, trace, register dump"] --> SOC["rtl/soc_top.v"]
-    SOC --> CORE["rtl/rv64_core.v<br/>pipeline registers + glue"]
-    SOC --> MEM["rtl/memory.v<br/>64 KiB, fetch port + data port, putchar MMIO"]
-    CORE --> BP["branch_predictor.v<br/>gshare PHT + BTB  (IF)"]
-    CORE --> DEC["decoder.v  (ID)"]
-    DEC --> IMM["imm_gen.v  (ID)"]
-    CORE --> RF["regfile.v  (RR, written in WB)"]
-    CORE --> FWD["forward_unit.v x2  (EX)"]
-    CORE --> ALU["alu.v  (EX)"]
-    CORE --> BR["branch_unit.v  (EX)"]
-    CORE --> HZ["hazard_unit.v"]
-```
+## Summary
 
-| file | lines of logic | job |
-|---|---|---|
-| `rtl/rv64_defines.vh` | constants | opcodes, ALU operation codes, sizes, MMIO address |
-| `rtl/rv64_core.v` | the pipeline | pipeline registers, stage wiring, the one clocked `always` block |
-| `rtl/branch_predictor.v` | IF | gshare pattern history table, global history, branch target buffer |
-| `rtl/decoder.v` | ID | instruction bits to control signals |
-| `rtl/imm_gen.v` | ID | reassembles the scattered immediate bits |
-| `rtl/regfile.v` | RR / WB | 32 x 64-bit, write-first bypass, x0 = 0 |
-| `rtl/forward_unit.v` | EX | chooses r / m / w for each operand |
-| `rtl/alu.v` | EX | add, sub, shifts, compares, logic, mul, div, rem, and the "W" variants |
-| `rtl/branch_unit.v` | EX | taken? and the target address |
-| `rtl/hazard_unit.v` | all | stall and flush decisions |
-| `rtl/memory.v` | IF + MEM | unified byte-addressed memory |
-
-## The one rule that makes a pipeline work
-
-Everything between two pipeline registers is **combinational**: it computes continuously from its
-inputs. On each rising clock edge **all** pipeline registers capture their inputs at the same time.
-In `rv64_core.v` this is a single `always @(posedge clk)` block, and every stage's next-state
-assignment is visible in one place, in pipeline order (WB side first).
-
-## What each pipeline register carries
-
-| register | fields |
+| property | value |
 |---|---|
-| **IF/ID** | `valid, pc, instr`, prediction `pred_taken, pred_target, pred_idx` |
-| **ID/RR** | `valid, pc, imm, rs1, rs2, rd`, control (`use_rs1, use_rs2, reg_write, alu_op, a_sel, b_imm, is_word, is_load, is_store, mem_size, mem_unsigned, is_branch, is_jal, is_jalr, wb_pc4, is_halt, illegal, funct3`), prediction |
-| **RR/EX** | everything in ID/RR, plus `rs1_val, rs2_val` read from the register file |
-| **EX/MEM** | `valid, pc, rd, reg_write, wb_val` (ALU result or PC+4), `addr, store_data, is_load, is_store, mem_size, mem_unsigned, is_halt, illegal` |
-| **MEM/WB** | `valid, pc, rd, reg_write, wb_val` (now including loaded data), `is_halt, illegal` |
+| instruction set | RV64I + M (multiply/divide) + Zicsr (CSR instructions): 71 instructions, see [`binary/`](../binary/README.md) |
+| pipeline | 6 stages, in order, single issue: FETCH1, FETCH2, DECODE, EXECUTE, MEMORY, WRITEBACK |
+| data hazards | forwarding **into DECODE** from EXECUTE, MEMORY, WRITEBACK; 1-cycle `LOAD_STALL` |
+| branch prediction | `GSharePredictor`: 2^`GSHARE_HISTORY_BITS` two-bit counters (default 4 bits = 16), speculative global history with checkpoint repair |
+| branch penalties | predicted-taken branch or JAL: 1 bubble (FETCH2 redirect); wrong guess or any JALR: 3 bubbles (flush) |
+| memory | `ScratchpadMemory`: 64 KiB unified, instruction port (32-bit) and data port (64-bit, byte mask), no stalls |
+| reset PC | `0x2000` (`PC_RESET` in [`src/const_pkg.sv`](../src/const_pkg.sv)) |
+| program end | write a nonzero value to the `tohost` CSR; the core halts when that instruction reaches WRITEBACK |
+| verification | every program, every cycle, RTL vs [`model/core.js`](../model/core.js), predictor on and off (`make test`) |
 
-`valid = 0` is a **bubble**: the register holds garbage that nothing is allowed to act on.
-Flushing an instruction just means clearing its `valid` bit.
+## Source files
+
+| file | module | stage | role |
+|---|---|---|---|
+| [`Opcode_pkg.sv`](../src/Opcode_pkg.sv) | `opcode_pkg` | | opcodes and funct3/funct7 codes (RV64I, M, Zicsr) |
+| [`ALUop_pkg.sv`](../src/ALUop_pkg.sv) | `alu_op_pkg` | | `alu_op_t` enum (ALU and M operations) |
+| [`IMMEDIATEop_pkg.sv`](../src/IMMEDIATEop_pkg.sv) | `immediate_op_pkg` | | immediate formats I S B U J Z |
+| [`WRITEBACK_op_pkg.sv`](../src/WRITEBACK_op_pkg.sv) | `writeback_op_pkg` | | writeback sources ALU, MEMORY, PC_ADD_4, CSR |
+| [`const_pkg.sv`](../src/const_pkg.sv) | `const_pkg` | | reset PC, memory size, MMIO and CSR addresses |
+| [`GShare_Branch_Predictor.sv`](../src/GShare_Branch_Predictor.sv) | `GSharePredictor` | FETCH1 (read), FETCH2 (history), EXECUTE (train/repair) | branch direction prediction |
+| [`Control_Unit.sv`](../src/Control_Unit.sv) | `ControlUnit` | DECODE | all control signals from the instruction bits |
+| [`ALUdec.sv`](../src/ALUdec.sv) | `ALUdec` | DECODE | opcode + funct3 + funct7 bits to `alu_op_t` |
+| [`Immediate_Generator.sv`](../src/Immediate_Generator.sv) | `ImmediateGenerator` | DECODE | builds and sign-extends immediates to 64 bits |
+| [`Register_File.sv`](../src/Register_File.sv) | `RegisterFile` | DECODE (read), WRITEBACK (write) | x1..x31, 2 asynchronous reads, 1 synchronous write |
+| [`ALU.sv`](../src/ALU.sv) | `ALU` | EXECUTE | shared 65-bit adder, logic, shifts, 32-bit W variants |
+| [`Multiply_Divide_Unit.sv`](../src/Multiply_Divide_Unit.sv) | `MultiplyDivideUnit` | EXECUTE | M extension (single cycle, combinational) |
+| [`Branch_Comparator.sv`](../src/Branch_Comparator.sv) | `BranchComparator` | EXECUTE | beq bne blt bge bltu bgeu |
+| [`Branch_Control_Unit.sv`](../src/Branch_Control_Unit.sv) | `BranchControl` | EXECUTE | prediction check, `FLUSH`, `ADJUST_NEXT_PC` |
+| [`Control_Status_Register_File.sv`](../src/Control_Status_Register_File.sv) | `CSRFile` | EXECUTE | tohost, status, cycle, instret, hartid |
+| [`Store_Control_Unit.sv`](../src/Store_Control_Unit.sv) | `StoreControl` | EXECUTE | byte lanes and write mask for sb sh sw sd |
+| [`Load_Control_Unit.sv`](../src/Load_Control_Unit.sv) | `LoadControl` | MEMORY | lane select and extension for all 7 loads |
+| [`Write_Control_Unit.sv`](../src/Write_Control_Unit.sv) | `WriteControl` | MEMORY | writeback multiplexer (also the MEMORY forward value) |
+| [`Scratchpad_Memory.sv`](../src/Scratchpad_Memory.sv) | `ScratchpadMemory` | FETCH1/EXECUTE | 64 KiB memory and the putchar port |
+| [`Riscv64.sv`](../src/Riscv64.sv) | `Riscv64` | all | the pipeline: registers, hazards, forwarding |
+| [`Riscv64_top.sv`](../src/Riscv64_top.sv) | `riscv64_top` | | core + memory |
+
+## Coding style
+
+The RTL follows the style of the original EECS 151 design so it reads like one project:
+`` `default_nettype none`` in every file, packages for every encoding, `always_comb` / `always_ff`
+/ `unique case`, and long UPPER_CASE signal names that begin with the stage that owns them
+(`DECODE_FORWARDED_REGISTER1_DATA`, `EXECUTE_ADJUST_NEXT_PC`), each with a comment saying what it
+is. A signal named `STAGE_X` is combinational inside that stage or is that stage's pipeline register.
 
 ## Stage by stage
 
-### IF: fetch and predict
-* `imem_addr = pc`; the instruction arrives combinationally from `memory.v`.
-* In parallel, `branch_predictor` looks up the Branch Target Buffer (BTB) and the gshare
-  counter for this PC.
-* Next PC: `pred_taken ? pred_target : pc + 4`. The prediction travels down the pipe so EX can
-  check it.
-* When the hazard unit says **stall**, `pc` and IF/ID keep their values.
+### FETCH1
+`FETCH1_PC` addresses the instruction memory. In the same cycle the `GSharePredictor` computes
+`FETCH1_GSHARE_INDEX = FETCH1_PC[5:2] ^ GLOBAL_HISTORY_REGISTER` and reads that counter's upper bit
+as `FETCH1_PREDICTED_BRANCH_TAKEN`. The next PC is chosen by priority: the EXECUTE flush target,
+then the FETCH2 redirect target, then `FETCH1_PC + 4`.
 
-### ID: decode
-`decoder.v` looks at `opcode`, `funct3`, `funct7`/`funct6` and produces the control signals in
-the table below. `imm_gen.v` rebuilds the immediate. The register numbers are taken from fixed bit
-positions, so they are available without decoding. Illegal encodings become `is_halt = 1` with
-no register reads, which keeps the hazard logic identical to the model even for garbage fetched
-down a wrong path.
+### FETCH2
+`FETCH2_INSTRUCTION` holds the word (the pipeline register acts as the output register of a
+synchronous SRAM). Predecode looks only at the opcode: `OPC_BRANCH` or `OPC_JAL`. The branch and
+jump immediates are unscrambled here and `FETCH2_PC_TARGET = FETCH2_PC + imm` is precomputed.
+`FETCH2_BRANCH_OFF_OR_CONTINUE` (a JAL, or a branch predicted taken) sends FETCH1 to the target and
+marks the instruction currently in FETCH1 invalid. When a branch leaves FETCH2 its predicted
+direction is shifted into the global history, and the history value before the shift travels down
+the pipeline as `DECODE_GLOBAL_HISTORY_CHECKPOINT`.
 
-| class | use_rs1 | use_rs2 | reg_write | a_sel | b_imm | special |
-|---|---|---|---|---|---|---|
-| R-type (`add`, `mul`, ...) | 1 | 1 | 1 | RS1 | 0 | `is_word` for OP-32 |
-| I-type ALU (`addi`, `slli`, ...) | 1 | 0 | 1 | RS1 | 1 | `is_word` for OP-IMM-32 |
-| load | 1 | 0 | 1 | RS1 | 1 | `is_load`, size, signedness |
-| store | 1 | 1 | 0 | RS1 | 1 | `is_store`, size |
-| branch | 1 | 1 | 0 | - | - | `is_branch`, `funct3` selects the compare |
-| `jal` | 0 | 0 | 1 | - | - | `is_jal`, `wb_pc4` |
-| `jalr` | 1 | 0 | 1 | RS1 | 1 | `is_jalr`, `wb_pc4` |
-| `lui` / `auipc` | 0 | 0 | 1 | ZERO / PC | 1 | |
-| `ecall` / `ebreak` | 0 | 0 | 0 | - | - | `is_halt` |
-| `fence` | 0 | 0 | 0 | - | - | no-op |
+### DECODE
+`ControlUnit` (with `ALUdec`) and `ImmediateGenerator` decode the instruction; the `RegisterFile` is
+read at `[19:15]` and `[24:20]`. Each operand then passes the forwarding chain
+x0 > EXECUTE (non-load) > MEMORY > WRITEBACK > register file. The chosen values are what EXECUTE
+receives, so EXECUTE has no forwarding muxes on its inputs.
 
-Per-instruction tables for all 65 instructions are in [`binary/`](../binary/README.md).
+`LOAD_STALL = DECODE_VALID && EXECUTE_VALID && EXECUTE_MEMORY_READ_ENABLE && rd != 0 && (rd == rs1 field || rd == rs2 field)`.
 
-### RR: register read
-`regfile.v` has two read ports addressed by `id_rr_rs1` / `id_rr_rs2`. If WB writes the same
-register in the same cycle, the read returns the **new** value (write-first bypass).
+### EXECUTE
+Operand muxes (`ALU_INPUT_A_IS_PC`, `ALU_INPUT_B_IS_IMMEDIATE`) feed the `ALU`; M instructions use
+the `MultiplyDivideUnit`. `BranchComparator` evaluates the condition and `BranchControl` decides:
 
-### EX: execute and resolve
-1. **Forwarding**: `forward_unit` decides, per operand, whether to use the value read in RR, the
-   EX/MEM value (1 instruction ahead) or the MEM/WB value (2 ahead).
-2. **Operand select**: A is rs1, PC or 0; B is rs2 or the immediate.
-3. **ALU** computes the result or memory address.
-4. **Branch unit** computes taken and target; the core compares this with the prediction:
-   `mispredict = (taken != pred_taken) or (taken and target != pred_target)`.
-   On a misprediction: `pc <- taken ? target : pc + 4`, and IF/ID, ID/RR, RR/EX are cleared.
-5. **Predictor update** on the same clock edge: counter, global history, BTB entry.
+| instruction | `FLUSH` | `ADJUST_NEXT_PC` | predictor |
+|---|---|---|---|
+| branch, guess right | 0 | (unused) | train counter |
+| branch, guess wrong | 1 | taken ? target : PC + 4 | train counter, restore history = checkpoint shifted with the real outcome |
+| JAL | 0 (already redirected in FETCH2) | target | nothing |
+| JALR | 1 | `(rs1 + imm) & ~1` | restore history = checkpoint |
 
-### MEM: memory
-Loads read 8 bytes at the address and then keep 1/2/4/8 of them, sign- or zero-extended. Stores
-write on the clock edge. A store to `0x1000_0000` prints a character in the simulator instead.
+`FLUSH_FETCH1_FETCH2_DECODE` squashes the three younger instructions and puts a bubble into
+EXECUTE. The `CSRFile` is read (old value to rd) and written (RW/RS/RC semantics) here. Stores write
+memory at the end of this cycle; loads read the aligned doubleword at the end of this cycle.
 
-### WB: write back
-`regfile[rd] <- wb_val` if `reg_write`. When an `ecall`/`ebreak` reaches WB the core sets
-`halted` and freezes; the testbench dumps the registers.
+### MEMORY
+`MEMORY_DATA_CACHE_DATA` holds the doubleword; `LoadControl` selects lanes with address bits [2:0]
+and extends. `WriteControl` selects the result by `WRITEBACK_SELECT`; that value is
+`MEMORY_FORWARD_DATA` (forwarded to DECODE) and becomes `WRITEBACK_DATA` at the edge.
 
-## Hazard rules (exact)
+### WRITEBACK
+The register file is written at the clock edge and the `instret` counter increments. If this
+instruction wrote a nonzero `tohost`, `HALT_NOW` freezes everything else and the testbench prints the
+result: `tohost = 1` is PASS, `(n << 1) | 1` is FAIL in test n (the riscv-tests convention).
 
-```
- load_use = RR/EX.valid && RR/EX.is_load && RR/EX.rd != 0 && ID/RR.valid &&
-            ((ID/RR.use_rs1 && ID/RR.rs1 == RR/EX.rd) || (ID/RR.use_rs2 && ID/RR.rs2 == RR/EX.rd))
- flush    = (RR/EX.valid && mispredict) || (RR/EX.valid && RR/EX.is_halt)
- stall    = load_use && !flush
-```
+## Memory map and CSRs
 
-| event | PC | IF/ID | ID/RR | RR/EX | EX/MEM | MEM/WB |
-|---|---|---|---|---|---|---|
-| normal | next PC | advance | advance | advance | advance | advance |
-| stall (load-use) | hold | hold | hold | **bubble** | advance | advance |
-| flush (mispredict) | **correct PC** | **bubble** | **bubble** | **bubble** | advance | advance |
-| flush (halt in EX) | hold, stop fetching | **bubble** | **bubble** | **bubble** | advance | advance |
+| address / CSR | meaning |
+|---|---|
+| `0x0000_2000` | reset PC: first instruction |
+| `0x0000_0000` to `0x0000_FFFF` | 64 KiB RAM (addresses wrap) |
+| `0x1000_0000` | store a byte here to print a character |
+| CSR `0x51E` `tohost` | program result (read/write) |
+| CSR `0x50A` `status` | scratch register (read/write) |
+| CSR `0x50B` `hartid`, `0xF14` `mhartid` | always 0 |
+| CSR `0xC00` `cycle` | clock cycles since reset (read-only) |
+| CSR `0xC02` `instret` | instructions retired since reset (read-only) |
 
-## How the model and the RTL stay identical
+## Timing rules (exact)
 
-`sim/core.js` computes each cycle in the same order as the hardware: WB, MEM, EX, RR, ID, IF all
-read the *current* register contents; then every update (register file, memory, predictor
-tables, pipeline registers) is applied together, like a clock edge. The testbench and the model
-print the same trace line per cycle:
+| event | bubbles |
+|---|---:|
+| pipeline fill at reset | 5 |
+| `LOAD_STALL` | 1 |
+| FETCH2 redirect (predicted-taken branch, JAL) | 1 (0 if a flush squashes the redirecting instruction) |
+| flush (wrong branch guess, JALR) | 3 |
 
-```
-C12 IF:0000001c ID:00000018 RR:00000014 EX:00000010 MEM:0000000c WB:00000008 FLUSH
-```
-
-`make test` diffs these line by line for every program with the predictor on and off.
+`cycles = N + 5 + L + 3F + R` holds exactly; see [MATH.md](MATH.md).
