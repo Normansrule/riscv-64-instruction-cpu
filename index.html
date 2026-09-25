@@ -1,5 +1,202 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8">
-<meta http-equiv="refresh" content="0; url=web/">
-<title>RISC-V 64 Instruction CPU: pipeline simulator</title></head>
-<body><p><a href="web/">Open the RISC-V 64 Instruction CPU simulator</a></p></body></html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RISC-V 64 Instruction CPU: watch a processor think</title>
+<meta name="description" content="A 6-stage RV64IM RISC-V CPU in SystemVerilog, running live in your browser in 3D. Decode instructions bit by bit, race branch predictors, and explore the real silicon layout.">
+<meta property="og:title" content="RISC-V 64 Instruction CPU">
+<meta property="og:description" content="Watch a 6-stage RISC-V pipeline run real programs in 3D, then explore its silicon.">
+<meta property="og:image" content="docs/img/site_preview.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23101B22'/><rect x='5' y='9' width='5' height='14' fill='%235B9BD5'/><rect x='13.5' y='9' width='5' height='14' fill='%23E8A33C'/><rect x='22' y='9' width='5' height='14' fill='%23E0584F'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site/style.css">
+<script type="importmap">{ "imports": { "three": "./site/vendor/three.module.min.js" } }</script>
+</head>
+<body>
+<a class="skip" href="#decode">Skip to content</a>
+
+<header class="nav" id="top">
+  <a class="brand" href="#top" aria-label="RISC-V 64 Instruction CPU, back to top">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="8" width="5" height="16" fill="var(--F1)"/><rect x="10" y="8" width="5" height="16" fill="var(--D)"/><rect x="17" y="8" width="5" height="16" fill="var(--E)"/><rect x="24" y="8" width="5" height="16" fill="var(--W)"/></svg>
+    <span>RISC-V 64 Instruction CPU</span>
+  </a>
+  <nav aria-label="Sections">
+    <a href="#decode">Decode</a>
+    <a href="#race">Predict</a>
+    <a href="#silicon">Silicon</a>
+    <a href="#numbers">Numbers</a>
+    <a href="#learn">Learn</a>
+    <a href="#commands">Run it</a>
+    <a href="web/index.html" class="lab">Open the lab</a>
+    <a data-repo-link href="#" class="gh">GitHub</a>
+  </nav>
+</header>
+
+<main>
+<!-- ============================================================== HERO -->
+<section class="hero" aria-label="The CPU running live">
+  <canvas id="stage3d" aria-label="Three-dimensional view of the six pipeline stages, with instructions moving through them"></canvas>
+  <div class="hero-copy">
+    <h1>Watch a 64&#8209;bit RISC&#8209;V processor think.</h1>
+    <p>Six stages, one instruction per clock. This is the real core from the repository, running a real program in your browser, cycle by cycle, exactly as the SystemVerilog does.</p>
+  </div>
+  <div class="hud" role="group" aria-label="Simulation controls">
+    <div class="hud-read">
+      <div><span class="k">cycle</span><strong id="h-cycle">0</strong></div>
+      <div><span class="k">retired</span><strong id="h-ret">0</strong></div>
+      <div><span class="k">CPI</span><strong id="h-cpi">–</strong></div>
+      <p id="h-event" class="event" aria-live="polite">Press play.</p>
+    </div>
+    <div class="hud-ctl">
+      <button id="h-play" class="primary" aria-pressed="false">Play</button>
+      <button id="h-step">Step one cycle</button>
+      <label>Program <select id="h-prog"></select></label>
+      <label class="sw"><input id="h-bp" type="checkbox" checked> Branch predictor</label>
+      <label>Speed <input id="h-speed" type="range" min="1" max="10" value="4"></label>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================== DECODE -->
+<section class="band" id="decode">
+  <div class="wrap two">
+    <div class="copy">
+      <h2>Every instruction is 32 bits. Click one.</h2>
+      <p>Type an instruction, or flip any bit and watch the CPU's decoder read something new. The colours are the fields the <code>ControlUnit</code> looks at; the lights underneath are the control signals it produces, with the names used in <code>src/Control_Unit.sv</code>.</p>
+      <div class="presets" id="bit-presets" aria-label="Example instructions"></div>
+    </div>
+    <div class="bitlab">
+      <label class="asm">Assembly <input id="bit-asm" value="add a0, a1, a2" spellcheck="false" autocomplete="off"></label>
+      <div id="bit-row" class="bitrow" role="group" aria-label="The 32 instruction bits, bit 31 on the left. Press a bit to flip it."></div>
+      <div id="bit-fields" class="bitfields" aria-hidden="true"></div>
+      <div class="bit-meta"><code id="bit-hex">0x00000000</code><span id="bit-desc"></span></div>
+      <p id="bit-sem" class="sem"></p>
+      <div id="bit-leds" class="leds" aria-label="Control signals"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================== RACE -->
+<section class="band alt" id="race">
+  <div class="wrap">
+    <div class="copy narrow">
+      <h2>Guess the branches well and the same program finishes sooner.</h2>
+      <p>Both CPUs below run the same program on the same clock. One always guesses that branches fall through; the other uses the gshare predictor from the tape-out: 2-bit counters indexed by the program counter XOR the last few branch outcomes. Each strip is the WRITEBACK stage over time: a filled tick is an instruction finishing, a coloured gap is a bubble.</p>
+    </div>
+    <div class="race-ctl">
+      <label>Program <select id="r-prog"></select></label>
+      <label>History bits <input id="r-hist" type="range" min="1" max="10" value="4"> <output id="r-hist-o">4</output></label>
+      <button id="r-go" class="primary">Start the race</button>
+    </div>
+    <div class="lanes">
+      <div class="lane" id="lane-off">
+        <div class="lane-head"><h3>Always not taken</h3><div class="lane-num"><strong data-k="cyc">0</strong> cycles<span data-k="cpi"></span></div></div>
+        <canvas class="strip" aria-hidden="true"></canvas>
+        <div class="bar"><i></i></div>
+      </div>
+      <div class="lane" id="lane-gs">
+        <div class="lane-head"><h3>gshare</h3><div class="lane-num"><strong data-k="cyc">0</strong> cycles<span data-k="cpi"></span></div></div>
+        <canvas class="strip" aria-hidden="true"></canvas>
+        <div class="bar"><i></i></div>
+      </div>
+    </div>
+    <div class="race-foot">
+      <div class="gs-state">
+        <h3>Inside gshare</h3>
+        <p class="small">Global history, newest bit on the right, then the counter table. Outlined: read this cycle. Ringed: trained by a branch in EXECUTE.</p>
+        <div id="gs-ghr" class="ghr"></div>
+        <div id="gs-pht" class="pht"></div>
+        <ul class="ckey"><li class="c0">strongly not taken</li><li class="c1">weakly not taken</li><li class="c2">weakly taken</li><li class="c3">strongly taken</li></ul>
+      </div>
+      <div class="bubble-key">
+        <h3>Why gaps appear</h3>
+        <ul>
+          <li><i style="background:var(--flush)"></i>Flush: a wrong guess or a <code>ret</code>, 3 cycles lost</li>
+          <li><i style="background:var(--F2)"></i>Redirect: a taken branch or <code>jal</code> seen in FETCH2, 1 cycle</li>
+          <li><i style="background:var(--stall)"></i>Load stall: data not back from memory yet, 1 cycle</li>
+          <li><i style="background:var(--fill)"></i>Pipeline filling up at the start, 5 cycles</li>
+        </ul>
+        <p id="r-verdict" class="verdict" aria-live="polite"></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================== SILICON -->
+<section class="band" id="silicon">
+  <div class="wrap">
+    <div class="copy narrow">
+      <h2>Then it became a chip.</h2>
+      <p>This is the original EECS 151 design after place and route on SkyWater's 130 nm process: every coloured speck is one standard cell at its real position. Drag the divider to peel the metal wiring off, drag the picture to pan, and use the buttons or your scroll wheel over it to zoom.</p>
+    </div>
+    <div class="scope" id="scope" tabindex="0" aria-label="Chip layout viewer. Arrow keys pan, plus and minus zoom.">
+      <div class="scope-inner" id="scope-inner">
+        <img src="docs/img/silicon/your_chip_cpu_zoom.png" alt="Placement of the core: register file, pipeline, ALU and predictor as coloured cell clusters" draggable="false">
+        <img src="docs/img/silicon/your_chip_routing.png" alt="" class="routing" id="scope-routing" draggable="false">
+      </div>
+      <div class="divider" id="scope-div" role="slider" tabindex="0" aria-label="Reveal the metal wiring" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"><span></span></div>
+      <div class="scope-ctl"><button id="z-in" aria-label="Zoom in">+</button><button id="z-out" aria-label="Zoom out">−</button><button id="z-reset">Fit</button></div>
+      <div class="scope-tags"><span>cells</span><span>metal</span></div>
+    </div>
+    <div class="facts">
+      <div><strong>26 ns</strong><span>clock period, met with 0.163 ns to spare in the slowest corner</span></div>
+      <div><strong>15,753</strong><span>standard cells on a 3 mm × 3 mm die</span></div>
+      <div><strong>56%</strong><span>of the critical path is the ALU's ripple-carry adder</span></div>
+    </div>
+    <figure class="cp"><img src="docs/img/silicon/critical_path.svg" alt="Critical path timeline: 14.3 of 25.56 nanoseconds in the ALU adder carry chain" loading="lazy"></figure>
+    <h3 class="cells-h">The gates it is made of, as drawn in the process design kit</h3>
+    <div class="cells">
+      <figure><img src="docs/img/silicon/cell_xor2.svg" alt="XOR2 layout" loading="lazy"><figcaption>XOR: one bit of the gshare index</figcaption></figure>
+      <figure><img src="docs/img/silicon/cell_dfxtp.svg" alt="D flip-flop layout" loading="lazy"><figcaption>Flip-flop: one bit of a pipeline register</figcaption></figure>
+      <figure><img src="docs/img/silicon/cell_fa.svg" alt="Full adder layout" loading="lazy"><figcaption>Full adder: one bit of the ALU</figcaption></figure>
+      <figure><img src="docs/img/silicon/cell_mux2.svg" alt="Multiplexer layout" loading="lazy"><figcaption>Multiplexer: one bit of forwarding</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================== NUMBERS -->
+<section class="band alt" id="numbers">
+  <div class="wrap">
+    <div class="copy narrow">
+      <h2>Where every cycle goes, for every program.</h2>
+      <p>Measured right now in your browser by the cycle-exact model. Each bar is one program's run time, split into useful work and each kind of bubble, with the predictor on (top) and off (bottom). Select a program to step through it in the lab.</p>
+    </div>
+    <div id="dash" class="dash" aria-busy="true"><p class="small">Running 15 programs…</p></div>
+  </div>
+</section>
+
+<!-- ============================================================== LEARN -->
+<section class="band" id="learn">
+  <div class="wrap">
+    <div class="copy narrow">
+      <h2>Learn it in eight short chapters.</h2>
+      <p>Each chapter explains one idea, shows the picture that goes with it, points at the lines of SystemVerilog that do it, and gives you a program to run.</p>
+    </div>
+    <ol class="chapters" id="chapters"></ol>
+  </div>
+</section>
+
+<!-- ============================================================== COMMANDS -->
+<section class="band alt" id="commands">
+  <div class="wrap">
+    <div class="copy narrow">
+      <h2>Run it yourself.</h2>
+      <p>Everything on this page also runs from a terminal on Ubuntu or Windows Subsystem for Linux (WSL).</p>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Command sets" id="cmd-tabs"></div>
+    <div class="term" id="cmd-body"></div>
+  </div>
+</section>
+</main>
+
+<footer class="foot">
+  <p>Designed by Aleksander Norman, grown from an EECS 151/251A ASIC project at UC Berkeley. MIT license. Cell layouts from the SkyWater PDK (Apache 2.0). Rendering with three.js (MIT).</p>
+  <p class="foot-links"><a data-repo-link href="#">Source on GitHub</a><a href="web/index.html">Pipeline lab</a><a href="docs/img/cpu_block_diagram.svg">Block diagram</a></p>
+</footer>
+
+<script type="module" src="site/main.js"></script>
+</body>
+</html>

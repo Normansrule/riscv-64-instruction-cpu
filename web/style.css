@@ -143,3 +143,5 @@ textarea { width: 100%; min-height: 20rem; font: .82rem/1.45 var(--mono); backgr
 .statlist dd { margin: 0; font-family: var(--mono); }
 .statlist dd.big { font-size: 1.4rem; font-weight: 600; }
 footer { color: var(--sub); font-size: .8rem; padding: 1rem 1.5rem 2rem; border-top: 1px solid var(--rule); }
+
+.home { margin: 0 0 4px; font-size: .88rem; } .home a { color: inherit; opacity: .75; }

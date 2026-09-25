@@ -103,8 +103,8 @@ schematics: build/synth/flat.v  ## Yosys schematics of small modules (docs/img/s
 	yosys -q -p "read_verilog build/synth/flat.v; hierarchy -top BranchControl; proc; opt -full; clean; show -format svg -width -stretch -prefix docs/img/schematics/branch_control BranchControl"
 	rm -f docs/img/schematics/*.dot
 
-serve:           ## interactive simulator at http://localhost:8000/web/
-	@echo "open http://localhost:8000/web/   (Ctrl+C to stop)"
+serve:           ## the site at http://localhost:8000/ and the lab at http://localhost:8000/web/
+	@echo "open http://localhost:8000/ (site) or http://localhost:8000/web/ (lab)   Ctrl+C to stop"
 	python3 -m http.server 8000
 
 clean:           ## remove build outputs

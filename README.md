@@ -17,8 +17,23 @@ how to read its diagrams**.
 | **Silicon** | the original design's real sky130 layout, timing and area, plus sky130 synthesis of this RTL |
 | **Runs on** | Icarus Verilog, Verilator, Yosys, any web browser |
 
-**Start here:** the [learning path](docs/learn/README.md) (8 short chapters) · the
-[web simulator](web/index.html) · the [architecture reference](docs/ARCHITECTURE.md)
+## Open the live site
+
+[![The front page: the CPU running in 3D](docs/img/site_preview.png)](https://normansrule.github.io/riscv-64-instruction-cpu/)
+
+The [GitHub Pages site](https://normansrule.github.io/riscv-64-instruction-cpu/) runs everything in
+your browser, with no install:
+
+* **the CPU in 3D**: every die is a real instruction moving through the six stages, with
+  forwarding arcs, stalls and flushes as they happen;
+* **a bit playground**: flip any of the 32 bits and watch the decoder and its control signals change;
+* **a predictor race**: the same program with and without gshare, at any history length;
+* **a chip scope**: pan and zoom the real placed-and-routed layout and peel the metal off with a slider;
+* **a live dashboard** of where every cycle goes, for every program;
+* **the lab** ([`web/`](web/index.html)): step forward and back through any program, or your own.
+
+Or start with the [learning path](docs/learn/README.md) (8 short chapters) and the
+[architecture reference](docs/ARCHITECTURE.md).
 
 ---
 
@@ -32,7 +47,7 @@ make test                          # every program on the RTL and the model, com
 make run  PROG=05_fibonacci        # registers, cycles, CPI, predictor accuracy
 make pipe PROG=03_load_use         # a pipeline chart in your terminal
 make cycle PROG=03_load_use C=5    # everything that happens in clock cycle 5
-make serve                         # then open http://localhost:8000/web/
+make serve                         # then open http://localhost:8000/ (the site) or /web/ (the lab)
 ```
 
 ## Watch it run
@@ -145,7 +160,8 @@ faster adder for the critical path, forwarding into EXECUTE, and putting the cac
 | [`programs/`](programs), [`tests/`](tests) | example programs and the self-check |
 | [`binary/`](binary/README.md) | every instruction and every program in binary |
 | [`docs/`](docs) | [learning path](docs/learn/README.md), [architecture](docs/ARCHITECTURE.md), [math](docs/MATH.md), [experiments](docs/EXPERIMENTS.md), [silicon](docs/SILICON.md), [from EECS 151](docs/FROM_EECS151.md), [references](docs/REFERENCES.md) |
-| [`web/`](web/index.html) | the interactive simulator |
+| [`index.html`](index.html), [`site/`](site) | the GitHub Pages front page: 3D pipeline, bit playground, predictor race, chip scope, dashboard (vanilla JavaScript modules + vendored three.js, no build step) |
+| [`web/`](web/index.html) | the pipeline lab: step-by-step simulator |
 | [`tools/`](tools) | CLI, test runner, doc/chart/diagram generators, chip and cell renderers |
 | [`original/eecs151-rv32i/`](original/eecs151-rv32i) | the student-written RV32I original, its physical-design configs, final DEF and reports |
 
@@ -159,6 +175,17 @@ make docs / charts / diagram         regenerate generated pages and pictures
 make synth / schematics              sky130 synthesis per module, Yosys schematics
 make lint / serve / clean
 ```
+
+## Publish the site
+
+```bash
+cd ~/riscv-64-instruction-cpu && git push           # the site is plain static files
+# GitHub: Settings -> Pages -> Build and deployment -> Deploy from a branch -> main, / (root) -> Save
+# about a minute later: https://<your-user>.github.io/riscv-64-instruction-cpu/
+```
+
+The front page was inspired by interactive explainers such as bbycroft's llm-viz and Georgia Tech's
+Transformer Explainer; the 3D view uses three.js (MIT, vendored in `site/vendor/`).
 
 ## Credits and license
 
