@@ -1,5 +1,10 @@
 # Experiments and labs
 
+Labs 4 to 8 are now **built** in the performance edition (see [PERFORMANCE.md](PERFORMANCE.md)),
+behind parameters. Do them in the other direction: switch one feature off in `src/Riscv64.sv` and
+`model/core.js` (`CONFIGS`), predict the change with the cycle equation, then measure it with
+`make test` and `make timing`. Or re-implement one yourself from the baseline build.
+
 Each lab changes one thing, predicts the effect with the equation from [MATH.md](MATH.md), then
 measures it. Labs 1 to 3 need no code changes. For labs that change the RTL, change
 [`model/core.js`](../model/core.js) the same way and keep `make test` passing: the model and RTL
@@ -14,7 +19,7 @@ make bp PROG=09_primes_sieve
 
 ![sweep](img/charts/predictor_sweep.svg)
 
-Measured cycles ([full table](img/charts/predictor_sweep.md)):
+Measured cycles on the original design ([performance edition table](img/charts/predictor_sweep.md)):
 
 | program | off | 2 bits | **4 bits (tape-out)** | 6 bits | 10 bits |
 |---|---:|---:|---:|---:|---:|

@@ -8,24 +8,24 @@
 // =============================================================================
 import fs from 'node:fs';
 import { assemble } from '../model/asm.js';
-import { Core, DEFAULT_HISTORY_BITS } from '../model/core.js';
+import { Core, DEFAULT_HISTORY_BITS, CONFIGS } from '../model/core.js';
 
 const FONT = "font-family=\"'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif\"";
 const MONO = "font-family=\"'IBM Plex Mono',Consolas,monospace\"";
 const W = (p, s) => { fs.mkdirSync('docs/img/charts', { recursive: true }); fs.writeFileSync(p, s); };
 const progs = fs.readdirSync('programs').filter(f => f.endsWith('.s')).sort();
 const load = f => assemble(fs.readFileSync(`programs/${f}`, 'utf8'));
-const run = (img, o) => { const c = new Core(img, o); c.run(5e6, false); return c.stats; };
+const run = (img, o) => { const c = new Core(img, { ...CONFIGS.performance, ...o }); c.run(5e6, false); return c.stats; };
 
 // ---------------------------------------------------------------- CPI stack
 const parts = [['retired', 'instructions (CPI 1.0 part)', '#2E86C1'], ['fill', 'pipeline fill (5)', '#B4BDB6'], ['loaduse', 'load stalls', '#E0A800'],
-  ['flush', 'flushes: wrong guess or JALR (3 each)', '#C2185B'], ['redirect', 'FETCH2 redirects (1 each)', '#17A2B8']];
+  ['flush', 'flushes: wrong guess or JALR (3 each)', '#C2185B'], ['redirect', 'FETCH2 redirects (1 each)', '#17A2B8'], ['muldiv', 'multiply/divide busy', '#6A5ACD']];
 {
   const rows = [];
   for (const f of progs) for (const bp of [true, false]) { const s = run(load(f), { bp }); rows.push({ name: f.replace('.s', ''), bp, s }); }
   const lx = 250, bw = 560, rh = 17, top = 70, width = lx + bw + 170, height = top + rows.length * rh + (rows.length / 2) * 6 + 70;
   let o = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}"><rect width="100%" height="100%" rx="10" fill="#FBFCF8" stroke="#D5DBD0"/>`;
-  o += `<text x="16" y="28" ${FONT} font-size="17" font-weight="600" fill="#17251D">Where the cycles go: CPI stack of every program (gshare on / predictor off)</text>`;
+  o += `<text x="16" y="28" ${FONT} font-size="17" font-weight="600" fill="#17251D">Where the cycles go: CPI stack of every program, performance edition (gshare on / predictor off)</text>`;
   o += `<text x="16" y="48" ${FONT} font-size="12" fill="#4A5A50">Each bar is 100% of the program's cycles. Blue is useful work; every other colour is a bubble, tagged by the event that created it.</text>`;
   let y = top;
   rows.forEach((r, i) => {
@@ -52,11 +52,12 @@ const parts = [['retired', 'instructions (CPI 1.0 part)', '#2E86C1'], ['fill', '
   const X = h => px + pw * h / 12, Y = a => py + ph * (1 - a);
   let o = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}"><rect width="100%" height="100%" rx="10" fill="#FBFCF8" stroke="#D5DBD0"/>`;
   o += `<text x="16" y="28" ${FONT} font-size="17" font-weight="600" fill="#17251D">Branch prediction accuracy vs gshare history length</text>`;
-  o += `<text x="16" y="48" ${FONT} font-size="12" fill="#4A5A50">0 = predictor off (always not taken). The EECS 151 tape-out used 4 bits (16 counters). More is not always better on short programs.</text>`;
+  o += `<text x="16" y="48" ${FONT} font-size="12" fill="#4A5A50">Performance edition. 0 = predictor off. The EECS 151 tape-out used 4 bits (16 counters); the default is now 6.</text>`;
   for (let a = 0; a <= 1.0001; a += 0.2) o += `<line x1="${px}" x2="${px + pw}" y1="${Y(a)}" y2="${Y(a)}" stroke="#E3E8DF"/><text x="${px - 8}" y="${Y(a) + 4}" ${MONO} font-size="10.5" fill="#6B7A70" text-anchor="end">${Math.round(a * 100)}%</text>`;
   for (const h of H) o += `<text x="${X(h)}" y="${py + ph + 18}" ${MONO} font-size="10.5" fill="#6B7A70" text-anchor="middle">${h}</text>`;
   o += `<text x="${px + pw / 2}" y="${py + ph + 38}" ${FONT} font-size="11.5" fill="#4A5A50" text-anchor="middle">GSHARE_HISTORY_BITS (table has 2^bits counters)</text>`;
-  o += `<line x1="${X(DEFAULT_HISTORY_BITS)}" x2="${X(DEFAULT_HISTORY_BITS)}" y1="${py}" y2="${py + ph}" stroke="#17251D" stroke-dasharray="4 4"/><text x="${X(DEFAULT_HISTORY_BITS) + 4}" y="${py + 12}" ${FONT} font-size="10.5" fill="#17251D">tape-out</text>`;
+  o += `<line x1="${X(4)}" x2="${X(4)}" y1="${py}" y2="${py + ph}" stroke="#17251D" stroke-dasharray="4 4"/><text x="${X(4) + 4}" y="${py + 12}" ${FONT} font-size="10.5" fill="#17251D">tape-out</text>`;
+  o += `<line x1="${X(DEFAULT_HISTORY_BITS)}" x2="${X(DEFAULT_HISTORY_BITS)}" y1="${py}" y2="${py + ph}" stroke="#2E86C1" stroke-dasharray="4 4"/><text x="${X(DEFAULT_HISTORY_BITS) + 4}" y="${py + 12}" ${FONT} font-size="10.5" fill="#2E86C1">default</text>`;
   data.forEach((d, i) => {
     o += `<polyline fill="none" stroke="${cols[i]}" stroke-width="2.4" points="${d.map((v, h) => `${X(h)},${Y(v.acc)}`).join(' ')}"/>`;
     d.forEach((v, h) => { o += `<circle cx="${X(h)}" cy="${Y(v.acc)}" r="3" fill="${cols[i]}"/>`; });

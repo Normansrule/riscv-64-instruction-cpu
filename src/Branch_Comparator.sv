@@ -13,10 +13,21 @@ module BranchComparator (
     logic BRANCH_LT_SIGNED; // 1 if A < B (signed), 0 otherwise
     logic BRANCH_LT_UNSIGNED; // 1 if A < B (unsigned), 0 otherwise
 
+    // Less-than is a subtraction in disguise: A - B = A + ~B + 1, done by a prefix adder (6 levels, not 64 carry steps)
+    logic [63:0] DIFFERENCE; // A - B
+    logic NO_BORROW; // Carry out of A + ~B + 1: 1 means A >= B (unsigned)
+    ParallelPrefixAdder #(.WIDTH(64)) compare_subtractor (
+        .A (A),
+        .B (~B),
+        .CARRY_IN (1'b1),
+        .SUM (DIFFERENCE),
+        .CARRY_OUT (NO_BORROW)
+    );
+
     always_comb begin
-        BRANCH_EQUALS = (A == B); // Branch if rs1 == rs2
-        BRANCH_LT_SIGNED = ($signed(A) < $signed(B)); // Branch if rs1 < rs2 (signed)
-        BRANCH_LT_UNSIGNED = (A < B); // Branch if rs1 < rs2 (unsigned)
+        BRANCH_EQUALS = (A == B); // Branch if rs1 == rs2 (64 XORs and an OR tree: already only a few levels)
+        BRANCH_LT_UNSIGNED = !NO_BORROW; // A < B (unsigned) means A - B had to borrow
+        BRANCH_LT_SIGNED = (A[63] != B[63]) ? A[63] : DIFFERENCE[63]; // Different signs: the negative one is smaller; same signs: the sign of A - B
 
         unique case (BRANCH_FUNCT3)
             FNC_BEQ: BRANCH_TAKEN = BRANCH_EQUALS; // Branch if A Equals B

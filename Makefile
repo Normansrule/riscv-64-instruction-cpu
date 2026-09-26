@@ -3,7 +3,8 @@
 # =============================================================================
 PROG ?= 05_fibonacci
 BP   ?= 1
-HIST ?= 4
+HIST ?= 6
+CONFIG ?= performance
 SRC   = $(firstword $(wildcard programs/$(PROG).s tests/$(PROG).s $(PROG)))
 RTL   = $(shell cat src/sources.f)
 NAME  = $(basename $(notdir $(SRC)))
@@ -11,25 +12,26 @@ LIB   = build/sky130_hd_tt.lib
 LIB_URL = https://raw.githubusercontent.com/The-OpenROAD-Project/OpenROAD-flow-scripts/master/flow/platforms/sky130hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
 SV2V_URL = https://github.com/zachjs/sv2v/releases/download/v0.0.13/sv2v-Linux.zip
 MODULES = GSharePredictor BranchComparator BranchControl ALU ImmediateGenerator ControlUnit LoadControl StoreControl RegisterFile CSRFile
-BPFLAG = $(if $(filter 0,$(BP)),--bp=off) --history=$(HIST)
+BPFLAG = $(if $(filter 0,$(BP)),--bp=off) --history=$(HIST) --config=$(CONFIG)
 
-.PHONY: help deps test test-model math run pipe bp cycle rtl vsim wave lint docs charts diagram schematics synth serve clean
+TBDEF = $(if $(filter baseline,$(CONFIG)),-DBASELINE)
+.PHONY: timing help deps test test-model math run pipe bp cycle rtl vsim wave lint docs charts diagram schematics synth serve clean
 
 help:            ## list targets
 	@grep -E '^[a-z-]+:.*##' Makefile | sed 's/:.*##/\t/' | expand -t 14
-	@echo "\nvariables: PROG=<name in programs/ or tests/> (default $(PROG))  BP=1|0 (gshare on/off)  HIST=<history bits> (default 4)"
+	@echo "\nvariables: PROG=<name in programs/ or tests/> (default $(PROG))  BP=1|0  HIST=<history bits> (default 6)  CONFIG=performance|baseline"
 
 deps:            ## install Ubuntu packages (needs sudo)
 	sudo apt-get update
 	sudo apt-get install -y nodejs npm iverilog verilator gtkwave yosys graphviz librsvg2-bin make git curl unzip
 
-test:            ## full regression: model vs EXPECT lines vs RTL, cycle-exact, predictor on and off
+test:            ## full regression: both builds, predictor on and off, RTL vs model cycle-exact (Verilator, else Icarus)
 	node tools/test.mjs
 
 test-model:      ## regression without a Verilog simulator (model only)
 	node tools/test.mjs --no-rtl
 
-math:            ## verify cycles = N + 5 + L + 3F + R on every program
+math:            ## verify cycles = N + 5 + L + 3F + R + K on every program, both builds
 	node tools/verify_math.mjs
 
 run:             ## run PROG on the model:   make run PROG=09_primes_sieve BP=0
@@ -46,7 +48,7 @@ cycle:           ## explain one cycle:        make cycle PROG=03_load_use C=5
 
 build/sim.vvp: $(RTL) tb/riscv64_testbench.sv
 	@mkdir -p build
-	iverilog -g2012 -o $@ $(RTL) tb/riscv64_testbench.sv
+	iverilog -g2012 $(TBDEF) -o $@ $(RTL) tb/riscv64_testbench.sv
 
 rtl: build/sim.vvp  ## run PROG on the SystemVerilog RTL (Icarus Verilog)
 	@mkdir -p build
@@ -55,7 +57,7 @@ rtl: build/sim.vvp  ## run PROG on the SystemVerilog RTL (Icarus Verilog)
 	@echo "per-cycle pipeline trace: build/$(NAME).rtl.trace"
 
 build/vsim/vsim: $(RTL) tb/riscv64_testbench.sv
-	verilator --binary --timing -Wno-fatal -Wno-lint -Wno-style $(RTL) tb/riscv64_testbench.sv --top-module riscv64_testbench -Mdir build/vsim -o vsim
+	verilator --binary --timing -O3 -Wno-fatal -Wno-lint -Wno-style $(TBDEF) $(RTL) tb/riscv64_testbench.sv --top-module riscv64_testbench -Mdir build/vsim -o vsim
 
 vsim: build/vsim/vsim  ## run PROG on the Verilator-compiled RTL (much faster)
 	node tools/rv.mjs asm $(SRC) -o build/$(NAME)
@@ -77,6 +79,10 @@ charts:          ## CPI stack and predictor sweep charts (docs/img/charts)
 
 diagram:         ## datapath block diagram (docs/img/cpu_block_diagram.svg)
 	node tools/blockdiagram.mjs
+
+timing:          ## logic-only sky130 timing of both builds (sv2v + Yosys + ABC): see docs/PERFORMANCE.md
+	./tools/timing.sh performance
+	./tools/timing.sh baseline
 
 $(LIB):
 	@mkdir -p build

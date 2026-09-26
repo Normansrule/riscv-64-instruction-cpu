@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1840 1010" width="1840" height="1010">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1840 1024" width="1840" height="1024">
 <defs><marker id="a-data" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2B3A31"/></marker><marker id="a-fwdE" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#E08E0B"/></marker><marker id="a-fwdM" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#27AE60"/></marker><marker id="a-fwdW" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C0392B"/></marker><marker id="a-flush" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C2185B"/></marker><marker id="a-redirect" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#17A2B8"/></marker><marker id="a-pred" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#00796B"/></marker><marker id="a-hold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#B8860B"/></marker><marker id="a-ctrl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6A4FC8"/></marker></defs>
 <rect width="100%" height="100%" rx="12" fill="#FBFCF8" stroke="#D5DBD0"/>
 <text x="20" y="28" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="17" font-weight="600" fill="#17251D" text-anchor="start">Riscv64 (src/Riscv64.sv): 6 stage RV64IM pipeline with GShare prediction, forwarding into DECODE and hazard control</text>
@@ -198,8 +198,8 @@
 <path d="M970,206 L1000,206" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
 <path d="M970,320 L1000,320" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
 <rect x="1000" y="346" width="130" height="56" rx="6" fill="#FFFFFF" stroke="#2B3A31" stroke-width="1.6"/>
-<text x="1065" y="364" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="600" fill="#17251D" text-anchor="middle">MultiplyDivideUnit</text>
-<text x="1065" y="380" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">MUL, DIV, REM (+W)</text>
+<text x="1065" y="364" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="600" fill="#17251D" text-anchor="middle">Iterative M unit</text>
+<text x="1065" y="380" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">MUL 7, DIV 3+bits cycles</text>
 <polygon points="1100,216 1124,232 1124,280 1100,296" fill="#F3F5F0" stroke="#2B3A31" stroke-width="1.6"/>
 <text x="1112" y="210" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#4A5A50" text-anchor="middle">result</text>
 <path d="M1070,240 L1100,240" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
@@ -275,7 +275,7 @@
 <path d="M1716,200 L1716,88 L806,88 L806,205" fill="none" stroke="#C0392B" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#a-fwdW)"/>
 <text x="1340" y="85" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#C0392B" text-anchor="start">WRITEBACK_DATA: forward + write rd</text>
 <path d="M806,88 L690,88 L690,150" fill="none" stroke="#C0392B" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#a-fwdW)"/>
-<rect x="20" y="782" width="1800" height="196" rx="8" fill="#FFF" stroke="#D5DBD0"/>
+<rect x="20" y="782" width="1800" height="204" rx="8" fill="#FFF" stroke="#D5DBD0"/>
 <text x="36" y="802" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#17251D" text-anchor="start">How to read this diagram</text>
 <path d="M36,822 L80,822" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
 <text x="90" y="826" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#17251D" text-anchor="start">data (64-bit values, 32-bit instructions)</text>
@@ -296,5 +296,6 @@
 <text x="36" y="886" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4A5A50" text-anchor="start">Every clock edge, each thick bar captures the results of the stage to its left: 6 instructions are in flight at once.</text>
 <text x="36" y="906" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4A5A50" text-anchor="start">Data hazards are fixed by forwarding INTO DECODE (EECS 151 style): the newest value of rs1/rs2 is latched into EXECUTE with the instruction.</text>
 <text x="36" y="926" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4A5A50" text-anchor="start">Branches are guessed twice: FETCH1 reads a gshare counter, FETCH2 redirects predicted-taken branches and every JAL; EXECUTE checks the guess.</text>
-<text x="36" y="946" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4A5A50" text-anchor="start">Numbers to remember: pipeline fill 5 cycles, load stall 1, FETCH2 redirect 1, wrong guess or JALR 3. Exact: cycles = N + 5 + L + 3F + R (docs/MATH.md).</text>
+<text x="36" y="946" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4A5A50" text-anchor="start">Numbers to remember: pipeline fill 5 cycles, load stall 1, FETCH2 redirect 1, wrong guess 3. Exact: cycles = N + 5 + L + 3F + R + K (docs/MATH.md).</text>
+<text x="36" y="966" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4A5A50" text-anchor="start">Performance edition (default): a Branch Target Buffer beside the GSharePredictor makes known taken branches free, and a Return Address Stack in FETCH2 predicts ret (docs/PERFORMANCE.md).</text>
 </svg>

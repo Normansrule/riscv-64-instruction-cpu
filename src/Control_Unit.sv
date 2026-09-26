@@ -19,6 +19,8 @@ module ControlUnit (
     output logic IS_A_BRANCH_INSTRUCTION,
     output logic IS_A_JAL_INSTRUCTION,
     output logic IS_A_JALR_INSTRUCTION,
+    output logic USES_REGISTER1, // This instruction really reads rs1 (used for precise load stalls)
+    output logic USES_REGISTER2, // This instruction really reads rs2
     output immediate_type_select_t IMMEDIATE_TYPE_SELECT,
     output writeback_select_t WRITEBACK_SELECT,
     output alu_op_t ALU_OPERATION
@@ -45,6 +47,17 @@ module ControlUnit (
         .multiply_divide_type(INSTRUCTION_MULTIPLY_DIVIDE_TYPE),
         .ALUop(ALU_OPERATION)
     );
+
+    // Which source registers are REALLY read. LOAD_STALL can use these instead of the raw rs1/rs2 fields,
+    // so "addi a1, zero, 5" right after "ld t0" no longer stalls just because its immediate looks like x5.
+    always_comb begin
+        unique case (INSTRUCTION_OPCODE)
+            OPC_ARI_RTYPE, OPC_ARI_RTYPE_WORD, OPC_STORE, OPC_BRANCH: begin USES_REGISTER1 = 1'b1; USES_REGISTER2 = 1'b1; end
+            OPC_ARI_ITYPE, OPC_ARI_ITYPE_WORD, OPC_LOAD, OPC_JALR: begin USES_REGISTER1 = 1'b1; USES_REGISTER2 = 1'b0; end
+            OPC_CSR: begin USES_REGISTER1 = (INSTRUCTION_FUNCT3 == FNC_RW) || (INSTRUCTION_FUNCT3 == FNC_RS) || (INSTRUCTION_FUNCT3 == FNC_RC); USES_REGISTER2 = 1'b0; end
+            default: begin USES_REGISTER1 = 1'b0; USES_REGISTER2 = 1'b0; end // LUI, AUIPC, JAL, FENCE
+        endcase
+    end
 
     always_comb begin
         REGISTER_WRITE_ENABLE = 1'b0;

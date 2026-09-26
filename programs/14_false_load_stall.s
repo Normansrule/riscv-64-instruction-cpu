@@ -14,12 +14,16 @@
 #   addi a1, zero, 6      imm[4:0] = 00110 = "x6" -> no stall
 #
 #   a0 = cycles for version A (false stall)    a1 = cycles for version B
-# The web simulator marks the first stall "false". Lab 5 in docs/EXPERIMENTS.md
-# adds USES_REGISTER1/USES_REGISTER2 signals to the Control Unit to remove it.
+# The web simulator marks the first stall "false". The performance edition uses
+# USES_REGISTER1/USES_REGISTER2 from the Control Unit (PRECISE_LOAD_STALL = 1), so
+# there both versions take 3 cycles.
 #
 # EXPECT: a2 = 5
 # EXPECT: a3 = 6
-# EXPECT: a0 = 4
+# EXPECT[gshare]: a0 = 4
+# EXPECT[bp-off]: a0 = 4
+# EXPECT[perf]: a0 = 3
+# EXPECT[perf-bp-off]: a0 = 3
 # EXPECT: a1 = 3
 # =============================================================================
     la   s0, value

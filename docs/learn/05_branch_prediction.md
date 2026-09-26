@@ -51,7 +51,7 @@ The Global History Register (GHR) holds the directions of the last 4 branches. X
 PC means the **same branch uses different counters in different situations**. A branch that
 alternates taken, not taken, taken, ... confuses a single counter, but with history each counter sees
 a constant pattern. Program [`11_gshare_patterns.s`](../../programs/11_gshare_patterns.s):
-2106 cycles with the predictor off, 1519 with gshare.
+2106 cycles with the predictor off, 1519 with gshare (original design; 1121 on the performance edition, whose Branch Target Buffer also removes the 1-cycle redirects).
 
 Keeping the history correct needs care: FETCH2 shifts in the **predicted** direction immediately
 (so the next branch can use it), and each instruction carries a **checkpoint** of the history. On a

@@ -21,7 +21,7 @@ export const COL = {
 };
 
 export function blockDiagramSVG() {
-  const W = 1840, H = 1010;
+  const W = 1840, H = 1024;
   const out = [];
   const add = s => out.push(s);
   const kinds = ['data', 'fwdE', 'fwdM', 'fwdW', 'flush', 'redirect', 'pred', 'hold', 'ctrl'];
@@ -142,7 +142,7 @@ export function blockDiagramSVG() {
   add(`<polygon points="1000,160 1070,190 1070,300 1000,330 1000,262 1014,245 1000,228" fill="#FFF3E0" stroke="${COL.EXECUTE}" stroke-width="2"/>`);
   text(1040, 235, 'ALU', { size: 14, weight: 700, anchor: 'middle' }); text(1040, 250, '65-bit shared', { size: 9, anchor: 'middle', fill: COL.sub }); text(1040, 261, 'adder, W ops', { size: 9, anchor: 'middle', fill: COL.sub });
   wire([[970, 206], [1000, 206]]); wire([[970, 320], [1000, 320]]);
-  box(1000, 346, 130, 56, 'MultiplyDivideUnit', ['MUL, DIV, REM (+W)'], { tsize: 11 });
+  box(1000, 346, 130, 56, 'Iterative M unit', ['MUL 7, DIV 3+bits cycles'], { tsize: 11 });
   mux(1100, 216, 24, 80, 'result', []);
   wire([[1070, 240], [1100, 240]]); wire([[1130, 374], [1140, 374], [1140, 320], [1124, 320], [1124, 290]], 'data', { arrow: false });
   wire([[1124, 256], [1305, 256]]); lbl(1136, 250, 'EXECUTE_ALU_RESULT');
@@ -184,7 +184,7 @@ export function blockDiagramSVG() {
 
   // ---------------------------------------------------------------- legend
   const ly = 800;
-  add(`<rect x="20" y="${ly - 18}" width="${W - 40}" height="196" rx="8" fill="#FFF" stroke="#D5DBD0"/>`);
+  add(`<rect x="20" y="${ly - 18}" width="${W - 40}" height="204" rx="8" fill="#FFF" stroke="#D5DBD0"/>`);
   text(36, ly + 2, 'How to read this diagram', { size: 13, weight: 700 });
   const leg = [['data', 'data (64-bit values, 32-bit instructions)'], ['fwdE', 'forward from EXECUTE'], ['fwdM', 'forward from MEMORY'], ['fwdW', 'forward / write from WRITEBACK'],
     ['redirect', 'FETCH2 redirect (1 bubble)'], ['flush', 'EXECUTE flush (3 bubbles)'], ['pred', 'branch predictor state'], ['hold', 'load stall hold']];
@@ -197,7 +197,8 @@ export function blockDiagramSVG() {
     'Every clock edge, each thick bar captures the results of the stage to its left: 6 instructions are in flight at once.',
     'Data hazards are fixed by forwarding INTO DECODE (EECS 151 style): the newest value of rs1/rs2 is latched into EXECUTE with the instruction.',
     'Branches are guessed twice: FETCH1 reads a gshare counter, FETCH2 redirects predicted-taken branches and every JAL; EXECUTE checks the guess.',
-    'Numbers to remember: pipeline fill 5 cycles, load stall 1, FETCH2 redirect 1, wrong guess or JALR 3. Exact: cycles = N + 5 + L + 3F + R (docs/MATH.md).',
+    'Numbers to remember: pipeline fill 5 cycles, load stall 1, FETCH2 redirect 1, wrong guess 3. Exact: cycles = N + 5 + L + 3F + R + K (docs/MATH.md).',
+    'Performance edition (default): a Branch Target Buffer beside the GSharePredictor makes known taken branches free, and a Return Address Stack in FETCH2 predicts ret (docs/PERFORMANCE.md).',
   ];
   notes.forEach((s, i) => text(36, ly + 86 + i * 20, s, { size: 11.5, fill: COL.sub }));
   add('</svg>');

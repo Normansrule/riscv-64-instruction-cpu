@@ -11,16 +11,25 @@
 #   a1 = cycles for the same 8 squares written inline
 #   a2 = a0 - a1 = the price of calling: 56 / 8 = 7 cycles per call
 #        = 1 redirect bubble + 3 flush bubbles + the mv, jal and ret instructions
-# Lab 6 in docs/EXPERIMENTS.md adds a Return Address Stack so "ret" is
-# predicted in FETCH2 and stops flushing.
+# The performance edition fixes both: the Branch Target Buffer makes "call" free
+# (0 bubbles) and the Return Address Stack predicts "ret" in FETCH2 (1 bubble, no
+# flush): 56 -> 33 cycles for 8 calls. But its multiply takes 7 cycles instead of
+# 1 (for a faster clock), so the inline loop gets slower: 43 -> 85. A real trade-off.
 #
 # EXPECT: a3 = 204
 # EXPECT: a4 = 204
-# EXPECT: a2 = 56
+# EXPECT[gshare]: a2 = 56
+# EXPECT[bp-off]: a2 = 56
 # EXPECT[gshare]: a0 = 99
 # EXPECT[gshare]: a1 = 43
 # EXPECT[bp-off]: a0 = 110
 # EXPECT[bp-off]: a1 = 54
+# EXPECT[perf]: a0 = 118
+# EXPECT[perf]: a1 = 85
+# EXPECT[perf]: a2 = 33
+# EXPECT[perf-bp-off]: a0 = 135
+# EXPECT[perf-bp-off]: a1 = 102
+# EXPECT[perf-bp-off]: a2 = 33
 # =============================================================================
     li   sp, 0xF000
     li   s4, 0               # sum of squares (called version)

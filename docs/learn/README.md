@@ -11,7 +11,7 @@ lines of SystemVerilog that implement it, and gives you a program to run so you 
 | 3 | [The six stages and how to read the diagrams](03_the_six_stages.md) | follow one instruction through the block diagram and the pipeline chart | `make cycle PROG=02_forwarding C=7` |
 | 4 | [Data hazards: forwarding and load stalls](04_data_hazards.md) | predict when the pipeline stalls | `make pipe PROG=03_load_use` |
 | 5 | [Control hazards and branch prediction](05_branch_prediction.md) | explain gshare, redirects and flushes | `make bp PROG=11_gshare_patterns` |
-| 6 | [Measuring performance](06_performance.md) | compute CPI and account for every cycle | `make run PROG=12_measure_cpi` |
+| 6 | [Measuring performance](06_performance.md) | compute CPI and account for every cycle; see also [PERFORMANCE.md](../PERFORMANCE.md) | `make run PROG=12_measure_cpi` |
 | 7 | [From RTL to silicon](07_silicon.md) | read a layout, a timing report and an area report | `make synth` |
 | 8 | [Using the CPU: write and run your own program](08_using_the_cpu.md) | write, assemble, simulate and debug RISC-V assembly | `make run PROG=my_program` |
 

@@ -16,6 +16,8 @@
 # READ in EXECUTE but instret COUNTS in WRITEBACK, so a few instructions that
 # were still in flight around the reads land inside the window. Real CPUs have
 # the same effect, which is why benchmarks measure long loops.
+# [gshare]/[bp-off] values are for the original design (make test builds it with -DBASELINE),
+# [perf] values for the performance edition (BTB, return stack, 6 history bits): CPI 1.25 -> 1.03.
 # The values are exact and repeatable because the pipeline is deterministic:
 # `make test` checks them against BOTH the model and the RTL.
 # EXPECT[gshare]: a0 = 104
@@ -24,6 +26,12 @@
 # EXPECT[bp-off]: a0 = 139
 # EXPECT[bp-off]: a1 = 82
 # EXPECT[bp-off]: a2 = 169
+# EXPECT[perf]: a0 = 86
+# EXPECT[perf]: a1 = 83
+# EXPECT[perf]: a2 = 103
+# EXPECT[perf-bp-off]: a0 = 139
+# EXPECT[perf-bp-off]: a1 = 82
+# EXPECT[perf-bp-off]: a2 = 169
 # =============================================================================
     li   t0, 20              # loop 20 times
     li   t1, 0

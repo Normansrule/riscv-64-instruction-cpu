@@ -14,8 +14,8 @@ For the original chip, 1 / 26 ns = **38.5 MHz**. A program with CPI 1.3 then exe
 ## 2. Exact cycle count
 
 ```text
-cycles = N + (S - 1) + L + P * F + R
-       = N + 5       + L + 3 * F + R
+cycles = N + (S - 1) + L + P * F + R + K
+       = N + 5       + L + 3 * F + R + K
 ```
 
 | symbol | meaning | source in the RTL |
@@ -24,7 +24,8 @@ cycles = N + (S - 1) + L + P * F + R
 | S | stages = 6; the first instruction needs 6 cycles, so S - 1 = 5 fill bubbles | |
 | L | load stalls, 1 bubble each | `LOAD_STALL` |
 | F | flushes: wrong branch guesses + every JALR, P = 3 bubbles each | `FLUSH_FETCH1_FETCH2_DECODE` |
-| R | FETCH2 redirects whose bubble survives, 1 each | `FETCH2_BRANCH_OFF_OR_CONTINUE` |
+| R | FETCH2 redirects whose bubble survives, 1 each (taken branches found in the BTB cost 0 and are not counted) | `FETCH2_BRANCH_OFF_OR_CONTINUE` |
+| K | cycles the iterative M unit holds EXECUTE (performance build) | `MULTIPLY_DIVIDE_STALL` |
 
 **Why 3 for a flush:** when EXECUTE flushes, FETCH1, FETCH2 and DECODE all hold wrong-path
 instructions. They are replaced by bubbles, and the correct instruction starts in FETCH1 on the next
@@ -35,15 +36,18 @@ overwritten, so it is counted inside the flush's 3. The model tags every bubble 
 counts them as they reach WRITEBACK, so the equation is an identity, not an estimate:
 
 ```bash
-make math     # checks all 15 programs, predictor on and off
+make math     # checks all 16 programs, both builds, predictor on and off
 ```
 
-Example, `04_branch_penalty.s` (10 loop iterations, N = 33):
+Example, `04_branch_penalty.s` (10 loop iterations, N = 33), baseline build:
 
 | predictor | L | F | R | cycles = 33 + 5 + L + 3F + R |
 |---|---:|---:|---:|---:|
 | off | 0 | 9 | 0 | 33 + 5 + 27 = **65** |
 | gshare | 0 | 1 | 9 | 33 + 5 + 3 + 9 = **50** |
+
+On the performance build with gshare, the Branch Target Buffer removes 8 of those 9 redirects
+(the first taken branch fills the BTB): 33 + 5 + 3 + 1 = **42** cycles.
 
 ## 3. Branch cost per branch
 

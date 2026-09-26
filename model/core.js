@@ -24,7 +24,29 @@ export const SHORT = { FETCH1: 'F1', FETCH2: 'F2', DECODE: 'D', EXECUTE: 'E', ME
 export const RESET_PC = 0x2000;
 export const MMIO_PUTCHAR = 0x10000000n;
 export const CSR = { TOHOST: 0x51E, STATUS: 0x50A, HARTID: 0x50B, CYCLE: 0xC00, INSTRET: 0xC02, MHARTID: 0xF14 };
-export const DEFAULT_HISTORY_BITS = 4; // GSHARE_HISTORY_BITS in src/Riscv64.sv
+export const DEFAULT_HISTORY_BITS = 6; // GSHARE_HISTORY_BITS in src/Riscv64.sv
+// The two builds `make test` checks (parameters of src/Riscv64.sv):
+export const CONFIGS = {
+  performance: { historyBits: 6, btb: true, ras: true, preciseStall: true, iterativeMdu: true },
+  baseline: { historyBits: 4, btb: false, ras: false, preciseStall: false, iterativeMdu: false }, // the original EECS 151 behaviour
+};
+// ControlUnit USES_REGISTER1 / USES_REGISTER2 (by opcode, exactly as src/Control_Unit.sv)
+export function usesRegisters(word) {
+  const op = word & 0x7f, f3 = (word >>> 12) & 7;
+  if (op === 0x33 || op === 0x3b || op === 0x23 || op === 0x63) return { rs1: true, rs2: true };
+  if (op === 0x13 || op === 0x1b || op === 0x03 || op === 0x67) return { rs1: true, rs2: false };
+  if (op === 0x73) return { rs1: f3 === 1 || f3 === 2 || f3 === 3, rs2: false };
+  return { rs1: false, rs2: false };
+}
+// Cycles an M instruction spends iterating in IterativeMultiplyDivideUnit (it occupies EXECUTE for steps + 3 cycles:
+// IDLE capture, PREPARE, the steps, DONE)
+export function multiplyDivideSteps(op, isWord, a) {
+  if (!['DIV', 'DIVU', 'REM', 'REMU'].includes(op)) return 4;
+  const signed = op === 'DIV' || op === 'REM';
+  let x = isWord ? (signed ? BigInt.asUintN(64, BigInt.asIntN(32, a)) : BigInt.asUintN(32, a)) : a;
+  if (signed && (x >> 63n)) x = BigInt.asUintN(64, -x);
+  return Math.max(1, x.toString(2).replace(/^0+/, '').length);
+}
 
 const u64 = x => BigInt.asUintN(64, x);
 const s64 = x => BigInt.asIntN(64, x);
@@ -205,7 +227,11 @@ const BUBBLE = cause => ({ valid: false, cause });
 // ---------------------------------------------------------------- the core
 export class Core {
   // opts.bp: false = always predict not taken; opts.historyBits: GSHARE_HISTORY_BITS
-  constructor(image, { bp = true, historyBits = DEFAULT_HISTORY_BITS } = {}) {
+  constructor(image, { bp = true, historyBits = DEFAULT_HISTORY_BITS, btb = true, ras = true, preciseStall = true, iterativeMdu = true } = {}) {
+    this.opts = { bp, historyBits, btb, ras, preciseStall, iterativeMdu };
+    this.btb = Array.from({ length: 16 }, () => ({ valid: false, tag: 0, target: 0, isJal: false }));
+    this.ras = { stack: new Array(8).fill(0n), top: 0 };
+    this.mdu = { state: 'IDLE', left: 0 };
     this.mem = new Uint8Array(65536);
     this.mem.set((image.bytes || image).slice(0, 65536)); // absolute addresses: code starts at RESET_PC
     this.regs = new Array(32).fill(0n);
@@ -216,8 +242,8 @@ export class Core {
     this.cycle = 0; this.halted = false; this.output = '';
     this.instrs = []; this.nextId = 0;
     this.stats = { cycles: 0, retired: 0, loadStalls: 0, falseLoadStalls: 0, flushes: 0, mispredicts: 0, jalrFlushes: 0,
-      redirects: 0, branches: 0, predictedTaken: 0, forwards: 0,
-      bubbles: { fill: 0, loaduse: 0, flush: 0, redirect: 0 } };
+      redirects: 0, branches: 0, predictedTaken: 0, forwards: 0, btbRedirects: 0, returnsPredicted: 0, multiplyDivideBusy: 0,
+      bubbles: { fill: 0, loaduse: 0, flush: 0, redirect: 0, muldiv: 0 } };
   }
 
   fetch(pc) { const m = this.mem, a = pc & 0xffff; return (m[a] | (m[(a + 1) & 0xffff] << 8) | (m[(a + 2) & 0xffff] << 16) | (m[(a + 3) & 0xffff] << 24)) >>> 0; }
@@ -264,7 +290,7 @@ export class Core {
     }
 
     // ================= EXECUTE =================
-    let FLUSH = false, adjust = 0, fwdE = 0n, exNext = null, storeOp = null, csrWrite = null, bpTrain = null, restoreGhr = null;
+    let FLUSH = false, adjust = 0, fwdE = 0n, exNext = null, storeOp = null, csrWrite = null, bpTrain = null, restoreGhr = null, btbWrite = null, MDU_STALL = false, mduSteps = 0;
     if (e.valid) {
       const A = e.aIsPC ? BigInt(e.pc) : e.rs1v, B = e.bIsImm ? e.imm : e.rs2v;
       const aluOut = alu(A, B, e.aluOp, e.isWord);
@@ -281,10 +307,15 @@ export class Core {
       } else if (e.isJal) {
         adjust = e.target; ev.resolve = { kind: 'jal', predicted: true, actual: true, mispredict: false, target: e.target };
       } else if (e.isJalr) {
-        adjust = Number(jalrTarget & 0xffffffffn); FLUSH = true;
-        ev.resolve = { kind: 'jalr', predicted: false, actual: true, mispredict: true, target: adjust };
+        adjust = Number(jalrTarget & 0xffffffffn);
+        const right = !!e.returnPredicted && BigInt(e.target) === (e.rs1v & ~1n); // returns have offset 0: compare with rs1
+        FLUSH = !right;
+        ev.resolve = { kind: 'jalr', predicted: !!e.returnPredicted, actual: true, mispredict: !right, target: adjust };
+        if (right) this.stats.returnsPredicted++;
       }
       if (FLUSH) restoreGhr = e.isBranch ? ((e.ckpt << 1) | (taken ? 1 : 0)) & this.bp.mask : e.ckpt;
+      if (this.opts.btb && ((e.isBranch && taken) || e.isJal)) btbWrite = { idx: (e.pc >>> 2) & 15, tag: (e.pc >>> 6) & 0x3ffffff, target: e.target >>> 0, isJal: !!e.isJal };
+      if (e.isMulDiv && this.opts.iterativeMdu) { MDU_STALL = this.mdu.state !== 'DONE'; mduSteps = multiplyDivideSteps(e.aluOp, !!e.isWord, e.rs1v); }
       const csrData = this.csrRead(e.csrAddr);
       fwdE = [result, 0n, pc4, csrData][e.wbSel];
       if (e.csrWrite) {
@@ -310,7 +341,8 @@ export class Core {
       if (w.valid && w.regWrite && w.rd !== 0 && w.rd === r) return [w.data, 'WRITEBACK'];
       return [this.regs[r], null];
     };
-    const LOAD_STALL = d.valid && e.valid && !!e.memRead && e.rd !== 0 && (e.rd === rs1f || e.rd === rs2f);
+    const useD = usesRegisters(dw), exact = this.opts.preciseStall;
+    const LOAD_STALL = d.valid && e.valid && !!e.memRead && e.rd !== 0 && ((e.rd === rs1f && (!exact || useD.rs1)) || (e.rd === rs2f && (!exact || useD.rs2)));
     let deNext = null;
     if (d.valid) {
       ev.stages.DECODE = { id: d.id, pc: d.pc };
@@ -319,32 +351,43 @@ export class Core {
       const use = usesRegs(decode(d.word));
       ev.fwd = { a: use.rs1 ? s1 : null, b: use.rs2 ? s2 : null, rs1: rs1f, rs2: rs2f };
       deNext = { valid: true, id: d.id, pc: d.pc, word: d.word, ...c, rs1v: v1, rs2v: v2, imm: immediate(d.word, c.immType), rd: rdf,
-        funct3: bits(d.word, 14, 12), csrAddr: bits(d.word, 31, 20), pred: d.pred, idx: d.idx, ckpt: d.ckpt, target: d.target };
-      if (LOAD_STALL) ev.loadStallReal = (use.rs1 && e.rd === rs1f) || (use.rs2 && e.rd === rs2f);
+        funct3: bits(d.word, 14, 12), csrAddr: bits(d.word, 31, 20), pred: d.pred, idx: d.idx, ckpt: d.ckpt, target: d.target,
+        returnPredicted: d.returnPredicted, isCall: d.isCall, isReturn: d.isReturn, rasCkpt: d.rasCkpt };
+      if (LOAD_STALL) ev.loadStallReal = (useD.rs1 && e.rd === rs1f) || (useD.rs2 && e.rd === rs2f);
     }
 
     // ================= FETCH2 =================
-    let REDIRECT = false, f2Target = 0, f2IsBranch = false;
+    let REDIRECT = false, f2Target = 0, f2IsBranch = false, f2Call = false, f2Return = false, f2ReturnPredicted = false;
     if (f2.valid) {
-      const op = f2.word & 0x7f, isJal = op === OPC.JAL;
+      const op = f2.word & 0x7f, isJal = op === OPC.JAL, isJalr = op === OPC.JALR;
+      const rdF = bits(f2.word, 11, 7), rs1F = bits(f2.word, 19, 15);
       f2IsBranch = op === OPC.BRANCH;
+      f2Call = (isJal || isJalr) && (rdF === 1 || rdF === 5);
+      f2Return = isJalr && rdF === 0 && (rs1F === 1 || rs1F === 5) && bits(f2.word, 31, 20) === 0;
+      f2ReturnPredicted = this.opts.ras && f2Return;
       const imm = isJal ? immediate(f2.word, 'J') : immediate(f2.word, 'B');
-      f2Target = Number(u64(BigInt(f2.pc) + imm) & 0xffffffffn);
-      REDIRECT = isJal || (f2IsBranch && f2.pred);
+      f2Target = f2ReturnPredicted ? Number(this.ras.stack[this.ras.top] & 0xffffffffn) : Number(u64(BigInt(f2.pc) + imm) & 0xffffffffn);
+      REDIRECT = (isJal || (f2IsBranch && f2.pred) || f2ReturnPredicted) && !f2.btbRedirected;
       ev.stages.FETCH2 = { id: f2.id, pc: f2.pc };
-      if (f2IsBranch || isJal) ev.predecode = { kind: isJal ? 'jal' : 'branch', predicted: REDIRECT, target: f2Target, idx: f2.idx, counter: f2.counter };
+      if (f2IsBranch || isJal || f2ReturnPredicted) ev.predecode = { kind: isJal ? 'jal' : f2IsBranch ? 'branch' : 'return', predicted: REDIRECT || !!f2.btbRedirected, byBtb: !!f2.btbRedirected, target: f2Target, idx: f2.idx, counter: f2.counter };
     }
 
     // ================= FETCH1 =================
     const word = this.fetch(this.F1PC);
     const pred = this.bp.predict(this.F1PC);
+    const be = this.btb[(this.F1PC >>> 2) & 15];
+    const btbHit = be.valid && be.tag === ((this.F1PC >>> 6) & 0x3ffffff);
+    const F1_BTB_REDIRECT = this.opts.btb && btbHit && (be.isJal || pred.taken);
+    const f1Next = F1_BTB_REDIRECT ? be.target : (this.F1PC + 4) >>> 0;
+    ev.btb = { hit: btbHit, redirect: F1_BTB_REDIRECT, target: btbHit ? be.target : null };
     const f1Id = this.nextId;
     this.instr(f1Id, this.F1PC, word);
     ev.stages.FETCH1 = { id: f1Id, pc: this.F1PC };
     ev.predict = pred;
 
-    const ADVANCE = !FLUSH && !LOAD_STALL;
+    const ADVANCE = !FLUSH && !LOAD_STALL && !MDU_STALL;
     ev.stall = LOAD_STALL && !FLUSH;
+    ev.busy = MDU_STALL && !FLUSH;
     ev.flush = FLUSH;
     ev.redirect = REDIRECT && ADVANCE;
     ev.ghr = this.bp.ghr;
@@ -365,6 +408,20 @@ export class Core {
     if (csrWrite) { if (csrWrite.addr === CSR.TOHOST) this.csr.tohost = csrWrite.value; else if (csrWrite.addr === CSR.STATUS) this.csr.status = csrWrite.value; }
     this.csr.cycle++; if (w.valid) this.csr.instret++;
     if (bpTrain) { ev.bpUpdate = { ...this.bp.train(bpTrain.idx, bpTrain.taken), taken: bpTrain.taken }; this.stats.branches++; }
+    const rasTopBefore = this.ras.top; // DECODE_RAS_CHECKPOINT: the pointer BEFORE this cycle's push or pop
+    if (btbWrite) Object.assign(this.btb[btbWrite.idx], { valid: true, tag: btbWrite.tag, target: btbWrite.target, isJal: btbWrite.isJal });
+    if (this.opts.ras) {
+      if (FLUSH) this.ras.top = (e.rasCkpt + (e.isCall ? 1 : 0) - (e.isReturn ? 1 : 0) + 8) & 7;
+      else if (ADVANCE && f2.valid && f2Call) { this.ras.top = (this.ras.top + 1) & 7; this.ras.stack[this.ras.top] = BigInt((f2.pc + 4) >>> 0); }
+      else if (ADVANCE && f2.valid && f2Return) this.ras.top = (this.ras.top + 7) & 7;
+    }
+    if (this.opts.iterativeMdu) {
+      const m = this.mdu;
+      if (m.state === 'IDLE') { if (e.valid && e.isMulDiv) { m.state = 'PREPARE'; m.left = mduSteps; } }
+      else if (m.state === 'PREPARE') m.state = 'BUSY';
+      else if (m.state === 'BUSY') { if (m.left === 1) m.state = 'DONE'; m.left--; }
+      else m.state = 'IDLE';
+    }
     if (FLUSH) { this.bp.ghr = restoreGhr; ev.ghrRestore = restoreGhr; }
     else if (ADVANCE && f2.valid && f2IsBranch) { this.bp.ghr = ((this.bp.ghr << 1) | (f2.pred ? 1 : 0)) & this.bp.mask; ev.ghrShift = f2.pred ? 1 : 0; }
 
@@ -372,6 +429,8 @@ export class Core {
     if (ev.stall) { this.stats.loadStalls++; if (!ev.loadStallReal) this.stats.falseLoadStalls++; }
     if (FLUSH) { this.stats.flushes++; if (e.isJalr) this.stats.jalrFlushes++; else this.stats.mispredicts++; }
     if (ev.redirect) this.stats.redirects++;
+    if (ev.busy) this.stats.multiplyDivideBusy++;
+    if (ADVANCE && !REDIRECT && F1_BTB_REDIRECT) this.stats.btbRedirects++;
 
     // pipeline registers
     this.w = m.valid ? { valid: true, id: m.id, pc: m.pc, rd: m.rd, regWrite: m.regWrite, data: fwdM, writesTohost: m.writesTohost } : BUBBLE(m.cause);
@@ -386,14 +445,17 @@ export class Core {
       this.F1PC = adjust >>> 0;
     } else if (LOAD_STALL) {
       this.e = BUBBLE('loaduse');
+    } else if (MDU_STALL) {
+      this.m = BUBBLE('muldiv'); // Execute holds the M instruction; Memory gets a bubble
     } else {
       if (deNext) { this.e = deNext; if (ev.fwd.a) this.stats.forwards++; if (ev.fwd.b) this.stats.forwards++; }
       else this.e = BUBBLE(d.cause);
-      this.d = f2.valid ? { valid: true, id: f2.id, pc: f2.pc, word: f2.word, pred: f2.pred, idx: f2.idx, ckpt: ev.ghr, target: f2Target } : BUBBLE(f2.cause);
+      this.d = f2.valid ? { valid: true, id: f2.id, pc: f2.pc, word: f2.word, pred: f2.pred, idx: f2.idx, ckpt: ev.ghr, target: f2Target,
+        returnPredicted: f2ReturnPredicted, isCall: this.opts.ras && f2Call, isReturn: this.opts.ras && f2Return, rasCkpt: rasTopBefore } : BUBBLE(f2.cause);
       if (REDIRECT) { squash(f1Id); this.f2 = BUBBLE('redirect'); }
-      else this.f2 = { valid: true, id: f1Id, pc: this.F1PC, word, pred: pred.taken, idx: pred.idx, counter: pred.counter };
+      else this.f2 = { valid: true, id: f1Id, pc: this.F1PC, word, pred: pred.taken, idx: pred.idx, counter: pred.counter, btbRedirected: F1_BTB_REDIRECT };
       this.nextId++;
-      this.F1PC = (REDIRECT ? f2Target : this.F1PC + 4) >>> 0;
+      this.F1PC = (REDIRECT ? f2Target : f1Next) >>> 0;
     }
     this.stats.cycles = this.cycle;
     return ev;
@@ -410,6 +472,6 @@ export class Core {
   // Same line format the RTL testbench prints: `make test` diffs the two.
   static traceLine(ev) {
     const f = s => (ev.stages[s] ? (ev.stages[s].pc >>> 0).toString(16).padStart(8, '0') : '--------');
-    return `C${ev.cycle} ` + STAGES.map(s => `${SHORT[s]}:${f(s)}`).join(' ') + (ev.stall ? ' STALL' : '') + (ev.flush ? ' FLUSH' : '') + (ev.redirect ? ' REDIRECT' : '');
+    return `C${ev.cycle} ` + STAGES.map(s => `${SHORT[s]}:${f(s)}`).join(' ') + (ev.stall ? ' STALL' : '') + (ev.flush ? ' FLUSH' : '') + (ev.redirect ? ' REDIRECT' : '') + (ev.busy ? ' BUSY' : '');
   }
 }

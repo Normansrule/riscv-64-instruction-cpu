@@ -7,8 +7,18 @@
 //   +BP=0                    turn the GShare predictor off (always predict not taken)
 //   +MAXCYCLES=N             safety limit (default 2000000)
 // =====================================================================================================
+//   Build-time configuration (make test builds both):
+//     default               the performance edition (BTB, RAS, precise load stalls, iterative M unit, 6 history bits)
+//     -DBASELINE            the original EECS 151 behaviour widened to RV64 (all features off, 4 history bits)
 `timescale 1ns/1ps
 `default_nettype none
+`ifdef BASELINE
+  `define CONFIG_FEATURES 1'b0
+  `define CONFIG_HISTORY 4
+`else
+  `define CONFIG_FEATURES 1'b1
+  `define CONFIG_HISTORY 6
+`endif
 
 module riscv64_testbench;
   logic clk = 1'b0;
@@ -21,9 +31,15 @@ module riscv64_testbench;
   logic [4:0]  DEBUG_REGISTER_ADDRESS = 5'd0;
   logic [5:0]  TRACE_VALID;
   logic [63:0] TRACE_FETCH1_PC, TRACE_FETCH2_PC, TRACE_DECODE_PC, TRACE_EXECUTE_PC, TRACE_MEMORY_PC, TRACE_WRITEBACK_PC;
-  logic        TRACE_LOAD_STALL, TRACE_FLUSH, TRACE_REDIRECT;
+  logic        TRACE_LOAD_STALL, TRACE_FLUSH, TRACE_REDIRECT, TRACE_MULTIPLY_DIVIDE_STALL;
 
-  riscv64_top dut (.*);
+  riscv64_top #(
+    .GSHARE_HISTORY_BITS (`CONFIG_HISTORY),
+    .BTB_ENABLE (`CONFIG_FEATURES),
+    .RAS_ENABLE (`CONFIG_FEATURES),
+    .PRECISE_LOAD_STALL (`CONFIG_FEATURES),
+    .ITERATIVE_MULTIPLY_DIVIDE (`CONFIG_FEATURES)
+  ) dut (.*);
 
   integer TRACE_FILE = 0, MAX_CYCLES, CYCLE = 0, RETIRED = 0, INDEX, BP_ARGUMENT;
   logic [1023:0] TRACE_FILE_NAME, VCD_FILE_NAME;
@@ -60,6 +76,7 @@ module riscv64_testbench;
       if (TRACE_LOAD_STALL) $fwrite(TRACE_FILE, " STALL");
       if (TRACE_FLUSH) $fwrite(TRACE_FILE, " FLUSH");
       if (TRACE_REDIRECT) $fwrite(TRACE_FILE, " REDIRECT");
+      if (TRACE_MULTIPLY_DIVIDE_STALL) $fwrite(TRACE_FILE, " BUSY");
       $fwrite(TRACE_FILE, "\n");
     end
     if (CYCLE >= MAX_CYCLES) begin

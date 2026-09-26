@@ -12,8 +12,11 @@ introduction read the [learning path](learn/README.md) first.
 | instruction set | RV64I + M (multiply/divide) + Zicsr (CSR instructions): 71 instructions, see [`binary/`](../binary/README.md) |
 | pipeline | 6 stages, in order, single issue: FETCH1, FETCH2, DECODE, EXECUTE, MEMORY, WRITEBACK |
 | data hazards | forwarding **into DECODE** from EXECUTE, MEMORY, WRITEBACK; 1-cycle `LOAD_STALL` |
-| branch prediction | `GSharePredictor`: 2^`GSHARE_HISTORY_BITS` two-bit counters (default 4 bits = 16), speculative global history with checkpoint repair |
-| branch penalties | predicted-taken branch or JAL: 1 bubble (FETCH2 redirect); wrong guess or any JALR: 3 bubbles (flush) |
+| branch prediction | `GSharePredictor`: 2^`GSHARE_HISTORY_BITS` two-bit counters (default 6 bits = 64; the tape-out used 4), speculative global history with checkpoint repair; a 16-entry `BranchTargetBuffer` in FETCH1; an 8-entry `ReturnAddressStack` in FETCH2 |
+| branch penalties | taken branch or JAL found in the BTB: 0 bubbles; otherwise a FETCH2 redirect: 1; predicted return: 1; wrong guess or unpredicted JALR: 3 (flush) |
+| multiply / divide | `IterativeMultiplyDivideUnit`: multiply 7 cycles, divide 3 + significant bits of the dividend (baseline build: single cycle) |
+| clock (logic only, sky130 typical) | 4.8 ns, about 207 MHz with the M unit; see [PERFORMANCE.md](PERFORMANCE.md) |
+| builds | performance (default) and baseline (`-DBASELINE`, the original behaviour); `make test` checks both |
 | memory | `ScratchpadMemory`: 64 KiB unified, instruction port (32-bit) and data port (64-bit, byte mask), no stalls |
 | reset PC | `0x2000` (`PC_RESET` in [`src/const_pkg.sv`](../src/const_pkg.sv)) |
 | program end | write a nonzero value to the `tohost` CSR; the core halts when that instruction reaches WRITEBACK |
@@ -34,7 +37,12 @@ introduction read the [learning path](learn/README.md) first.
 | [`Immediate_Generator.sv`](../src/Immediate_Generator.sv) | `ImmediateGenerator` | DECODE | builds and sign-extends immediates to 64 bits |
 | [`Register_File.sv`](../src/Register_File.sv) | `RegisterFile` | DECODE (read), WRITEBACK (write) | x1..x31, 2 asynchronous reads, 1 synchronous write |
 | [`ALU.sv`](../src/ALU.sv) | `ALU` | EXECUTE | shared 65-bit adder, logic, shifts, 32-bit W variants |
-| [`Multiply_Divide_Unit.sv`](../src/Multiply_Divide_Unit.sv) | `MultiplyDivideUnit` | EXECUTE | M extension (single cycle, combinational) |
+| [`Multiply_Divide_Unit.sv`](../src/Multiply_Divide_Unit.sv) | `MultiplyDivideUnit` | EXECUTE | M extension, single cycle (baseline build) |
+| [`Iterative_Multiply_Divide_Unit.sv`](../src/Iterative_Multiply_Divide_Unit.sv) | `IterativeMultiplyDivideUnit` | EXECUTE | M extension, one short step per cycle (performance build) |
+| [`Parallel_Prefix_Adder.sv`](../src/Parallel_Prefix_Adder.sv) | `ParallelPrefixAdder` | EXECUTE, FETCH2 | Kogge-Stone adder: carries in log2(n) levels |
+| [`Prefix_Negate.sv`](../src/Prefix_Negate.sv) | `PrefixNegate` | EXECUTE | -x without a carry chain |
+| [`Branch_Target_Buffer.sv`](../src/Branch_Target_Buffer.sv) | `BranchTargetBuffer` | FETCH1 (read), EXECUTE (write) | zero-bubble taken branches and jumps |
+| [`Return_Address_Stack.sv`](../src/Return_Address_Stack.sv) | `ReturnAddressStack` | FETCH2 | predicts `ret` |
 | [`Branch_Comparator.sv`](../src/Branch_Comparator.sv) | `BranchComparator` | EXECUTE | beq bne blt bge bltu bgeu |
 | [`Branch_Control_Unit.sv`](../src/Branch_Control_Unit.sv) | `BranchControl` | EXECUTE | prediction check, `FLUSH`, `ADJUST_NEXT_PC` |
 | [`Control_Status_Register_File.sv`](../src/Control_Status_Register_File.sv) | `CSRFile` | EXECUTE | tohost, status, cycle, instret, hartid |
@@ -122,7 +130,9 @@ result: `tohost = 1` is PASS, `(n << 1) | 1` is FAIL in test n (the riscv-tests 
 |---|---:|
 | pipeline fill at reset | 5 |
 | `LOAD_STALL` | 1 |
-| FETCH2 redirect (predicted-taken branch, JAL) | 1 (0 if a flush squashes the redirecting instruction) |
-| flush (wrong branch guess, JALR) | 3 |
+| FETCH2 redirect (predicted-taken branch or JAL not in the BTB, predicted return) | 1 (0 if a flush squashes the redirecting instruction) |
+| taken branch or JAL found in the BTB | 0 |
+| flush (wrong branch guess, JALR not predicted or predicted wrong) | 3 |
+| M instruction (performance build) | multiply 6, divide 2 + significant bits of the dividend (EXECUTE held, bubbles into MEMORY) |
 
-`cycles = N + 5 + L + 3F + R` holds exactly; see [MATH.md](MATH.md).
+`cycles = N + 5 + L + 3F + R + K` holds exactly for both builds; see [MATH.md](MATH.md).

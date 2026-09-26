@@ -3,8 +3,11 @@ src/ALUop_pkg.sv
 src/IMMEDIATEop_pkg.sv
 src/WRITEBACK_op_pkg.sv
 src/const_pkg.sv
+src/Parallel_Prefix_Adder.sv
+src/Prefix_Negate.sv
 src/ALU.sv
 src/Multiply_Divide_Unit.sv
+src/Iterative_Multiply_Divide_Unit.sv
 src/ALUdec.sv
 src/Control_Unit.sv
 src/Immediate_Generator.sv
@@ -12,6 +15,8 @@ src/Register_File.sv
 src/Branch_Comparator.sv
 src/Branch_Control_Unit.sv
 src/GShare_Branch_Predictor.sv
+src/Branch_Target_Buffer.sv
+src/Return_Address_Stack.sv
 src/Load_Control_Unit.sv
 src/Store_Control_Unit.sv
 src/Write_Control_Unit.sv

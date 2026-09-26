@@ -57,6 +57,7 @@ function render() {
   if (!ev) st.textContent = 'reset: pipeline empty, FETCH1_PC = 0x2000';
   else if (ev.halt) { st.textContent = `halted: tohost = ${core.csr.tohost}${core.csr.tohost === 1n ? ' (PASS)' : ` (FAIL in test ${core.csr.tohost >> 1n})`}`; st.classList.add('halt'); }
   else if (ev.stall) { st.textContent = `LOAD_STALL${ev.loadStallReal ? '' : ' (false stall)'}`; st.classList.add('stall'); }
+  else if (ev.busy) { st.textContent = 'MULTIPLY_DIVIDE_STALL: the M unit is iterating'; st.classList.add('stall'); }
   else if (ev.flush) { st.textContent = 'FLUSH_FETCH1_FETCH2_DECODE: wrong guess, 3 instructions squashed'; st.classList.add('flush'); }
   else if (ev.redirect) { st.textContent = 'FETCH2 redirect: 1 instruction squashed'; st.classList.add('flush'); }
   else st.textContent = '';
@@ -201,11 +202,11 @@ function renderStats() {
   const items = [
     ['cycles', s.cycles, true], ['instructions retired', s.retired], ['CPI', s.retired ? (s.cycles / s.retired).toFixed(3) : '-', true],
     ['load stalls (false)', `${s.loadStalls} (${s.falseLoadStalls})`], ['flushes: wrong guess / JALR', `${s.mispredicts} / ${s.jalrFlushes}`],
-    ['FETCH2 redirects', s.redirects], ['branch accuracy', s.branches ? (100 * (1 - s.mispredicts / s.branches)).toFixed(1) + '%' : '-'], ['operands forwarded', s.forwards],
+    ['FETCH2 redirects / BTB hits', `${s.redirects} / ${s.btbRedirects}`], ['multiply/divide busy cycles', s.multiplyDivideBusy], ['branch accuracy', s.branches ? (100 * (1 - s.mispredicts / s.branches)).toFixed(1) + '%' : '-'], ['operands forwarded', s.forwards],
   ];
   if (core.halted) {
-    const pred = s.retired + 5 + s.loadStalls + 3 * s.flushes + b.redirect;
-    items.push(['equation check', `${s.retired} + 5 + ${s.loadStalls} + 3×${s.flushes} + ${b.redirect} = ${pred} ${pred === s.cycles ? '✓' : '✗'}`]);
+    const pred = s.retired + 5 + s.loadStalls + 3 * s.flushes + b.redirect + b.muldiv;
+    items.push(['equation check', `${s.retired} + 5 + ${s.loadStalls} + 3×${s.flushes} + ${b.redirect} + ${b.muldiv} = ${pred} ${pred === s.cycles ? '✓' : '✗'}`]);
   }
   $('stats').innerHTML = items.map(([k, v, big]) => `<dt>${k}</dt><dd class="${big ? 'big' : ''}">${v}</dd>`).join('');
 }
@@ -213,7 +214,7 @@ function renderStats() {
 // ------------------------------------------------------------------ wiring
 const sel = $('prog');
 for (const name of Object.keys(PROGRAMS)) sel.add(new Option(name.replace(/_/g, ' '), name));
-for (let h = 1; h <= 10; h++) $('hist').add(new Option(`${h} bits (${1 << h} counters)${h === DEFAULT_HISTORY_BITS ? ', tape-out' : ''}`, h));
+for (let h = 1; h <= 10; h++) $('hist').add(new Option(`${h} bits (${1 << h} counters)${h === 4 ? ', tape-out' : h === DEFAULT_HISTORY_BITS ? ', default' : ''}`, h));
 $('hist').value = DEFAULT_HISTORY_BITS;
 const wanted = new URLSearchParams(location.search).get('prog');
 sel.value = wanted in PROGRAMS ? wanted : '03_load_use' in PROGRAMS ? '03_load_use' : Object.keys(PROGRAMS)[0];

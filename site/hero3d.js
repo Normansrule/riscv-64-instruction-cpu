@@ -131,8 +131,10 @@ export function createHero({ canvas, programs, ui, reducedMotion }) {
     if (ev.flush) return ev.resolve?.kind === 'jalr'
       ? `<b>Flush.</b> <code>${t(ev.stages.EXECUTE.id)}</code> jumps to an address held in a register, which FETCH could not know. The 3 instructions behind it are thrown away.`
       : `<b>Wrong guess, flush.</b> The branch in EXECUTE went the other way. The 3 younger instructions were on the wrong path and are thrown away.`;
+    if (ev.busy) return `<b>Multiply/divide busy.</b> <code>${t(ev.stages.EXECUTE.id)}</code> is computed a little each cycle so the clock can stay fast; everything behind it waits.`;
     if (ev.stall) return `<b>Load stall.</b> DECODE needs a value that the load in EXECUTE has not fetched from memory yet, so the front of the pipeline waits one cycle${ev.loadStallReal ? '' : ' (a false alarm: the bits only look like that register)'}.`;
-    if (ev.redirect) return `<b>Redirect.</b> FETCH2 sees ${ev.predecode?.kind === 'jal' ? 'a jump' : 'a branch predicted taken'} and sends FETCH1 to its target; the instruction fetched behind it is dropped.`;
+    if (ev.redirect) return `<b>Redirect.</b> FETCH2 sees ${ev.predecode?.kind === 'jal' ? 'a jump' : ev.predecode?.kind === 'return' ? 'a return and takes its address from the return address stack' : 'a branch predicted taken'} and sends FETCH1 there; the instruction fetched behind it is dropped.`;
+    if (ev.btb?.redirect) return `<b>Branch target buffer hit.</b> FETCH1 recognises this taken branch from last time and jumps to its target immediately: no cycle lost.`;
     if (ev.fwd?.a || ev.fwd?.b) return `<b>Forwarding.</b> <code>${t(ev.stages.DECODE.id)}</code> needs a result that is still inside the pipeline, so it is passed back from ${[ev.fwd.a, ev.fwd.b].filter(Boolean).join(' and ')} instead of waiting.`;
     if (ev.rfWrite) return `<code>${t(ev.stages.WRITEBACK.id)}</code> finishes and writes its result. Every stage is busy with a different instruction.`;
     return 'Every stage works on a different instruction at the same time.';
@@ -163,6 +165,8 @@ export function createHero({ canvas, programs, ui, reducedMotion }) {
     if (ev.redirect) arc(SX.FETCH2, SX.FETCH1, col('--F2'), 1.6, 0.9, 0.07);
     if (ev.flush) { arc(SX.EXECUTE, SX.FETCH1, col('--W'), 3.4, 0, 0.09); for (const s of ['FETCH1', 'FETCH2', 'DECODE']) { platforms[s].pulse = 1; platforms[s].pulseColor.copy(col('--W')); } }
     if (ev.stall) for (const s of ['FETCH1', 'FETCH2', 'DECODE']) { platforms[s].pulse = 1; platforms[s].pulseColor.copy(col('--stall')); }
+    if (ev.busy) { platforms.EXECUTE.pulse = 1; platforms.EXECUTE.pulseColor.copy(col('--D')); }
+    if (ev.btb?.redirect && !ev.flush && !ev.redirect && !ev.stall && !ev.busy) arc(SX.FETCH1 + 0.9, SX.FETCH1 - 0.9, col('--F1'), 1.1, 0.9, 0.05);
     for (const r of regs) r.material.emissiveIntensity = 0.5;
     const st = core.stats;
     ui.cycle.textContent = st.cycles; ui.ret.textContent = st.retired;

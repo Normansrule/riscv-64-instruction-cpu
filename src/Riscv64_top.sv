@@ -3,7 +3,13 @@
 import const_pkg::*;
 
 // riscv64_top: the whole "chip" for simulation: the Riscv64 core wired to its Scratchpad Memory
-module riscv64_top (
+module riscv64_top #(
+  parameter int GSHARE_HISTORY_BITS = 6,
+  parameter bit BTB_ENABLE = 1'b1,
+  parameter bit RAS_ENABLE = 1'b1,
+  parameter bit PRECISE_LOAD_STALL = 1'b1,
+  parameter bit ITERATIVE_MULTIPLY_DIVIDE = 1'b1
+) (
   input  logic        clk,
   input  logic        reset,
   input  logic        BRANCH_PREDICTION_ENABLE,
@@ -13,7 +19,7 @@ module riscv64_top (
   output logic [63:0] DEBUG_REGISTER_DATA,
   output logic [5:0]  TRACE_VALID,
   output logic [63:0] TRACE_FETCH1_PC, TRACE_FETCH2_PC, TRACE_DECODE_PC, TRACE_EXECUTE_PC, TRACE_MEMORY_PC, TRACE_WRITEBACK_PC,
-  output logic        TRACE_LOAD_STALL, TRACE_FLUSH, TRACE_REDIRECT
+  output logic        TRACE_LOAD_STALL, TRACE_FLUSH, TRACE_REDIRECT, TRACE_MULTIPLY_DIVIDE_STALL
 );
 
   logic [63:0] dcache_addr; // From cpu of Riscv64
@@ -34,7 +40,13 @@ module riscv64_top (
   );
 
   // RISC-V 64 CPU
-  Riscv64 cpu (
+  Riscv64 #(
+    .GSHARE_HISTORY_BITS (GSHARE_HISTORY_BITS),
+    .BTB_ENABLE (BTB_ENABLE),
+    .RAS_ENABLE (RAS_ENABLE),
+    .PRECISE_LOAD_STALL (PRECISE_LOAD_STALL),
+    .ITERATIVE_MULTIPLY_DIVIDE (ITERATIVE_MULTIPLY_DIVIDE)
+  ) cpu (
     .clk                      (clk),
     .reset                    (reset),
     .BRANCH_PREDICTION_ENABLE (BRANCH_PREDICTION_ENABLE),
@@ -57,7 +69,8 @@ module riscv64_top (
     .TRACE_WRITEBACK_PC       (TRACE_WRITEBACK_PC),
     .TRACE_LOAD_STALL         (TRACE_LOAD_STALL),
     .TRACE_FLUSH              (TRACE_FLUSH),
-    .TRACE_REDIRECT           (TRACE_REDIRECT)
+    .TRACE_REDIRECT           (TRACE_REDIRECT),
+    .TRACE_MULTIPLY_DIVIDE_STALL (TRACE_MULTIPLY_DIVIDE_STALL)
   );
 
 endmodule

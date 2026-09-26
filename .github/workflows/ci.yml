@@ -18,5 +18,5 @@ jobs:
         run: make math
       - name: Generated docs and charts are up to date
         run: |
-          make docs charts diagram
+          make docs charts diagram && node tools/perf_report.mjs > /dev/null
           git diff --exit-code -- binary docs/img/pipeline docs/img/instructions docs/img/formats docs/img/charts docs/img/cpu_block_diagram.svg web/programs.js

@@ -6,7 +6,7 @@
 // =============================================================================
 import { assemble } from '../model/asm.js';
 import { decode, disasm, FORMATS } from '../model/isa.js';
-import { Core, control, WB_NAMES } from '../model/core.js';
+import { Core, control, WB_NAMES, CONFIGS } from '../model/core.js';
 import { PROGRAMS } from '../web/programs.js';
 
 const $ = id => document.getElementById(id);
@@ -26,6 +26,7 @@ const REPO = (() => {
 })();
 document.querySelectorAll('[data-repo-link]').forEach(a => { a.href = REPO; });
 const blob = p => `${REPO}/blob/main/${p}`;
+document.querySelectorAll('[data-repo-doc]').forEach(a => { a.href = blob(a.dataset.repoDoc); });
 
 // ---------------------------------------------------------------- hero (3D)
 (async () => {
@@ -97,11 +98,16 @@ $('bit-presets').onclick = e => { const b = e.target.closest('button'); if (b) {
 fromAsm();
 
 // ---------------------------------------------------------------- predictor race
-const CAUSE = { fill: '--fill', loaduse: '--stall', flush: '--flush', redirect: '--F2' };
+const CAUSE = { fill: '--fill', loaduse: '--stall', flush: '--flush', redirect: '--F2', muldiv: '--D' };
 const cssv = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 for (const n of NAMES) $('r-prog').add(new Option(nice(n), n));
 $('r-prog').value = '11_gshare_patterns';
 $('r-hist').oninput = () => { $('r-hist-o').textContent = $('r-hist').value; };
+$('r-mode').onchange = () => {
+  const cmp = $('r-mode').value === 'build';
+  $('lane-off').querySelector('h3').textContent = cmp ? 'Original EECS 151 design' : 'Always not taken';
+  $('lane-gs').querySelector('h3').textContent = cmp ? 'Performance edition' : 'gshare';
+};
 let race = null;
 function laneSetup(id, opts, total) {
   const el = $(id), cv = el.querySelector('canvas');
@@ -114,10 +120,15 @@ function laneSetup(id, opts, total) {
 }
 function raceStart() {
   const name = $('r-prog').value, hist = Number($('r-hist').value);
-  const probe = new Core(assemble(PROGRAMS[name]), { bp: false }); probe.run(5e6, false);
-  const total = probe.stats.cycles * 1.02, N = probe.stats.retired;
+  const img = assemble(PROGRAMS[name]);
+  const probes = [{ ...CONFIGS.performance, bp: false }, { ...CONFIGS.baseline, bp: true }, { ...CONFIGS.performance, bp: true, historyBits: hist }].map(o => { const c = new Core(img, o); c.run(5e6, false); return c.stats; });
+  const total = Math.max(...probes.map(p => p.cycles)) * 1.02, N = probes[0].retired;
   race = { name, N, total };
-  race.lanes = [laneSetup('lane-off', { bp: false }, total), laneSetup('lane-gs', { bp: true, historyBits: hist }, total)];
+  const cmp = $('r-mode').value === 'build';
+  race.lanes = cmp
+    ? [laneSetup('lane-off', { ...CONFIGS.baseline, bp: true }, total), laneSetup('lane-gs', { ...CONFIGS.performance, bp: true, historyBits: hist }, total)]
+    : [laneSetup('lane-off', { ...CONFIGS.performance, bp: false }, total), laneSetup('lane-gs', { ...CONFIGS.performance, bp: true, historyBits: hist }, total)];
+  race.cmp = cmp;
   race.perFrame = Math.max(1, Math.ceil(total / (60 * (reducedMotion ? 1.5 : 7))));
   $('r-verdict').textContent = '';
   $('r-go').textContent = 'Restart';
@@ -149,8 +160,11 @@ function raceEnd() {
   const winner = b <= a ? race.lanes[1] : race.lanes[0];
   winner.el.classList.add('won');
   const hist = $('r-hist').value;
-  $('r-verdict').innerHTML = b < a
-    ? `gshare with ${hist} history bits finished in <b>${b.toLocaleString()}</b> cycles, ${(a - b).toLocaleString()} fewer: <b>${(100 * (a - b) / a).toFixed(1)}%</b> faster.`
+  const who = race.cmp ? 'The performance edition' : `gshare with ${hist} history bits`;
+  $('r-verdict').innerHTML = race.cmp && b >= a
+    ? `Same clock, and here the performance edition needs <b>${(b - a).toLocaleString()}</b> more cycles: this program multiplies or divides, which now takes several short cycles. Its clock is about 27 times faster (7.5 MHz to 207 MHz), so it still finishes far sooner.`
+    : b < a
+    ? `${who} finished in <b>${b.toLocaleString()}</b> cycles, ${(a - b).toLocaleString()} fewer: <b>${(100 * (a - b) / a).toFixed(1)}%</b> fewer cycles${race.cmp ? ', on a clock about 27 times faster' : ''}.`
     : b === a ? 'A tie: this program has too few branches for guessing to matter.'
     : `Here guessing <b>cost</b> ${(b - a).toLocaleString()} cycles: this program's branches are hard to predict with ${hist} history bits, and every wrong guess costs 3 cycles. Try another history length.`;
 }
@@ -209,7 +223,7 @@ drawGshare({ core: new Core(assemble(PROGRAMS['11_gshare_patterns']), { bp: true
 // ---------------------------------------------------------------- dashboard
 (() => {
   const dash = $('dash');
-  const parts = [['retired', '--F1', 'useful work'], ['fill', '--fill', 'pipeline fill'], ['loaduse', '--stall', 'load stalls'], ['flush', '--flush', 'flushes'], ['redirect', '--F2', 'redirects']];
+  const parts = [['retired', '--F1', 'useful work'], ['fill', '--fill', 'pipeline fill'], ['loaduse', '--stall', 'load stalls'], ['flush', '--flush', 'flushes'], ['redirect', '--F2', 'redirects'], ['muldiv', '--D', 'multiply/divide busy']];
   const tiles = [];
   let i = 0;
   const bar = (s, max) => `<div class="stack" style="width:${(100 * s.cycles / max).toFixed(1)}%">${parts.map(([k, v]) => { const n = k === 'retired' ? s.retired : s.bubbles[k]; return n ? `<i style="width:${(100 * n / s.cycles).toFixed(2)}%;background:var(${v})" title="${n} ${k}"></i>` : ''; }).join('')}</div>`;
@@ -219,11 +233,11 @@ drawGshare({ core: new Core(assemble(PROGRAMS['11_gshare_patterns']), { bp: true
       dash.removeAttribute('aria-busy'); return;
     }
     const n = NAMES[i++], img = assemble(PROGRAMS[n]);
-    const r = [true, false].map(bp => { const c = new Core(img, { bp }); c.run(5e6, false); return c.stats; });
+    const r = ['performance', 'baseline'].map(k => { const c = new Core(img, { ...CONFIGS[k], bp: true }); c.run(5e6, false); return c.stats; });
     const max = Math.max(r[0].cycles, r[1].cycles);
     tiles.push(`<a class="tile" href="web/index.html?prog=${n}"><h3>${esc(nice(n))}</h3><p>${esc(describe(n))}</p>
-      <div class="trow"><span>gshare</span>${bar(r[0], max)}<b>${r[0].cycles.toLocaleString()}</b></div>
-      <div class="trow"><span>no guess</span>${bar(r[1], max)}<b>${r[1].cycles.toLocaleString()}</b></div></a>`);
+      <div class="trow"><span>faster</span>${bar(r[0], max)}<b>CPI ${(r[0].cycles / r[0].retired).toFixed(2)}</b></div>
+      <div class="trow"><span>original</span>${bar(r[1], max)}<b>CPI ${(r[1].cycles / r[1].retired).toFixed(2)}</b></div></a>`);
     setTimeout(next, 0);
   }
   new IntersectionObserver((es, o) => { if (es[0].isIntersecting) { o.disconnect(); next(); } }, { rootMargin: '400px' }).observe(dash);
@@ -255,6 +269,7 @@ const CMDS = {
     ['make pipe PROG=03_load_use', 'pipeline chart in the terminal'],
     ['make cycle PROG=03_load_use C=5', 'everything that happens in one clock cycle'],
     ['make bp PROG=06_bubble_sort', 'predictor off vs gshare with 1 to 12 history bits'],
+    ['make run PROG=09_primes_sieve CONFIG=baseline', 'the same program on the original EECS 151 design'],
     ['node tools/rv.mjs encode "ld a0, 16(sp)"', 'show an instruction in binary'],
   ],
   'RTL and waveforms': [
@@ -262,6 +277,7 @@ const CMDS = {
     ['make vsim PROG=09_primes_sieve', 'the same, compiled with Verilator (faster)'],
     ['make wave PROG=03_load_use', 'open GTKWave with one signal group per stage'],
     ['make lint && make math', 'Verilator lint, then check the cycle equation'],
+    ['make timing', 'logic-only sky130 clock estimate of both builds'],
   ],
   'Silicon': [
     ['make synth', 'map every module onto real SkyWater sky130 cells (sv2v + Yosys)'],

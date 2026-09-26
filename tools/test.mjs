@@ -22,14 +22,17 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { assemble, toHex, toListing } from '../model/asm.js';
-import { Core } from '../model/core.js';
+import { Core, CONFIGS } from '../model/core.js';
 import { regNum, ABI } from '../model/isa.js';
 
 const args = process.argv.slice(2);
 const noRtl = args.includes('--no-rtl');
 const filter = args.find(a => !a.startsWith('--'));
 const bpArg = (args.find(a => a.startsWith('--bp=')) || '--bp=both').slice(5);
-const MODES = bpArg === 'on' ? [true] : bpArg === 'off' ? [false] : [true, false];
+const cfgArg = (args.find(a => a.startsWith('--config=')) || '--config=both').slice(9);
+const CONFIG_NAMES = cfgArg === 'both' ? ['performance', 'baseline'] : [cfgArg];
+const MODES = (bpArg === 'on' ? [true] : bpArg === 'off' ? [false] : [true, false]).flatMap(bp => CONFIG_NAMES.map(cfg => ({ bp, cfg })));
+const useIcarus = args.includes('--icarus');
 const tty = process.stdout.isTTY;
 const green = s => (tty ? `\x1b[32m${s}\x1b[0m` : s), red = s => (tty ? `\x1b[31m${s}\x1b[0m` : s);
 
@@ -38,20 +41,42 @@ const files = ['programs', 'tests'].flatMap(d => fs.readdirSync(d).filter(f => f
 
 fs.mkdirSync('build', { recursive: true });
 let haveRtl = false;
+const SIM = {};
 if (!noRtl) {
+  // Verilator (compiled C++, fast) if installed, otherwise Icarus Verilog. One binary per configuration.
   const sources = fs.readFileSync('src/sources.f', 'utf8').split('\n').filter(Boolean);
-  const r = spawnSync('iverilog', ['-g2012', '-o', 'build/sim.vvp', ...sources, 'tb/riscv64_testbench.sv'], { encoding: 'utf8' });
-  if (r.error) console.log('iverilog not found: skipping RTL comparison (sudo apt install iverilog)');
-  else if (r.status !== 0) { console.log(red('RTL failed to compile:\n') + r.stderr); process.exit(1); }
-  else haveRtl = true;
+  const hasVerilator = !useIcarus && !spawnSync('verilator', ['--version']).error;
+  for (const cfg of CONFIG_NAMES) {
+    const def = cfg === 'baseline' ? ['-DBASELINE'] : [];
+    let r;
+    if (hasVerilator) {
+      const dir = `build/vsim_${cfg}`;
+      const stamp = sources.concat('tb/riscv64_testbench.sv').map(f => fs.statSync(f).mtimeMs).reduce((a, b) => Math.max(a, b));
+      if (fs.existsSync(`${dir}/vsim`) && fs.statSync(`${dir}/vsim`).mtimeMs > stamp) { SIM[cfg] = [`${dir}/vsim`]; continue; }
+      process.stdout.write(`building ${cfg} RTL with Verilator... `);
+      r = spawnSync('verilator', ['--binary', '--timing', '-O3', '-Wno-fatal', '-Wno-lint', '-Wno-style', ...def, ...sources, 'tb/riscv64_testbench.sv', '--top-module', 'riscv64_testbench', '-Mdir', dir, '-o', 'vsim'], { encoding: 'utf8', maxBuffer: 1 << 26 });
+      console.log(r.status === 0 ? 'done' : 'failed');
+      SIM[cfg] = [`${dir}/vsim`];
+    } else {
+      r = spawnSync('iverilog', ['-g2012', ...def, '-o', `build/sim_${cfg}.vvp`, ...sources, 'tb/riscv64_testbench.sv'], { encoding: 'utf8' });
+      SIM[cfg] = ['vvp', '-n', `build/sim_${cfg}.vvp`];
+    }
+    if (r.error) { console.log('no Verilog simulator found: skipping RTL comparison (sudo apt install verilator iverilog)'); break; }
+    if (r.status !== 0) { console.log(red(`RTL (${cfg}) failed to compile:\n`) + (r.stderr || r.stdout).slice(-3000)); process.exit(1); }
+    haveRtl = true;
+  }
+  if (Object.keys(SIM).length === CONFIG_NAMES.length) haveRtl = true;
 }
 
 // "# EXPECT: a0 = 5" always; "# EXPECT[gshare]: ..." / "# EXPECT[bp-off]: ..." only in that predictor mode
 // (timing measured with rdcycle legitimately differs between the two modes).
-function parseExpect(src, bp) {
+// "# EXPECT[gshare]" / "# EXPECT[bp-off]" are timing values of the BASELINE build; "# EXPECT[perf]" /
+// "# EXPECT[perf-bp-off]" of the performance build.
+function parseExpect(src, bp, cfg) {
   const regs = [], out = [];
-  for (const m of src.matchAll(/^#\s*EXPECT(?:\[(gshare|bp-off)\])?:\s*(\w+)\s*=\s*(-?\w+)\s*$/gm))
-    if (!m[1] || (m[1] === 'gshare') === bp) regs.push([m[2], BigInt.asUintN(64, BigInt(m[3]))]);
+  const want = cfg === 'baseline' ? (bp ? 'gshare' : 'bp-off') : (bp ? 'perf' : 'perf-bp-off');
+  for (const m of src.matchAll(/^#\s*EXPECT(?:\[([\w-]+)\])?:\s*(\w+)\s*=\s*(-?\w+)\s*$/gm))
+    if (!m[1] || m[1] === want) regs.push([m[2], BigInt.asUintN(64, BigInt(m[3]))]);
   for (const m of src.matchAll(/^#\s*EXPECT-OUTPUT:\s?(.*)$/gm)) out.push(m[1].replace(/\\n/g, '\n'));
   return { regs, output: out.length ? out.join('') : null };
 }
@@ -65,16 +90,17 @@ for (const f of files) {
   fs.writeFileSync(`build/${name}.hex`, toHex(img));
   fs.writeFileSync(`build/${name}.lst`, toListing(img));
 
-  for (const bp of MODES) {
+  for (const { bp, cfg } of MODES) {
   const problems = [];
-  const tag = bp ? 'gshare' : 'no-bp ';
+  const tag = `${cfg === 'baseline' ? 'base' : 'perf'} ${bp ? 'gshare' : 'no-bp '}`;
+  const tr = `${cfg}.${bp ? 'bp' : 'nobp'}`;
   // ---------------- model ----------------
-  const core = new Core(img, { bp });
+  const core = new Core(img, { ...CONFIGS[cfg], bp });
   const trace = [];
   while (!core.halted && core.cycle < 2000000) trace.push(Core.traceLine(core.step()));
   if (!core.halted) problems.push('model did not halt');
-  fs.writeFileSync(`build/${name}.${bp ? 'bp' : 'nobp'}.model.trace`, trace.join('\n') + '\n');
-  const exp = parseExpect(src, bp);
+  fs.writeFileSync(`build/${name}.${tr}.model.trace`, trace.join('\n') + '\n');
+  const exp = parseExpect(src, bp, cfg);
   for (const [r, v] of exp.regs) {
     const got = core.regs[regNum(r)];
     if (got !== v) problems.push(`model: ${r} = ${BigInt.asIntN(64, got)} (0x${got.toString(16)}), expected ${BigInt.asIntN(64, v)}`);
@@ -85,7 +111,8 @@ for (const f of files) {
   // ---------------- RTL ----------------
   let rtlNote = '';
   if (haveRtl && core.halted) {
-    const r = spawnSync('vvp', ['-n', 'build/sim.vvp', `+HEX=build/${name}.hex`, `+TRACE=build/${name}.${bp ? 'bp' : 'nobp'}.rtl.trace`, '+MAXCYCLES=2000000', `+BP=${bp ? 1 : 0}`], { encoding: 'utf8', maxBuffer: 1 << 26 });
+    const [cmd, ...pre] = SIM[cfg];
+    const r = spawnSync(cmd, [...pre, `+HEX=build/${name}.hex`, `+TRACE=build/${name}.${tr}.rtl.trace`, '+MAXCYCLES=2000000', `+BP=${bp ? 1 : 0}`], { encoding: 'utf8', maxBuffer: 1 << 26 });
     const stdout = r.stdout || '';
     const k = stdout.indexOf('[tb] HALT');
     if (k < 0) problems.push('RTL did not halt:\n' + stdout.slice(-500));
@@ -96,7 +123,7 @@ for (const f of files) {
       for (const m of stdout.matchAll(/^REG x(\d+) ([0-9a-f]+)$/gm)) regs[+m[1]] = BigInt('0x' + m[2]);
       for (let i = 0; i < 32; i++) if (regs[i] !== core.regs[i])
         problems.push(`RTL x${i}(${ABI[i]}) = 0x${(regs[i] ?? 0n).toString(16)}, model = 0x${core.regs[i].toString(16)}`);
-      const rt = fs.readFileSync(`build/${name}.${bp ? 'bp' : 'nobp'}.rtl.trace`, 'utf8').trimEnd().split('\n');
+      const rt = fs.readFileSync(`build/${name}.${tr}.rtl.trace`, 'utf8').trimEnd().split('\n');
       const n = Math.max(rt.length, trace.length);
       for (let i = 0; i < n; i++) if (rt[i] !== trace[i]) {
         problems.push(`pipeline trace differs at line ${i + 1}:\n      RTL:   ${rt[i]}\n      model: ${trace[i]}`); break;

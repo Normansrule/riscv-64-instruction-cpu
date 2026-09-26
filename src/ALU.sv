@@ -1,5 +1,6 @@
 // Fullest Optimized and Parallelized ALU (RV64):
 // Optimized ALU: Uses a single shared adder/subtractor for ADD, SUB, SLT, SLTU, and JALR to reduce critical path
+// Performance edition: that shared adder is a Kogge-Stone parallel prefix adder (src/Parallel_Prefix_Adder.sv)
 // RV64 addition: ALU_IS_WORD_OPERATION selects the 32-bit "W" variants (ADDW, SUBW, SLLW, SRLW, SRAW)
 //                which compute on the low 32 bits and sign-extend the 32-bit result back to 64 bits
 `default_nettype none
@@ -15,18 +16,31 @@ module ALU (
     output logic [63:0] ALUOut
 );
 
+    // Single Shared Adder and Subtractor, built as a Parallel Prefix (Kogge-Stone) adder:
+    // A + B if SUBTRACT_MODE = 0, A - B = A + ~B + 1 if SUBTRACT_MODE = 1 (SUB, SLT, SLTU all need A - B)
+    logic SUBTRACT_MODE;
+    logic [63:0] ADDER_SUM;
+    logic ADDER_CARRY_OUT;
+    assign SUBTRACT_MODE = (ALUop == ALU_SUB) || (ALUop == ALU_SLT) || (ALUop == ALU_SLTU);
+    ParallelPrefixAdder #(.WIDTH(64)) shared_adder (
+        .A (A),
+        .B (SUBTRACT_MODE ? ~B : B),
+        .CARRY_IN (SUBTRACT_MODE),
+        .SUM (ADDER_SUM),
+        .CARRY_OUT (ADDER_CARRY_OUT)
+    );
+
     // ALU Function: ALU(A, B, RESULT):
     function automatic logic [63:0] alu (
         input logic [63:0] rs1, // First operand
         input logic [63:0] rs2, // Second operand
         input alu_op_t operation_code, // The Operation Code
-        input logic is_word // Word (32-bit) operation?
+        input logic is_word, // Word (32-bit) operation?
+        input logic [64:0] add_and_subtract_result // {carry out, sum} from the shared prefix adder
     );
     logic signed [63:0] signed_rs1; // For Signed Operations
     logic [5:0] bit_shift; // For 64 bits 2^6 = 64 which means shift is by 6 bits
     logic [4:0] word_bit_shift; // For 32 bit Word operations 2^5 = 32 which means shift is by 5 bits
-    logic subtract_mode; // 0 for ADD/JALR, 1 for SUB/SLT/SLTU (uses two's complement: A - B = A + ~B + 1)
-    logic [64:0] add_and_subtract_result; // Single Shared Adder/Subtractor Result (65-bit captures carry-out for unsigned compare)
     logic [63:0] and_result; // Precomputed AND Result
     logic [63:0] or_result; // Precomputed OR Result
     logic [63:0] xor_result; // Precomputed XOR Result
@@ -46,10 +60,7 @@ module ALU (
         bit_shift = rs2[5:0];
         word_bit_shift = rs2[4:0];
 
-        // Single Shared Adder and Subtractor: Synthesis will now build a single 65-bit adder instead of 4 parallel ones (ADD, SUB, SLT, SLTU)
-        subtract_mode = (operation_code == ALU_SUB) || (operation_code == ALU_SLT) || (operation_code == ALU_SLTU); // Subtract Mode for SUB, SLT, and SLTU since all three need A - B
-        add_and_subtract_result = {1'b0, rs1} + {1'b0, (subtract_mode ? ~rs2 : rs2)} + {64'd0, subtract_mode}; // A + B if subtract_mode = 0, A - B = A + ~B + 1 if subtract_mode = 1
-
+        // The shared adder result arrives from the ParallelPrefixAdder instance above (a function cannot contain a module)
         // Precompute all results in parallel so ALUop only drives the final mux:
         and_result = rs1 & rs2; // Operand 1 AND Operand 2
         or_result = rs1 | rs2; // Operand 1 OR Operand 2
@@ -95,7 +106,7 @@ module ALU (
     endfunction
 
     always_comb begin
-        ALUOut = alu(A, B, ALUop, ALU_IS_WORD_OPERATION);
+        ALUOut = alu(A, B, ALUop, ALU_IS_WORD_OPERATION, {ADDER_CARRY_OUT, ADDER_SUM});
     end
 
 endmodule

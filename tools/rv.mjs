@@ -14,7 +14,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { assemble, toHex, toListing } from '../model/asm.js';
-import { Core, STAGES, SHORT, DEFAULT_HISTORY_BITS, WB_NAMES } from '../model/core.js';
+import { Core, STAGES, SHORT, DEFAULT_HISTORY_BITS, WB_NAMES, CONFIGS } from '../model/core.js';
 import { decode, disasm, INSTRUCTIONS, FORMATS, ABI } from '../model/isa.js';
 
 const tty = process.stdout.isTTY && !process.env.NO_COLOR;
@@ -32,7 +32,7 @@ function usage() {
                                    print a pipeline chart (instruction x cycle)
   cycle  <file.s> <C>              explain everything that happens in cycle C
   bp     <file.s>                  predictor off vs gshare with 1..12 history bits
-  run/pipe/cycle accept --bp=off and --history=N (default ${DEFAULT_HISTORY_BITS}, like the tape-out)
+  run/pipe/cycle accept --bp=off, --history=N (default ${DEFAULT_HISTORY_BITS}) and --config=baseline (the original design)
   encode "<instruction>"           show the binary encoding field by field
   decode <hexword> [...]           decode 32-bit machine words
   isa                              table of every supported instruction`);
@@ -44,7 +44,10 @@ function load(file) {
   catch (e) { console.error(C(31, `assembly failed for ${file}:\n`) + e.message); process.exit(1); }
 }
 function opt(args, name, def) { const a = args.find(x => x.startsWith(name + '=')); if (a) return a.slice(name.length + 1); const i = args.indexOf(name); return i >= 0 ? args[i + 1] : def; }
-function coreOpts(args) { return { bp: opt(args, '--bp', 'on') !== 'off', historyBits: +opt(args, '--history', DEFAULT_HISTORY_BITS) }; }
+function coreOpts(args) {
+  const cfg = CONFIGS[opt(args, '--config', 'performance')] || CONFIGS.performance;
+  return { ...cfg, bp: opt(args, '--bp', 'on') !== 'off', historyBits: +opt(args, '--history', cfg.historyBits) };
+}
 const hex64 = v => '0x' + v.toString(16).padStart(16, '0');
 const signed = v => BigInt.asIntN(64, v);
 
@@ -63,8 +66,9 @@ export function summary(core) {
   const s = core.stats, b = s.bubbles;
   return [
     `cycles ${s.cycles}   instructions ${s.retired}   CPI ${(s.cycles / s.retired).toFixed(3)}   tohost ${core.csr.tohost}${core.csr.tohost === 1n ? ' (PASS)' : ` (FAIL in test ${core.csr.tohost >> 1n})`}`,
-    `cycles = instructions + bubbles:  ${s.cycles} = ${s.retired} + ${b.fill} fill + ${b.loaduse} load-stall + ${b.flush} flush + ${b.redirect} redirect`,
+    `cycles = instructions + bubbles:  ${s.cycles} = ${s.retired} + ${b.fill} fill + ${b.loaduse} load-stall + ${b.flush} flush + ${b.redirect} redirect + ${b.muldiv} multiply/divide busy`,
     `load stalls ${s.loadStalls} (${s.falseLoadStalls} false)   flushes ${s.flushes} (${s.mispredicts} branch mispredicts, ${s.jalrFlushes} JALR)   FETCH2 redirects ${s.redirects}   forwards ${s.forwards}`,
+    `BTB redirects ${s.btbRedirects}   returns predicted ${s.returnsPredicted}   build: ${core.opts.btb ? 'performance edition' : 'original (baseline)'}`,
     `branches ${s.branches}   predictor accuracy ${s.branches ? (100 * (1 - s.mispredicts / s.branches)).toFixed(1) + '%' : '-'}   (${core.bp.enabled ? `gshare, ${core.bp.historyBits} history bits, ${1 << core.bp.historyBits} counters` : 'predictor off: always not taken'})`,
   ];
 }
@@ -181,11 +185,11 @@ function cmdDecode(args) {
   for (const a of args) { showFields(parseInt(a.replace(/_/g, ''), 16) >>> 0); console.log(); }
 }
 
-export function predictorSweep(img, maxBits = 12) {
+export function predictorSweep(img, maxBits = 12, base = CONFIGS.performance) {
   const rows = [];
   const run = (label, o) => { const core = new Core(img, o); core.run(5e6, false); const s = core.stats; rows.push({ label, bits: o.bp ? o.historyBits : 0, cycles: s.cycles, cpi: s.cycles / s.retired, mispredicts: s.mispredicts, branches: s.branches, accuracy: s.branches ? 1 - s.mispredicts / s.branches : 1, redirects: s.redirects }); };
-  run('off (always not taken)', { bp: false });
-  for (let h = 1; h <= maxBits; h++) run(`gshare ${String(h).padStart(2)} bits (${String(1 << h).padStart(4)} counters)`, { bp: true, historyBits: h });
+  run('off (always not taken)', { ...base, bp: false });
+  for (let h = 1; h <= maxBits; h++) run(`gshare ${String(h).padStart(2)} bits (${String(1 << h).padStart(4)} counters)`, { ...base, bp: true, historyBits: h });
   return rows;
 }
 
@@ -193,7 +197,7 @@ function cmdBp(args) {
   const { img } = load(args[0]);
   console.log('predictor                              cycles     CPI  mispredicts  accuracy');
   for (const r of predictorSweep(img)) {
-    const mark = r.bits === DEFAULT_HISTORY_BITS ? '  <- EECS 151 tape-out' : '';
+    const mark = r.bits === 4 ? '  <- EECS 151 tape-out' : r.bits === DEFAULT_HISTORY_BITS ? '  <- performance edition default' : '';
     console.log(`${r.label.padEnd(38)} ${String(r.cycles).padStart(7)}  ${r.cpi.toFixed(3)}  ${String(r.mispredicts).padStart(11)}  ${(100 * r.accuracy).toFixed(1).padStart(7)}%${mark}`);
   }
   console.log('\naccuracy = conditional branches predicted correctly / all conditional branches');
