@@ -1,6 +1,8 @@
-# RISC-V 64 Instruction CPU
+# Sixfold
 
-**A 64-bit RISC-V processor you can read, run, watch, and see as real silicon.** A 6-stage pipelined
+**Six stages. One instruction per clock. Watch a 64-bit RISC-V processor think.**
+
+Sixfold is a 64-bit RISC-V processor you can read, run, watch, and see as real silicon: a 6-stage pipelined
 RV64IM core with instruction and data caches, a tournament branch predictor, a branch target buffer
 and a return address stack, written in SystemVerilog and built to **teach how a modern RISC-V CPU works
 and how to read its diagrams**.
@@ -14,7 +16,7 @@ and how to read its diagrams**.
 | **Hazards** | forwarding into DECODE from EXECUTE / MEMORY / WRITEBACK, 1-cycle `LOAD_STALL` |
 | **Branch prediction** | tournament: a per-branch Branch History Table and `GSharePredictor` (PC xor global history, checkpoint repair) with a chooser; a 16-entry Branch Target Buffer (known taken branches cost 0 cycles); an 8-entry Return Address Stack |
 | **Memory** | 4 KiB instruction cache with next-line prefetch and 4 KiB write-through data cache (32-byte lines) in front of a 10-cycle main memory |
-| **Clock (logic only)** | about **200 MHz** on SkyWater 130 nm and **1.34 GHz** on the ASAP7 7 nm research kit, with the full M extension: [PERFORMANCE.md](docs/PERFORMANCE.md) |
+| **Clock (logic only)** | about **182 MHz** on SkyWater 130 nm and **1.37 GHz** on the ASAP7 7 nm research kit, with the full M extension: [PERFORMANCE.md](docs/PERFORMANCE.md) |
 | **Two builds** | the performance edition (default) and a simple baseline pipeline (`-DBASELINE`), both in the same RTL behind parameters |
 | **Verified** | 15 programs + an 859-case self-checking test, predictor on and off, **both builds**: the RTL matches a software twin on **every clock cycle** (64 runs) |
 | **Silicon** | the original design's real sky130 layout, timing and area, plus sky130 synthesis of this RTL |
@@ -22,9 +24,9 @@ and how to read its diagrams**.
 
 ## Open the live site
 
-[![The front page: the CPU running in 3D](docs/img/site_preview.png)](https://normansrule.github.io/riscv-64-instruction-cpu/)
+[![The front page: the CPU running in 3D](docs/img/site_preview.png)](https://normansrule.github.io/sixfold-cpu/)
 
-The [GitHub Pages site](https://normansrule.github.io/riscv-64-instruction-cpu/) runs everything in
+The [GitHub Pages site](https://normansrule.github.io/sixfold-cpu/) runs everything in
 your browser, with no install:
 
 * **the CPU in 3D**: every die is a real instruction moving through the six stages, with
@@ -44,7 +46,7 @@ Or start with the [learning path](docs/learn/README.md) (8 short chapters) and t
 
 ```bash
 sudo apt-get install -y nodejs iverilog verilator yosys graphviz gtkwave make git curl unzip
-git clone <this repository> && cd riscv-64-instruction-cpu
+git clone <this repository> && cd sixfold-cpu
 
 make test                          # every program on the RTL and the model, compared cycle by cycle
 make run  PROG=05_fibonacci        # registers, cycles, CPI, predictor accuracy
@@ -94,8 +96,8 @@ stages. Try `node tools/rv.mjs encode "ld a0, 16(sp)"`.
 The baseline divides 64 bits in a single 133 ns cycle; the performance edition divides one bit per
 cycle, uses Kogge-Stone prefix adders, and wins cycles back with a tournament predictor, a Branch
 Target Buffer, a Return Address Stack and precise load stalls, while its caches make the memory
-realistic. Result: about 200 MHz (logic-only, sky130 typical corner) instead of about 7.5 MHz, and
-1.34 GHz for the same RTL on a 7 nm-class library.
+realistic. Result: about 182 MHz (logic-only, sky130 typical corner) instead of about 7.5 MHz, and
+1.37 GHz for the same RTL on a 7 nm-class library.
 [PERFORMANCE.md](docs/PERFORMANCE.md) has every step, every trade-off (divide-heavy code needs more
 cycles), and why 2.5 GHz is not possible in a 130 nm process.
 
@@ -203,9 +205,9 @@ make lint / serve / clean
 ## Publish the site
 
 ```bash
-cd ~/riscv-64-instruction-cpu && git push           # the site is plain static files
+cd ~/sixfold-cpu && git push           # the site is plain static files
 # GitHub: Settings -> Pages -> Build and deployment -> Deploy from a branch -> main, / (root) -> Save
-# about a minute later: https://<your-user>.github.io/riscv-64-instruction-cpu/
+# about a minute later: https://<your-user>.github.io/sixfold-cpu/
 ```
 
 The front page was inspired by interactive explainers such as bbycroft's llm-viz and Georgia Tech's

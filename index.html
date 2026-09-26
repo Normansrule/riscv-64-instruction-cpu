@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>RISC-V 64 Instruction CPU: watch a processor think</title>
+<title>Sixfold: watch a RISC-V processor think</title>
 <meta name="description" content="A 6-stage RV64IM RISC-V CPU in SystemVerilog, running live in your browser in 3D. Decode instructions bit by bit, race branch predictors, and explore the real silicon layout.">
-<meta property="og:title" content="RISC-V 64 Instruction CPU">
+<meta property="og:title" content="Sixfold: a 64-bit RISC-V CPU you can watch">
 <meta property="og:description" content="Watch a 6-stage RISC-V pipeline run real programs in 3D, then explore its silicon.">
 <meta property="og:image" content="docs/img/site_preview.png">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23101B22'/><rect x='5' y='9' width='5' height='14' fill='%235B9BD5'/><rect x='13.5' y='9' width='5' height='14' fill='%23E8A33C'/><rect x='22' y='9' width='5' height='14' fill='%23E0584F'/></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23101B22'/><rect x='2' y='8' width='3.4' height='16' fill='%235B9BD5'/><rect x='7' y='8' width='3.4' height='16' fill='%236CC4BA'/><rect x='12' y='8' width='3.4' height='16' fill='%23A884D6'/><rect x='17' y='8' width='3.4' height='16' fill='%23E8A33C'/><rect x='22' y='8' width='3.4' height='16' fill='%236DBE6D'/><rect x='27' y='8' width='3.4' height='16' fill='%23E0584F'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -19,13 +19,14 @@
 <a class="skip" href="#decode">Skip to content</a>
 
 <header class="nav" id="top">
-  <a class="brand" href="#top" aria-label="RISC-V 64 Instruction CPU, back to top">
-    <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="8" width="5" height="16" fill="var(--F1)"/><rect x="10" y="8" width="5" height="16" fill="var(--D)"/><rect x="17" y="8" width="5" height="16" fill="var(--E)"/><rect x="24" y="8" width="5" height="16" fill="var(--W)"/></svg>
-    <span>RISC-V 64 Instruction CPU</span>
+  <a class="brand" href="#top" aria-label="Sixfold, back to top">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="8" width="3.4" height="16" fill="var(--F1)"/><rect x="7" y="8" width="3.4" height="16" fill="var(--F2)"/><rect x="12" y="8" width="3.4" height="16" fill="var(--D)"/><rect x="17" y="8" width="3.4" height="16" fill="var(--E)"/><rect x="22" y="8" width="3.4" height="16" fill="var(--M)"/><rect x="27" y="8" width="3.4" height="16" fill="var(--W)"/></svg>
+    <span>Sixfold</span>
   </a>
   <nav aria-label="Sections">
     <a href="#decode">Decode</a>
     <a href="#race">Predict</a>
+    <a href="#caches">Caches</a>
     <a href="#silicon">Silicon</a>
     <a href="#numbers">Numbers</a>
     <a href="#faster">Faster</a>
@@ -130,6 +131,36 @@
   </div>
 </section>
 
+<!-- ============================================================== CACHES -->
+<section class="band" id="caches">
+  <div class="wrap">
+    <div class="copy narrow">
+      <h2>Inside the caches.</h2>
+      <p>Main memory needs 10 cycles to deliver anything, so Sixfold keeps two small, fast copies next to the pipeline: 4 KiB for instructions and 4 KiB for data, each 128 lines of 32 bytes. Every address is cut into three fields: the <b class="f-tag">tag</b> says which piece of memory, the <b class="f-idx">index</b> picks one of the 128 lines, the <b class="f-off">offset</b> picks the byte inside it. Play a program and watch lines fill; after each miss the instruction cache also fetches the next line on its own.</p>
+    </div>
+    <div class="race-ctl">
+      <label>Program <select id="c-prog"></select></label>
+      <button id="c-go" class="primary">Play</button>
+      <button id="c-reset">Reset</button>
+    </div>
+    <div class="cache-grid-wrap">
+      <div class="cache-panel">
+        <h3>Instruction cache</h3>
+        <div class="addr" id="c-iaddr" aria-live="off"></div>
+        <div class="cgrid" id="c-igrid" aria-label="Instruction cache: 128 lines"></div>
+        <dl class="cstats" id="c-istats"></dl>
+      </div>
+      <div class="cache-panel">
+        <h3>Data cache</h3>
+        <div class="addr" id="c-daddr" aria-live="off"></div>
+        <div class="cgrid" id="c-dgrid" aria-label="Data cache: 128 lines"></div>
+        <dl class="cstats" id="c-dstats"></dl>
+      </div>
+    </div>
+    <ul class="ckey cache-key"><li class="k-empty">empty line</li><li class="k-valid">holds a copy</li><li class="k-fill">refilling from main memory</li><li class="k-pf">being prefetched</li><li class="k-hit">hit this cycle</li></ul>
+  </div>
+</section>
+
 <!-- ============================================================== SILICON -->
 <section class="band" id="silicon">
   <div class="wrap">
@@ -181,12 +212,12 @@
       <p>The baseline computes a whole 64-bit division in one clock cycle: 64 subtractions in a row, 133 ns. The performance edition divides one bit per cycle, adds carry-lookahead (Kogge-Stone) adders, and wins cycles back with a tournament branch predictor, a branch target buffer, a return address stack and precise load stalls, behind instruction and data caches with prefetching. Both designs are in the repository and both are checked cycle by cycle.</p>
     </div>
     <div class="facts">
-      <div><strong>200 MHz</strong><span>logic-only estimate on SkyWater 130 nm with the multiply/divide unit (the baseline: about 7.5 MHz)</span></div>
-      <div><strong>1.34 GHz</strong><span>the same RTL mapped onto ASAP7, a 7 nm-class research library</span></div>
+      <div><strong>182 MHz</strong><span>logic-only estimate on SkyWater 130 nm with the multiply/divide unit (the baseline: about 7.5 MHz)</span></div>
+      <div><strong>1.37 GHz</strong><span>the same RTL mapped onto ASAP7, a 7 nm-class research library</span></div>
       <div><strong>1.03</strong><span>cycles per instruction on the branch-pattern program, caches included (baseline 1.38)</span></div>
     </div>
     <figure class="cp"><img src="docs/img/charts/performance.svg" alt="Cycles per instruction per program, original design versus performance edition" loading="lazy"></figure>
-    <p class="small">Why not higher? In 130 nm one carry step of an adder takes about 330 ps; in 7 nm the whole core's longest path is 748 ps. Smaller processes are faster, but a process node is chosen by the foundry, not written in RTL. <a data-repo-doc="docs/PERFORMANCE.md" href="docs/PERFORMANCE.md">How every number was measured</a>.</p>
+    <p class="small">Why not higher? In 130 nm one carry step of an adder takes about 330 ps; in 7 nm the whole core's longest path is 728 ps. Smaller processes are faster, but a process node is chosen by the foundry, not written in RTL. <a data-repo-doc="docs/PERFORMANCE.md" href="docs/PERFORMANCE.md">How every number was measured</a>.</p>
   </div>
 </section>
 

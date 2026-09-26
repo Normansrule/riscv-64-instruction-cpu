@@ -7,7 +7,7 @@ import alu_op_pkg::*;
 import writeback_op_pkg::*;
 
 // =====================================================================================================
-// Riscv64: the RISC-V 64 Instruction CPU. A 6 stage, in-order, single issue RV64IM + Zicsr core,
+// Riscv64: the core of Sixfold. A 6 stage, in-order, single issue RV64IM + Zicsr core,
 //
 // 6 Stage Datapath:
 //   Fetch1 (GSharePredictor)                                                    ->

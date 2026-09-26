@@ -344,7 +344,7 @@ export class Core {
       }
       if (FLUSH) restoreGhr = e.isBranch ? ((e.ckpt << 1) | (taken ? 1 : 0)) & this.bp.mask : e.ckpt;
       if (this.opts.btb && ((e.isBranch && taken) || e.isJal)) btbWrite = { idx: (e.pc >>> 2) & 15, tag: (e.pc >>> 6) & 0x3ffffff, target: e.target >>> 0, isJal: !!e.isJal };
-      if (e.memRead && this.opts.caches) { dReq = true; dHit = this.cacheHit(this.dcache, result); dAddr = result; D_STALL = !dHit; }
+      if (e.memRead && this.opts.caches) { dReq = true; dHit = this.cacheHit(this.dcache, result); dAddr = result; D_STALL = !dHit; ev.dcacheAccess = { addr: Number(result & 0xffffffffn), hit: dHit }; }
       if (e.isMulDiv && this.opts.iterativeMdu) { MDU_STALL = this.mdu.state !== 'DONE'; mduSteps = multiplyDivideSteps(e.aluOp, !!e.isWord, e.rs1v); }
       const csrData = this.csrRead(e.csrAddr);
       fwdE = [result, 0n, pc4, csrData][e.wbSel];

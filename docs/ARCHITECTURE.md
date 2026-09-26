@@ -15,7 +15,7 @@ introduction read the [learning path](learn/README.md) first.
 | branch prediction | tournament: `TournamentChooser` (128-entry per-branch history table + 128-entry chooser) with `GSharePredictor` (2^`GSHARE_HISTORY_BITS` counters, default 6 bits = 64), speculative global history with checkpoint repair; a 16-entry `BranchTargetBuffer` in FETCH1; an 8-entry `ReturnAddressStack` in FETCH2 |
 | branch penalties | taken branch or JAL found in the BTB: 0 bubbles; otherwise a FETCH2 redirect: 1; predicted return: 1; wrong guess or unpredicted JALR: 3 (flush) |
 | multiply / divide | `IterativeMultiplyDivideUnit`: multiply 7 cycles, divide 3 + significant bits of the dividend (baseline build: single cycle) |
-| clock (logic only) | sky130 130 nm: 5.0 ns, about 200 MHz; ASAP7 7 nm: 0.75 ns, about 1.34 GHz; see [PERFORMANCE.md](PERFORMANCE.md) |
+| clock (logic only) | sky130 130 nm: 5.5 ns, about 182 MHz; ASAP7 7 nm: 0.73 ns, about 1.37 GHz; see [PERFORMANCE.md](PERFORMANCE.md) |
 | builds | performance (default) and baseline (`-DBASELINE`, the plain pipeline); `make test` checks both |
 | memory | performance build: `InstructionCache` (4 KiB, direct-mapped, 32-byte lines, next-line prefetch) and `DataCache` (4 KiB, write-through, no store allocation) in front of a 64 KiB main memory with a 10-cycle line refill; baseline: single-cycle 64 KiB `ScratchpadMemory` |
 | reset PC | `0x2000` (`PC_RESET` in [`src/const_pkg.sv`](../src/const_pkg.sv)) |

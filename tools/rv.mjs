@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // =============================================================================
-// tools/rv.mjs: command-line front end for the RISC-V 64 Instruction CPU.
+// tools/rv.mjs: command-line front end for Sixfold.
 //
 //   node tools/rv.mjs asm    programs/05_fibonacci.s        -> build/05_fibonacci.{hex,lst}
 //   node tools/rv.mjs run    programs/05_fibonacci.s        run on the cycle-exact model

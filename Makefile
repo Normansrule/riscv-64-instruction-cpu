@@ -1,5 +1,5 @@
 # =============================================================================
-# RISC-V 64 Instruction CPU: every command in one place.        `make help`
+# Sixfold: every command in one place.        `make help`
 # =============================================================================
 PROG ?= 05_fibonacci
 BP   ?= 1

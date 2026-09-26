@@ -19,13 +19,18 @@ module CSRFile (
     logic [63:0] CSR_STATUS_REGISTER;
     logic [63:0] CSR_CYCLE_COUNTER; // Counts every clock cycle since reset (read with rdcycle)
     logic [63:0] CSR_INSTRET_COUNTER; // Counts every retired instruction since reset (read with rdinstret)
+    // Split counters: each 64-bit counter is two 32-bit halves. The low half's carry is REGISTERED and added
+    // to the high half one cycle later, so no 64-bit carry chain sits between two flip-flops. (The high half
+    // lags by one cycle once every 2^32 counts, which is harmless for performance counters.)
+    logic CYCLE_CARRY_PENDING, INSTRET_CARRY_PENDING;
     logic [63:0] CSR_NEW_VALUE; // Value after applying the read-modify-write operation
 
-    // The counters' + 1 is an increment whose carry would ripple through 64 bits: use prefix adders
-    logic [63:0] CYCLE_COUNTER_NEXT, INSTRET_COUNTER_NEXT;
-    logic CYCLE_CARRY_UNUSED, INSTRET_CARRY_UNUSED;
-    ParallelPrefixAdder #(.WIDTH(64)) cycle_incrementer (.A (CSR_CYCLE_COUNTER), .B (64'd0), .CARRY_IN (1'b1), .SUM (CYCLE_COUNTER_NEXT), .CARRY_OUT (CYCLE_CARRY_UNUSED));
-    ParallelPrefixAdder #(.WIDTH(64)) instret_incrementer (.A (CSR_INSTRET_COUNTER), .B (64'd0), .CARRY_IN (1'b1), .SUM (INSTRET_COUNTER_NEXT), .CARRY_OUT (INSTRET_CARRY_UNUSED));
+    logic [31:0] CYCLE_LOW_NEXT, CYCLE_HIGH_NEXT, INSTRET_LOW_NEXT, INSTRET_HIGH_NEXT;
+    logic CYCLE_LOW_CARRY, CYCLE_HIGH_CARRY_UNUSED, INSTRET_LOW_CARRY, INSTRET_HIGH_CARRY_UNUSED;
+    ParallelPrefixAdder #(.WIDTH(32)) cycle_low_incrementer (.A (CSR_CYCLE_COUNTER[31:0]), .B (32'd0), .CARRY_IN (1'b1), .SUM (CYCLE_LOW_NEXT), .CARRY_OUT (CYCLE_LOW_CARRY));
+    ParallelPrefixAdder #(.WIDTH(32)) cycle_high_incrementer (.A (CSR_CYCLE_COUNTER[63:32]), .B (32'd0), .CARRY_IN (CYCLE_CARRY_PENDING), .SUM (CYCLE_HIGH_NEXT), .CARRY_OUT (CYCLE_HIGH_CARRY_UNUSED));
+    ParallelPrefixAdder #(.WIDTH(32)) instret_low_incrementer (.A (CSR_INSTRET_COUNTER[31:0]), .B (32'd0), .CARRY_IN (1'b1), .SUM (INSTRET_LOW_NEXT), .CARRY_OUT (INSTRET_LOW_CARRY));
+    ParallelPrefixAdder #(.WIDTH(32)) instret_high_incrementer (.A (CSR_INSTRET_COUNTER[63:32]), .B (32'd0), .CARRY_IN (INSTRET_CARRY_PENDING), .SUM (INSTRET_HIGH_NEXT), .CARRY_OUT (INSTRET_HIGH_CARRY_UNUSED));
 
     // Read-Modify-Write: CSRRW replaces, CSRRS sets the 1 bits, CSRRC clears the 1 bits
     always_comb begin
@@ -43,10 +48,15 @@ module CSRFile (
             CSR_STATUS_REGISTER <= 64'd0;
             CSR_CYCLE_COUNTER <= 64'd0;
             CSR_INSTRET_COUNTER <= 64'd0;
+            CYCLE_CARRY_PENDING <= 1'b0;
+            INSTRET_CARRY_PENDING <= 1'b0;
         end else begin
-            CSR_CYCLE_COUNTER <= CYCLE_COUNTER_NEXT; // One more clock cycle has passed
+            CSR_CYCLE_COUNTER <= {CYCLE_HIGH_NEXT, CYCLE_LOW_NEXT}; // One more clock cycle has passed
+            CYCLE_CARRY_PENDING <= CYCLE_LOW_CARRY; // The low half wrapped: the high half catches up next cycle
+            CSR_INSTRET_COUNTER[63:32] <= INSTRET_HIGH_NEXT;
+            INSTRET_CARRY_PENDING <= INSTRUCTION_RETIRED && INSTRET_LOW_CARRY;
             if (INSTRUCTION_RETIRED) begin
-                CSR_INSTRET_COUNTER <= INSTRET_COUNTER_NEXT; // One more instruction has finished
+                CSR_INSTRET_COUNTER[31:0] <= INSTRET_LOW_NEXT; // One more instruction has finished
             end
             if (CSR_WRITE_ENABLE) begin
                 unique case (CSR_ADDRESS)

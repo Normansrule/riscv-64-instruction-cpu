@@ -22,7 +22,7 @@ const REPO = (() => {
     const owner = location.hostname.split('.')[0], repo = location.pathname.split('/').filter(Boolean)[0];
     if (repo) return `https://github.com/${owner}/${repo}`;
   }
-  return 'https://github.com/Normansrule/riscv-64-instruction-cpu';
+  return 'https://github.com/Normansrule/sixfold-cpu';
 })();
 document.querySelectorAll('[data-repo-link]').forEach(a => { a.href = REPO; });
 const blob = p => `${REPO}/blob/main/${p}`;
@@ -285,9 +285,9 @@ const CMDS = {
     ['python3 tools/render_def.py docs/silicon/prototype_layout.def.gz docs/img/silicon', 'redraw the chip pictures from the layout file'],
   ],
   'Publish on GitHub Pages': [
-    ['git remote add origin git@github.com:<you>/riscv-64-instruction-cpu.git', 'run inside the project folder'],
+    ['git remote add origin git@github.com:<you>/sixfold-cpu.git', 'run inside the project folder'],
     ['git push -u origin main', 'upload'],
-    ['# Settings -> Pages -> Deploy from a branch -> main, / (root)', 'this page appears at https://<you>.github.io/riscv-64-instruction-cpu/'],
+    ['# Settings -> Pages -> Deploy from a branch -> main, / (root)', 'this page appears at https://<you>.github.io/sixfold-cpu/'],
   ],
 };
 const tabs = $('cmd-tabs');
@@ -304,3 +304,46 @@ $('cmd-body').onclick = async e => {
   setTimeout(() => { b.textContent = 'Copy'; }, 1600);
 };
 showCmds('Quick start');
+
+// ---------------------------------------------------------------- inside the caches
+(() => {
+  for (const n of NAMES) $('c-prog').add(new Option(nice(n), n));
+  $('c-prog').value = '09_primes_sieve';
+  const mkGrid = el => { el.innerHTML = '<i></i>'.repeat(128); return [...el.children]; };
+  const ig = mkGrid($('c-igrid')), dg = mkGrid($('c-dgrid'));
+  $('c-dgrid').style.setProperty('--cv', 'var(--M)');
+  let core = null, raf = 0, playing = false, hits = { i: 0, d: 0, dAcc: 0 };
+  const bits = (a, split) => { const b = (a >>> 0).toString(2).padStart(32, '0');
+    return `<span class="t">${b.slice(0, 20)}</span> <span class="x">${b.slice(20, 27)}</span> <span class="o">${b.slice(27)}</span>`; };
+  const describe = (a, label) => `${label} <b>0x${(a >>> 0).toString(16).padStart(8, '0')}</b> = ${bits(a)} &nbsp;line ${((a >>> 5) & 127)}`;
+  function reset() {
+    cancelAnimationFrame(raf); playing = false; $('c-go').textContent = 'Play';
+    core = new Core(assemble(PROGRAMS[$('c-prog').value]), { ...CONFIGS.performance, bp: true });
+    hits = { i: 0, d: 0, dAcc: 0 }; draw(null);
+  }
+  function draw(ev) {
+    const paint = (cells, c, hitIdx) => cells.forEach((el, i) => {
+      el.className = (c.valid[i] ? 'v' : '') + (c.busy && ((c.line >>> 5) & 127) === i ? (c.demand === false ? ' pf' : ' fill') : '') + (i === hitIdx ? ' hit' : '');
+    });
+    const iIdx = ev && ev.icacheHit ? ((ev.stages.FETCH1.pc >>> 5) & 127) : -1;
+    const dIdx = ev && ev.dcacheAccess && ev.dcacheAccess.hit ? ((ev.dcacheAccess.addr >>> 5) & 127) : -1;
+    paint(ig, core.icache, iIdx); paint(dg, core.dcache, dIdx);
+    if (ev) {
+      $('c-iaddr').innerHTML = describe(ev.stages.FETCH1.pc, 'FETCH1 PC');
+      if (ev.dcacheAccess) $('c-daddr').innerHTML = describe(ev.dcacheAccess.addr, 'load address');
+    } else { $('c-iaddr').innerHTML = 'Press Play: FETCH1 looks up its PC every cycle.'; $('c-daddr').innerHTML = 'Loads look up their address in EXECUTE.'; }
+    const s = core.stats;
+    $('c-istats').innerHTML = `<dt>cycles</dt><dd>${s.cycles.toLocaleString()}</dd><dt>misses</dt><dd>${s.icacheMisses}</dd><dt>prefetches</dt><dd>${s.prefetches || 0}</dd><dt>miss bubbles</dt><dd>${s.bubbles.imiss}</dd>`;
+    $('c-dstats').innerHTML = `<dt>loads</dt><dd>${hits.dAcc.toLocaleString()}</dd><dt>misses</dt><dd>${s.dcacheMisses}</dd><dt>hit rate</dt><dd>${hits.dAcc ? (100 * (1 - s.dcacheMisses / hits.dAcc)).toFixed(1) + '%' : '-'}</dd><dt>miss bubbles</dt><dd>${s.bubbles.dmiss}</dd>`;
+  }
+  function tick() {
+    let ev = null;
+    const per = Math.max(1, Math.round((reducedMotion ? 40 : 6)));
+    for (let k = 0; k < per && !core.halted; k++) { ev = core.step(); if (ev.dcacheAccess && !ev.dmiss) hits.dAcc++; }
+    if (ev) draw(ev);
+    if (!core.halted && playing) raf = requestAnimationFrame(tick); else { playing = false; $('c-go').textContent = core.halted ? 'Done' : 'Play'; }
+  }
+  $('c-go').onclick = () => { if (core.halted) reset(); playing = !playing; $('c-go').textContent = playing ? 'Pause' : 'Play'; if (playing) raf = requestAnimationFrame(tick); };
+  $('c-reset').onclick = reset; $('c-prog').onchange = reset;
+  reset();
+})();
