@@ -26,12 +26,12 @@
 # EXPECT[bp-off]: a0 = 139
 # EXPECT[bp-off]: a1 = 82
 # EXPECT[bp-off]: a2 = 169
-# EXPECT[perf]: a0 = 86
+# EXPECT[perf]: a0 = 89
 # EXPECT[perf]: a1 = 83
-# EXPECT[perf]: a2 = 103
-# EXPECT[perf-bp-off]: a0 = 139
+# EXPECT[perf]: a2 = 107
+# EXPECT[perf-bp-off]: a0 = 142
 # EXPECT[perf-bp-off]: a1 = 82
-# EXPECT[perf-bp-off]: a2 = 169
+# EXPECT[perf-bp-off]: a2 = 173
 # =============================================================================
     li   t0, 20              # loop 20 times
     li   t1, 0

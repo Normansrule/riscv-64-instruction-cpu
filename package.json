@@ -1,7 +1,7 @@
 {
   "name": "riscv-64-instruction-cpu",
   "version": "2.0.0",
-  "description": "Educational 6-stage RV64IM + Zicsr RISC-V CPU grown from an EECS 151 ASIC design: SystemVerilog RTL, gshare branch prediction, cycle-exact model, interactive pipeline visualizer and real sky130 silicon",
+  "description": "Educational 6-stage RV64IM + Zicsr RISC-V CPU SystemVerilog RTL, gshare branch prediction, cycle-exact model, interactive pipeline visualizer and real sky130 silicon",
   "type": "module",
   "license": "MIT",
   "scripts": {

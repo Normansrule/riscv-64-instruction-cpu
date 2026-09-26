@@ -20,12 +20,12 @@ The XOR is one bit of the gshare index; the flip-flop is one bit of a pipeline r
 core has thousands); the full adder is one bit of the ALU; the multiplexer is one bit of a
 forwarding mux.
 
-## The EECS 151 chip, placed and routed
+## A 32-bit prototype, placed and routed
 
-This is the original RV32I design, laid out with Cadence Innovus on a 3 mm x 3 mm sky130 die.
+This is an earlier 32-bit (RV32I) version of this pipeline, laid out on a 3 mm x 3 mm sky130 die.
 The picture is rendered straight from its final layout file (DEF).
 
-![cpu zoom](../img/silicon/your_chip_cpu_zoom.png)
+![cpu zoom](../img/silicon/prototype_cpu_zoom.png)
 
 The register file (purple) is the biggest block: 31 x 32 flip-flops plus big read multiplexers.
 The pipeline (red), ALU (orange) and gshare predictor (teal) cluster around it; the caches sit next
@@ -48,12 +48,18 @@ different history lengths:
 | history bits | counters | area (um2) | cells |
 |---:|---:|---:|---:|
 | 2 | 4 | 571 | 65 |
-| **4 (tape-out)** | 16 | 2,148 | 249 |
+| **4 (baseline)** | 16 | 2,148 | 249 |
 | 6 | 64 | 7,923 | 951 |
 | 8 | 256 | 31,350 | 3,522 |
 | 10 | 1,024 | 115,760 | 12,508 |
 
 About 4x per 2 bits. Compare with chapter 5's accuracy chart: 6 bits gains a few percent of accuracy
-for 3.7x the area. That is the everyday trade-off of hardware design.
+for 3.7x the area.
+
+## Same RTL, smaller transistors
+
+`make timing` also maps the design onto **ASAP7**, a 7 nm-class research library: the same RTL whose
+longest path is 5.0 ns on sky130 (130 nm) has a 0.75 ns path there, about 1.34 GHz. The process node
+is a property of the factory, not of the Verilog; see [PERFORMANCE.md](../PERFORMANCE.md). That is the everyday trade-off of hardware design.
 
 Next: [8. Using the CPU](08_using_the_cpu.md)

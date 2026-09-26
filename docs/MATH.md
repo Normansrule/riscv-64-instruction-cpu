@@ -14,8 +14,8 @@ For the original chip, 1 / 26 ns = **38.5 MHz**. A program with CPI 1.3 then exe
 ## 2. Exact cycle count
 
 ```text
-cycles = N + (S - 1) + L + P * F + R + K
-       = N + 5       + L + 3 * F + R + K
+cycles = N + (S - 1) + L + P * F + R + K + I + D
+       = N + 5       + L + 3 * F + R + K + I + D
 ```
 
 | symbol | meaning | source in the RTL |
@@ -26,6 +26,8 @@ cycles = N + (S - 1) + L + P * F + R + K
 | F | flushes: wrong branch guesses + every JALR, P = 3 bubbles each | `FLUSH_FETCH1_FETCH2_DECODE` |
 | R | FETCH2 redirects whose bubble survives, 1 each (taken branches found in the BTB cost 0 and are not counted) | `FETCH2_BRANCH_OFF_OR_CONTINUE` |
 | K | cycles the iterative M unit holds EXECUTE (performance build) | `MULTIPLY_DIVIDE_STALL` |
+| I | bubbles sent to FETCH2 while the instruction cache refills | `icache_hit` |
+| D | cycles a load waits in EXECUTE for its data-cache line | `DATA_CACHE_STALL` |
 
 **Why 3 for a flush:** when EXECUTE flushes, FETCH1, FETCH2 and DECODE all hold wrong-path
 instructions. They are replaced by bubbles, and the correct instruction starts in FETCH1 on the next

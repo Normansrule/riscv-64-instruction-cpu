@@ -94,12 +94,8 @@ https://www.youtube.com/playlist?list=PL0MxyGPHXXYIPmeYPTyPwqNAl6cgkl3d3 (Englis
 
 **[18]** Arvind et al., *6.175 Constructive Computer Architecture*, MIT. Builds pipelined RISC-V
 processors with branch target buffers and branch history tables step by step:
-http://csg.csail.mit.edu/6.175/ . The original Riscv151 cites its 6-stage pipeline lab:
+http://csg.csail.mit.edu/6.175/ . Its 6-stage pipeline lab:
 https://csg.csail.mit.edu/6.175/labs/lab6-riscv-pipeline.html .
-
-**[21]** UC Berkeley EECS 151/251A, *Introduction to Digital Design and Integrated Circuits*,
-https://inst.eecs.berkeley.edu/~eecs151/ . The course whose ASIC project this CPU started from
-(RTL, synthesis, place and route with Hammer on sky130).
 
 **[22]** UC Berkeley CS 61C, *Great Ideas in Computer Architecture (Machine Structures)*,
 https://cs61c.org/ . RISC-V assembly, the single-cycle and pipelined datapath (English lectures and labs).
@@ -107,7 +103,7 @@ https://cs61c.org/ . RISC-V assembly, the single-cycle and pipelined datapath (E
 **[23]** UCSD CSE 141L branch prediction tutorial, https://cseweb.ucsd.edu/classes/fa04/cse141L/bp_tutorial.pdf ,
 and the OpenRISC mor1kx gshare predictor,
 https://github.com/openrisc/mor1kx/blob/master/rtl/verilog/mor1kx_branch_predictor_gshare.v .
-Both are cited by the original `GShare_Branch_Predictor.sv`.
+Both are cited in `GShare_Branch_Predictor.sv`.
 
 ## Adders (the critical path)
 
@@ -137,3 +133,13 @@ OpenROAD-flow-scripts: https://github.com/The-OpenROAD-Project/OpenROAD-flow-scr
 
 **[27]** riscv-tests (the tohost PASS/FAIL convention used here):
 https://github.com/riscv-software-src/riscv-tests .
+
+**[28]** R. E. Kessler, "The Alpha 21264 Microprocessor," *IEEE Micro*, vol. 19, no. 2, 1999. The
+tournament (local + global + chooser) branch predictor used by `TournamentChooser`.
+
+**[29]** L. T. Clark et al., "ASAP7: A 7-nm finFET predictive process design kit," *Microelectronics
+Journal*, vol. 53, 2016. The 7 nm-class library used by `tools/timing.sh ... asap7`; liberty files from
+https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts (platforms/asap7).
+
+**[30]** A. J. Smith, "Cache Memories," *ACM Computing Surveys*, vol. 14, no. 3, 1982. Direct-mapped
+caches, write-through, and sequential (next-line) prefetching.

@@ -52,11 +52,11 @@ const parts = [['retired', 'instructions (CPI 1.0 part)', '#2E86C1'], ['fill', '
   const X = h => px + pw * h / 12, Y = a => py + ph * (1 - a);
   let o = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}"><rect width="100%" height="100%" rx="10" fill="#FBFCF8" stroke="#D5DBD0"/>`;
   o += `<text x="16" y="28" ${FONT} font-size="17" font-weight="600" fill="#17251D">Branch prediction accuracy vs gshare history length</text>`;
-  o += `<text x="16" y="48" ${FONT} font-size="12" fill="#4A5A50">Performance edition. 0 = predictor off. The EECS 151 tape-out used 4 bits (16 counters); the default is now 6.</text>`;
+  o += `<text x="16" y="48" ${FONT} font-size="12" fill="#4A5A50">Performance edition. 0 = predictor off. The baseline uses 4 bits (16 counters); the default is 6.</text>`;
   for (let a = 0; a <= 1.0001; a += 0.2) o += `<line x1="${px}" x2="${px + pw}" y1="${Y(a)}" y2="${Y(a)}" stroke="#E3E8DF"/><text x="${px - 8}" y="${Y(a) + 4}" ${MONO} font-size="10.5" fill="#6B7A70" text-anchor="end">${Math.round(a * 100)}%</text>`;
   for (const h of H) o += `<text x="${X(h)}" y="${py + ph + 18}" ${MONO} font-size="10.5" fill="#6B7A70" text-anchor="middle">${h}</text>`;
   o += `<text x="${px + pw / 2}" y="${py + ph + 38}" ${FONT} font-size="11.5" fill="#4A5A50" text-anchor="middle">GSHARE_HISTORY_BITS (table has 2^bits counters)</text>`;
-  o += `<line x1="${X(4)}" x2="${X(4)}" y1="${py}" y2="${py + ph}" stroke="#17251D" stroke-dasharray="4 4"/><text x="${X(4) + 4}" y="${py + 12}" ${FONT} font-size="10.5" fill="#17251D">tape-out</text>`;
+  o += `<line x1="${X(4)}" x2="${X(4)}" y1="${py}" y2="${py + ph}" stroke="#17251D" stroke-dasharray="4 4"/><text x="${X(4) + 4}" y="${py + 12}" ${FONT} font-size="10.5" fill="#17251D">baseline</text>`;
   o += `<line x1="${X(DEFAULT_HISTORY_BITS)}" x2="${X(DEFAULT_HISTORY_BITS)}" y1="${py}" y2="${py + ph}" stroke="#2E86C1" stroke-dasharray="4 4"/><text x="${X(DEFAULT_HISTORY_BITS) + 4}" y="${py + 12}" ${FONT} font-size="10.5" fill="#2E86C1">default</text>`;
   data.forEach((d, i) => {
     o += `<polyline fill="none" stroke="${cols[i]}" stroke-width="2.4" points="${d.map((v, h) => `${X(h)},${Y(v.acc)}`).join(' ')}"/>`;

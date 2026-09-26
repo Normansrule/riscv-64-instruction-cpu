@@ -13,13 +13,13 @@ package const_pkg;
   localparam int CPU_DATA_BITS  = 64;
 
   // -----------------------------
-  // Scratchpad memory (replaces the EECS 151 cache + DRAM model for teaching)
+  // Main memory (behind the instruction and data caches in the performance build)
   // -----------------------------
   localparam int MEMORY_BYTES      = 65536;                    // 64 KiB unified instruction + data memory
   localparam logic [63:0] MMIO_PUTCHAR = 64'h0000_0000_1000_0000; // A store here prints one character
 
   // -----------------------------
-  // PC address on reset (same as the EECS 151 project)
+  // PC address on reset
   // -----------------------------
   localparam logic [63:0] PC_RESET = 64'h0000_0000_0000_2000;
 

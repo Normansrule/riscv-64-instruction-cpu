@@ -98,14 +98,14 @@ $('bit-presets').onclick = e => { const b = e.target.closest('button'); if (b) {
 fromAsm();
 
 // ---------------------------------------------------------------- predictor race
-const CAUSE = { fill: '--fill', loaduse: '--stall', flush: '--flush', redirect: '--F2', muldiv: '--D' };
+const CAUSE = { fill: '--fill', loaduse: '--stall', flush: '--flush', redirect: '--F2', muldiv: '--D', imiss: '--F1', dmiss: '--M' };
 const cssv = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 for (const n of NAMES) $('r-prog').add(new Option(nice(n), n));
 $('r-prog').value = '11_gshare_patterns';
 $('r-hist').oninput = () => { $('r-hist-o').textContent = $('r-hist').value; };
 $('r-mode').onchange = () => {
   const cmp = $('r-mode').value === 'build';
-  $('lane-off').querySelector('h3').textContent = cmp ? 'Original EECS 151 design' : 'Always not taken';
+  $('lane-off').querySelector('h3').textContent = cmp ? 'Baseline design' : 'Always not taken';
   $('lane-gs').querySelector('h3').textContent = cmp ? 'Performance edition' : 'gshare';
 };
 let race = null;
@@ -223,7 +223,7 @@ drawGshare({ core: new Core(assemble(PROGRAMS['11_gshare_patterns']), { bp: true
 // ---------------------------------------------------------------- dashboard
 (() => {
   const dash = $('dash');
-  const parts = [['retired', '--F1', 'useful work'], ['fill', '--fill', 'pipeline fill'], ['loaduse', '--stall', 'load stalls'], ['flush', '--flush', 'flushes'], ['redirect', '--F2', 'redirects'], ['muldiv', '--D', 'multiply/divide busy']];
+  const parts = [['retired', '--F1', 'useful work'], ['fill', '--fill', 'pipeline fill'], ['loaduse', '--stall', 'load stalls'], ['flush', '--flush', 'flushes'], ['redirect', '--F2', 'redirects'], ['muldiv', '--D', 'multiply/divide busy'], ['imiss', '--E', 'instruction cache misses'], ['dmiss', '--W', 'data cache misses']];
   const tiles = [];
   let i = 0;
   const bar = (s, max) => `<div class="stack" style="width:${(100 * s.cycles / max).toFixed(1)}%">${parts.map(([k, v]) => { const n = k === 'retired' ? s.retired : s.bubbles[k]; return n ? `<i style="width:${(100 * n / s.cycles).toFixed(2)}%;background:var(${v})" title="${n} ${k}"></i>` : ''; }).join('')}</div>`;
@@ -237,7 +237,7 @@ drawGshare({ core: new Core(assemble(PROGRAMS['11_gshare_patterns']), { bp: true
     const max = Math.max(r[0].cycles, r[1].cycles);
     tiles.push(`<a class="tile" href="web/index.html?prog=${n}"><h3>${esc(nice(n))}</h3><p>${esc(describe(n))}</p>
       <div class="trow"><span>faster</span>${bar(r[0], max)}<b>CPI ${(r[0].cycles / r[0].retired).toFixed(2)}</b></div>
-      <div class="trow"><span>original</span>${bar(r[1], max)}<b>CPI ${(r[1].cycles / r[1].retired).toFixed(2)}</b></div></a>`);
+      <div class="trow"><span>baseline</span>${bar(r[1], max)}<b>CPI ${(r[1].cycles / r[1].retired).toFixed(2)}</b></div></a>`);
     setTimeout(next, 0);
   }
   new IntersectionObserver((es, o) => { if (es[0].isIntersecting) { o.disconnect(); next(); } }, { rootMargin: '400px' }).observe(dash);
@@ -269,7 +269,7 @@ const CMDS = {
     ['make pipe PROG=03_load_use', 'pipeline chart in the terminal'],
     ['make cycle PROG=03_load_use C=5', 'everything that happens in one clock cycle'],
     ['make bp PROG=06_bubble_sort', 'predictor off vs gshare with 1 to 12 history bits'],
-    ['make run PROG=09_primes_sieve CONFIG=baseline', 'the same program on the original EECS 151 design'],
+    ['make run PROG=09_primes_sieve CONFIG=baseline', 'the same program on the baseline design'],
     ['node tools/rv.mjs encode "ld a0, 16(sp)"', 'show an instruction in binary'],
   ],
   'RTL and waveforms': [
@@ -282,7 +282,7 @@ const CMDS = {
   'Silicon': [
     ['make synth', 'map every module onto real SkyWater sky130 cells (sv2v + Yosys)'],
     ['make schematics', 'gate-level schematics of the predictor and branch control'],
-    ['python3 tools/render_def.py original/eecs151-rv32i/physical-design/riscv_top.def.gz docs/img/silicon', 'redraw the chip pictures from the layout file'],
+    ['python3 tools/render_def.py docs/silicon/prototype_layout.def.gz docs/img/silicon', 'redraw the chip pictures from the layout file'],
   ],
   'Publish on GitHub Pages': [
     ['git remote add origin git@github.com:<you>/riscv-64-instruction-cpu.git', 'run inside the project folder'],

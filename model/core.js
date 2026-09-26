@@ -27,8 +27,8 @@ export const CSR = { TOHOST: 0x51E, STATUS: 0x50A, HARTID: 0x50B, CYCLE: 0xC00, 
 export const DEFAULT_HISTORY_BITS = 6; // GSHARE_HISTORY_BITS in src/Riscv64.sv
 // The two builds `make test` checks (parameters of src/Riscv64.sv):
 export const CONFIGS = {
-  performance: { historyBits: 6, btb: true, ras: true, preciseStall: true, iterativeMdu: true },
-  baseline: { historyBits: 4, btb: false, ras: false, preciseStall: false, iterativeMdu: false }, // the original EECS 151 behaviour
+  performance: { historyBits: 6, btb: true, ras: true, preciseStall: true, iterativeMdu: true, tournament: true, caches: true, missLatency: 10 },
+  baseline: { historyBits: 4, btb: false, ras: false, preciseStall: false, iterativeMdu: false, tournament: false, caches: false, missLatency: 10 }, // the plain pipeline
 };
 // ControlUnit USES_REGISTER1 / USES_REGISTER2 (by opcode, exactly as src/Control_Unit.sv)
 export function usesRegisters(word) {
@@ -227,8 +227,12 @@ const BUBBLE = cause => ({ valid: false, cause });
 // ---------------------------------------------------------------- the core
 export class Core {
   // opts.bp: false = always predict not taken; opts.historyBits: GSHARE_HISTORY_BITS
-  constructor(image, { bp = true, historyBits = DEFAULT_HISTORY_BITS, btb = true, ras = true, preciseStall = true, iterativeMdu = true } = {}) {
-    this.opts = { bp, historyBits, btb, ras, preciseStall, iterativeMdu };
+  constructor(image, { bp = true, historyBits = DEFAULT_HISTORY_BITS, btb = true, ras = true, preciseStall = true, iterativeMdu = true, tournament = true, caches = true, missLatency = 10 } = {}) {
+    this.opts = { bp, historyBits, btb, ras, preciseStall, iterativeMdu, tournament, caches, missLatency };
+    this.bht = new Uint8Array(128).fill(2); // TournamentChooser: per-branch history table (weakly taken)
+    this.chooser = new Uint8Array(128).fill(1); // ... and chooser (weakly trust the BHT)
+    const cache = () => ({ valid: new Uint8Array(128), tag: new Uint32Array(128), busy: false, left: 0, line: 0, demand: false, pf: false, pfLine: 0 });
+    this.icache = cache(); this.dcache = cache();
     this.btb = Array.from({ length: 16 }, () => ({ valid: false, tag: 0, target: 0, isJal: false }));
     this.ras = { stack: new Array(8).fill(0n), top: 0 };
     this.mdu = { state: 'IDLE', left: 0 };
@@ -243,9 +247,33 @@ export class Core {
     this.instrs = []; this.nextId = 0;
     this.stats = { cycles: 0, retired: 0, loadStalls: 0, falseLoadStalls: 0, flushes: 0, mispredicts: 0, jalrFlushes: 0,
       redirects: 0, branches: 0, predictedTaken: 0, forwards: 0, btbRedirects: 0, returnsPredicted: 0, multiplyDivideBusy: 0,
-      bubbles: { fill: 0, loaduse: 0, flush: 0, redirect: 0, muldiv: 0 } };
+      icacheMisses: 0, dcacheMisses: 0, choseGshare: 0,
+      bubbles: { fill: 0, loaduse: 0, flush: 0, redirect: 0, muldiv: 0, imiss: 0, dmiss: 0 } };
   }
 
+  cacheHit(c, addr) { // addr: Number (fetch) or BigInt (data)
+    const a = typeof addr === 'bigint' ? addr : BigInt(addr >>> 0);
+    if (a >> 32n) return false;
+    const idx = Number((a >> 5n) & 127n);
+    return !!c.valid[idx] && c.tag[idx] === Number((a >> 12n) & 0xfffffn);
+  }
+  refill(c, missing, addr) { // one clock edge of a refill engine (Instruction/DataCache)
+    if (!c.busy) { if (missing) { c.busy = true; c.left = this.opts.missLatency; c.line = Number(BigInt.asUintN(32, (typeof addr === 'bigint' ? addr : BigInt(addr >>> 0))) & ~31n); return true; } }
+    else if (c.left === 1) { c.busy = false; const idx = (c.line >>> 5) & 127; c.valid[idx] = 1; c.tag[idx] = (c.line >>> 12) & 0xfffff; }
+    else c.left--;
+    return false;
+  }
+  irefill(missing, pc) { // InstructionCache engine with next-line prefetch
+    const c = this.icache;
+    if (!c.busy) {
+      if (missing) { c.busy = true; c.left = this.opts.missLatency; c.line = (pc & ~31) >>> 0; c.demand = true; return true; }
+      if (c.pf) { c.pf = false; if (!this.cacheHit(c, c.pfLine)) { c.busy = true; c.left = this.opts.missLatency; c.line = c.pfLine; c.demand = false; this.stats.prefetches = (this.stats.prefetches || 0) + 1; } }
+    } else if (c.left === 1) {
+      c.busy = false; const idx = (c.line >>> 5) & 127; c.valid[idx] = 1; c.tag[idx] = (c.line >>> 12) & 0xfffff;
+      if (c.demand) { c.pf = true; c.pfLine = (c.line + 32) >>> 0; }
+    } else c.left--;
+    return false;
+  }
   fetch(pc) { const m = this.mem, a = pc & 0xffff; return (m[a] | (m[(a + 1) & 0xffff] << 8) | (m[(a + 2) & 0xffff] << 16) | (m[(a + 3) & 0xffff] << 24)) >>> 0; }
   readDouble(addr) {
     if (addr === MMIO_PUTCHAR) return 0n;
@@ -291,6 +319,7 @@ export class Core {
 
     // ================= EXECUTE =================
     let FLUSH = false, adjust = 0, fwdE = 0n, exNext = null, storeOp = null, csrWrite = null, bpTrain = null, restoreGhr = null, btbWrite = null, MDU_STALL = false, mduSteps = 0;
+    let dReq = false, dHit = true, dAddr = 0n, D_STALL = false;
     if (e.valid) {
       const A = e.aIsPC ? BigInt(e.pc) : e.rs1v, B = e.bIsImm ? e.imm : e.rs2v;
       const aluOut = alu(A, B, e.aluOp, e.isWord);
@@ -302,7 +331,7 @@ export class Core {
       adjust = Number(pc4 & 0xffffffffn);
       if (e.isBranch) {
         adjust = taken ? e.target : adjust; FLUSH = taken !== e.pred;
-        bpTrain = { idx: e.idx, taken };
+        bpTrain = { idx: e.idx, taken, pc: e.pc, g: e.gTaken, b: e.bTaken };
         ev.resolve = { kind: 'branch', predicted: e.pred, actual: taken, mispredict: FLUSH, target: e.target };
       } else if (e.isJal) {
         adjust = e.target; ev.resolve = { kind: 'jal', predicted: true, actual: true, mispredict: false, target: e.target };
@@ -315,6 +344,7 @@ export class Core {
       }
       if (FLUSH) restoreGhr = e.isBranch ? ((e.ckpt << 1) | (taken ? 1 : 0)) & this.bp.mask : e.ckpt;
       if (this.opts.btb && ((e.isBranch && taken) || e.isJal)) btbWrite = { idx: (e.pc >>> 2) & 15, tag: (e.pc >>> 6) & 0x3ffffff, target: e.target >>> 0, isJal: !!e.isJal };
+      if (e.memRead && this.opts.caches) { dReq = true; dHit = this.cacheHit(this.dcache, result); dAddr = result; D_STALL = !dHit; }
       if (e.isMulDiv && this.opts.iterativeMdu) { MDU_STALL = this.mdu.state !== 'DONE'; mduSteps = multiplyDivideSteps(e.aluOp, !!e.isWord, e.rs1v); }
       const csrData = this.csrRead(e.csrAddr);
       fwdE = [result, 0n, pc4, csrData][e.wbSel];
@@ -352,7 +382,7 @@ export class Core {
       ev.fwd = { a: use.rs1 ? s1 : null, b: use.rs2 ? s2 : null, rs1: rs1f, rs2: rs2f };
       deNext = { valid: true, id: d.id, pc: d.pc, word: d.word, ...c, rs1v: v1, rs2v: v2, imm: immediate(d.word, c.immType), rd: rdf,
         funct3: bits(d.word, 14, 12), csrAddr: bits(d.word, 31, 20), pred: d.pred, idx: d.idx, ckpt: d.ckpt, target: d.target,
-        returnPredicted: d.returnPredicted, isCall: d.isCall, isReturn: d.isReturn, rasCkpt: d.rasCkpt };
+        returnPredicted: d.returnPredicted, isCall: d.isCall, isReturn: d.isReturn, rasCkpt: d.rasCkpt, gTaken: d.gTaken, bTaken: d.bTaken };
       if (LOAD_STALL) ev.loadStallReal = (useD.rs1 && e.rd === rs1f) || (useD.rs2 && e.rd === rs2f);
     }
 
@@ -375,19 +405,26 @@ export class Core {
     // ================= FETCH1 =================
     const word = this.fetch(this.F1PC);
     const pred = this.bp.predict(this.F1PC);
+    const gTaken = pred.taken, tIdx = (this.F1PC >>> 2) & 127;
+    const bTaken = this.bp.enabled && this.bht[tIdx] >= 2, useG = this.chooser[tIdx] >= 2;
+    if (this.opts.tournament) { pred.taken = useG ? gTaken : bTaken; pred.chooser = useG ? 'gshare' : 'bht'; }
+    const iHit = !this.opts.caches || this.cacheHit(this.icache, this.F1PC);
+    ev.icacheHit = iHit;
     const be = this.btb[(this.F1PC >>> 2) & 15];
     const btbHit = be.valid && be.tag === ((this.F1PC >>> 6) & 0x3ffffff);
-    const F1_BTB_REDIRECT = this.opts.btb && btbHit && (be.isJal || pred.taken);
-    const f1Next = F1_BTB_REDIRECT ? be.target : (this.F1PC + 4) >>> 0;
+    const F1_BTB_REDIRECT = this.opts.btb && iHit && btbHit && (be.isJal || pred.taken);
+    const f1Next = !iHit ? this.F1PC : F1_BTB_REDIRECT ? be.target : (this.F1PC + 4) >>> 0;
     ev.btb = { hit: btbHit, redirect: F1_BTB_REDIRECT, target: btbHit ? be.target : null };
     const f1Id = this.nextId;
     this.instr(f1Id, this.F1PC, word);
     ev.stages.FETCH1 = { id: f1Id, pc: this.F1PC };
     ev.predict = pred;
 
-    const ADVANCE = !FLUSH && !LOAD_STALL && !MDU_STALL;
-    ev.stall = LOAD_STALL && !FLUSH;
+    const ADVANCE = !FLUSH && !D_STALL && !LOAD_STALL && !MDU_STALL;
+    ev.stall = LOAD_STALL && !FLUSH && !D_STALL;
     ev.busy = MDU_STALL && !FLUSH;
+    ev.dmiss = D_STALL && !FLUSH;
+    ev.imiss = ADVANCE && !REDIRECT && !iHit;
     ev.flush = FLUSH;
     ev.redirect = REDIRECT && ADVANCE;
     ev.ghr = this.bp.ghr;
@@ -407,7 +444,18 @@ export class Core {
     }
     if (csrWrite) { if (csrWrite.addr === CSR.TOHOST) this.csr.tohost = csrWrite.value; else if (csrWrite.addr === CSR.STATUS) this.csr.status = csrWrite.value; }
     this.csr.cycle++; if (w.valid) this.csr.instret++;
-    if (bpTrain) { ev.bpUpdate = { ...this.bp.train(bpTrain.idx, bpTrain.taken), taken: bpTrain.taken }; this.stats.branches++; }
+    if (bpTrain) {
+      ev.bpUpdate = { ...this.bp.train(bpTrain.idx, bpTrain.taken), taken: bpTrain.taken }; this.stats.branches++;
+      if (this.opts.tournament) {
+        const i = (bpTrain.pc >>> 2) & 127, t = bpTrain.taken, gOk = bpTrain.g === t, bOk = bpTrain.b === t;
+        this.bht[i] = t ? Math.min(3, this.bht[i] + 1) : Math.max(0, this.bht[i] - 1);
+        if (gOk && !bOk) this.chooser[i] = Math.min(3, this.chooser[i] + 1); else if (bOk && !gOk) this.chooser[i] = Math.max(0, this.chooser[i] - 1);
+      }
+    }
+    if (this.opts.caches) {
+      if (this.irefill(!iHit, this.F1PC)) this.stats.icacheMisses++;
+      if (this.refill(this.dcache, dReq && !dHit, dAddr)) this.stats.dcacheMisses++;
+    }
     const rasTopBefore = this.ras.top; // DECODE_RAS_CHECKPOINT: the pointer BEFORE this cycle's push or pop
     if (btbWrite) Object.assign(this.btb[btbWrite.idx], { valid: true, tag: btbWrite.tag, target: btbWrite.target, isJal: btbWrite.isJal });
     if (this.opts.ras) {
@@ -443,6 +491,8 @@ export class Core {
       squash(f1Id); this.nextId++;
       this.d = BUBBLE('flush'); this.f2 = BUBBLE('flush');
       this.F1PC = adjust >>> 0;
+    } else if (D_STALL) {
+      this.m = BUBBLE('dmiss'); // the load waits in Execute for its cache line
     } else if (LOAD_STALL) {
       this.e = BUBBLE('loaduse');
     } else if (MDU_STALL) {
@@ -451,10 +501,10 @@ export class Core {
       if (deNext) { this.e = deNext; if (ev.fwd.a) this.stats.forwards++; if (ev.fwd.b) this.stats.forwards++; }
       else this.e = BUBBLE(d.cause);
       this.d = f2.valid ? { valid: true, id: f2.id, pc: f2.pc, word: f2.word, pred: f2.pred, idx: f2.idx, ckpt: ev.ghr, target: f2Target,
-        returnPredicted: f2ReturnPredicted, isCall: this.opts.ras && f2Call, isReturn: this.opts.ras && f2Return, rasCkpt: rasTopBefore } : BUBBLE(f2.cause);
-      if (REDIRECT) { squash(f1Id); this.f2 = BUBBLE('redirect'); }
-      else this.f2 = { valid: true, id: f1Id, pc: this.F1PC, word, pred: pred.taken, idx: pred.idx, counter: pred.counter, btbRedirected: F1_BTB_REDIRECT };
-      this.nextId++;
+        returnPredicted: f2ReturnPredicted, isCall: this.opts.ras && f2Call, isReturn: this.opts.ras && f2Return, rasCkpt: rasTopBefore, gTaken: f2.gTaken, bTaken: f2.bTaken } : BUBBLE(f2.cause);
+      if (REDIRECT) { squash(f1Id); this.f2 = BUBBLE('redirect'); this.nextId++; }
+      else if (!iHit) { this.f2 = BUBBLE('imiss'); } // same instruction retried next cycle (same id)
+      else { this.f2 = { valid: true, id: f1Id, pc: this.F1PC, word, pred: pred.taken, idx: pred.idx, counter: pred.counter, btbRedirected: F1_BTB_REDIRECT, gTaken, bTaken }; this.nextId++; if (pred.chooser === 'gshare') this.stats.choseGshare++; }
       this.F1PC = (REDIRECT ? f2Target : f1Next) >>> 0;
     }
     this.stats.cycles = this.cycle;
@@ -472,6 +522,6 @@ export class Core {
   // Same line format the RTL testbench prints: `make test` diffs the two.
   static traceLine(ev) {
     const f = s => (ev.stages[s] ? (ev.stages[s].pc >>> 0).toString(16).padStart(8, '0') : '--------');
-    return `C${ev.cycle} ` + STAGES.map(s => `${SHORT[s]}:${f(s)}`).join(' ') + (ev.stall ? ' STALL' : '') + (ev.flush ? ' FLUSH' : '') + (ev.redirect ? ' REDIRECT' : '') + (ev.busy ? ' BUSY' : '');
+    return `C${ev.cycle} ` + STAGES.map(s => `${SHORT[s]}:${f(s)}`).join(' ') + (ev.stall ? ' STALL' : '') + (ev.flush ? ' FLUSH' : '') + (ev.redirect ? ' REDIRECT' : '') + (ev.busy ? ' BUSY' : '') + (ev.imiss ? ' IMISS' : '') + (ev.dmiss ? ' DMISS' : '');
   }
 }

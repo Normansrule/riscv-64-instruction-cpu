@@ -16,10 +16,10 @@
 //             - on ANY flush, rewind the GHR to the checkpoint (+ the real outcome  (RESTORE_HISTORY)
 //               if the flushing instruction is a branch), undoing the history the
 //               wrong-path branches wrote.
-// Improvement over the EECS 151 version: the history is only shifted for real branches (not every fetch)
+// The history is only shifted for real branches (not every fetch)
 // and a misprediction restores the exact checkpoint instead of shifting one more bit in.
 module GSharePredictor #(
-    parameter int HISTORY_BITS = 4 // 2^HISTORY_BITS counters: 4 bits gives the 16 entry table of the EECS 151 tape-out
+    parameter int HISTORY_BITS = 4 // 2^HISTORY_BITS counters: 4 bits gives a 16 entry table
 ) (
     input logic clk,
     input logic reset,

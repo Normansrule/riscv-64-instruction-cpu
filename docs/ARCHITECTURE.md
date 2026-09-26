@@ -12,12 +12,12 @@ introduction read the [learning path](learn/README.md) first.
 | instruction set | RV64I + M (multiply/divide) + Zicsr (CSR instructions): 71 instructions, see [`binary/`](../binary/README.md) |
 | pipeline | 6 stages, in order, single issue: FETCH1, FETCH2, DECODE, EXECUTE, MEMORY, WRITEBACK |
 | data hazards | forwarding **into DECODE** from EXECUTE, MEMORY, WRITEBACK; 1-cycle `LOAD_STALL` |
-| branch prediction | `GSharePredictor`: 2^`GSHARE_HISTORY_BITS` two-bit counters (default 6 bits = 64; the tape-out used 4), speculative global history with checkpoint repair; a 16-entry `BranchTargetBuffer` in FETCH1; an 8-entry `ReturnAddressStack` in FETCH2 |
+| branch prediction | tournament: `TournamentChooser` (128-entry per-branch history table + 128-entry chooser) with `GSharePredictor` (2^`GSHARE_HISTORY_BITS` counters, default 6 bits = 64), speculative global history with checkpoint repair; a 16-entry `BranchTargetBuffer` in FETCH1; an 8-entry `ReturnAddressStack` in FETCH2 |
 | branch penalties | taken branch or JAL found in the BTB: 0 bubbles; otherwise a FETCH2 redirect: 1; predicted return: 1; wrong guess or unpredicted JALR: 3 (flush) |
 | multiply / divide | `IterativeMultiplyDivideUnit`: multiply 7 cycles, divide 3 + significant bits of the dividend (baseline build: single cycle) |
-| clock (logic only, sky130 typical) | 4.8 ns, about 207 MHz with the M unit; see [PERFORMANCE.md](PERFORMANCE.md) |
-| builds | performance (default) and baseline (`-DBASELINE`, the original behaviour); `make test` checks both |
-| memory | `ScratchpadMemory`: 64 KiB unified, instruction port (32-bit) and data port (64-bit, byte mask), no stalls |
+| clock (logic only) | sky130 130 nm: 5.0 ns, about 200 MHz; ASAP7 7 nm: 0.75 ns, about 1.34 GHz; see [PERFORMANCE.md](PERFORMANCE.md) |
+| builds | performance (default) and baseline (`-DBASELINE`, the plain pipeline); `make test` checks both |
+| memory | performance build: `InstructionCache` (4 KiB, direct-mapped, 32-byte lines, next-line prefetch) and `DataCache` (4 KiB, write-through, no store allocation) in front of a 64 KiB main memory with a 10-cycle line refill; baseline: single-cycle 64 KiB `ScratchpadMemory` |
 | reset PC | `0x2000` (`PC_RESET` in [`src/const_pkg.sv`](../src/const_pkg.sv)) |
 | program end | write a nonzero value to the `tohost` CSR; the core halts when that instruction reaches WRITEBACK |
 | verification | every program, every cycle, RTL vs [`model/core.js`](../model/core.js), predictor on and off (`make test`) |
@@ -43,6 +43,9 @@ introduction read the [learning path](learn/README.md) first.
 | [`Prefix_Negate.sv`](../src/Prefix_Negate.sv) | `PrefixNegate` | EXECUTE | -x without a carry chain |
 | [`Branch_Target_Buffer.sv`](../src/Branch_Target_Buffer.sv) | `BranchTargetBuffer` | FETCH1 (read), EXECUTE (write) | zero-bubble taken branches and jumps |
 | [`Return_Address_Stack.sv`](../src/Return_Address_Stack.sv) | `ReturnAddressStack` | FETCH2 | predicts `ret` |
+| [`Tournament_Chooser.sv`](../src/Tournament_Chooser.sv) | `TournamentChooser` | FETCH1 (read), EXECUTE (train) | per-branch history table + chooser |
+| [`Instruction_Cache.sv`](../src/Instruction_Cache.sv) | `InstructionCache` | FETCH1 | 4 KiB, next-line prefetch |
+| [`Data_Cache.sv`](../src/Data_Cache.sv) | `DataCache` | EXECUTE | 4 KiB, write-through |
 | [`Branch_Comparator.sv`](../src/Branch_Comparator.sv) | `BranchComparator` | EXECUTE | beq bne blt bge bltu bgeu |
 | [`Branch_Control_Unit.sv`](../src/Branch_Control_Unit.sv) | `BranchControl` | EXECUTE | prediction check, `FLUSH`, `ADJUST_NEXT_PC` |
 | [`Control_Status_Register_File.sv`](../src/Control_Status_Register_File.sv) | `CSRFile` | EXECUTE | tohost, status, cycle, instret, hartid |
@@ -55,7 +58,7 @@ introduction read the [learning path](learn/README.md) first.
 
 ## Coding style
 
-The RTL follows the style of the original EECS 151 design so it reads like one project:
+The RTL follows one consistent style so it reads like one project:
 `` `default_nettype none`` in every file, packages for every encoding, `always_comb` / `always_ff`
 / `unique case`, and long UPPER_CASE signal names that begin with the stage that owns them
 (`DECODE_FORWARDED_REGISTER1_DATA`, `EXECUTE_ADJUST_NEXT_PC`), each with a comment saying what it
@@ -134,5 +137,7 @@ result: `tohost = 1` is PASS, `(n << 1) | 1` is FAIL in test n (the riscv-tests 
 | taken branch or JAL found in the BTB | 0 |
 | flush (wrong branch guess, JALR not predicted or predicted wrong) | 3 |
 | M instruction (performance build) | multiply 6, divide 2 + significant bits of the dividend (EXECUTE held, bubbles into MEMORY) |
+| instruction-cache miss | 11 (bubbles into FETCH2; a prefetched line costs 0) |
+| data-cache miss (loads) | 11 (the load waits in EXECUTE; stores never wait) |
 
-`cycles = N + 5 + L + 3F + R + K` holds exactly for both builds; see [MATH.md](MATH.md).
+`cycles = N + 5 + L + 3F + R + K + I + D` holds exactly for both builds; see [MATH.md](MATH.md).

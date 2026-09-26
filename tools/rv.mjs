@@ -66,9 +66,9 @@ export function summary(core) {
   const s = core.stats, b = s.bubbles;
   return [
     `cycles ${s.cycles}   instructions ${s.retired}   CPI ${(s.cycles / s.retired).toFixed(3)}   tohost ${core.csr.tohost}${core.csr.tohost === 1n ? ' (PASS)' : ` (FAIL in test ${core.csr.tohost >> 1n})`}`,
-    `cycles = instructions + bubbles:  ${s.cycles} = ${s.retired} + ${b.fill} fill + ${b.loaduse} load-stall + ${b.flush} flush + ${b.redirect} redirect + ${b.muldiv} multiply/divide busy`,
+    `cycles = instructions + bubbles:  ${s.cycles} = ${s.retired} + ${b.fill} fill + ${b.loaduse} load-stall + ${b.flush} flush + ${b.redirect} redirect + ${b.muldiv} multiply/divide busy + ${b.imiss} I-cache + ${b.dmiss} D-cache`,
     `load stalls ${s.loadStalls} (${s.falseLoadStalls} false)   flushes ${s.flushes} (${s.mispredicts} branch mispredicts, ${s.jalrFlushes} JALR)   FETCH2 redirects ${s.redirects}   forwards ${s.forwards}`,
-    `BTB redirects ${s.btbRedirects}   returns predicted ${s.returnsPredicted}   build: ${core.opts.btb ? 'performance edition' : 'original (baseline)'}`,
+    `BTB redirects ${s.btbRedirects}   returns predicted ${s.returnsPredicted}   I-cache misses ${s.icacheMisses} (+${s.prefetches || 0} prefetches)   D-cache misses ${s.dcacheMisses}   build: ${core.opts.btb ? 'performance' : 'baseline'}`,
     `branches ${s.branches}   predictor accuracy ${s.branches ? (100 * (1 - s.mispredicts / s.branches)).toFixed(1) + '%' : '-'}   (${core.bp.enabled ? `gshare, ${core.bp.historyBits} history bits, ${1 << core.bp.historyBits} counters` : 'predictor off: always not taken'})`,
   ];
 }
@@ -197,7 +197,7 @@ function cmdBp(args) {
   const { img } = load(args[0]);
   console.log('predictor                              cycles     CPI  mispredicts  accuracy');
   for (const r of predictorSweep(img)) {
-    const mark = r.bits === 4 ? '  <- EECS 151 tape-out' : r.bits === DEFAULT_HISTORY_BITS ? '  <- performance edition default' : '';
+    const mark = r.bits === 4 ? '  <- baseline' : r.bits === DEFAULT_HISTORY_BITS ? '  <- performance edition default' : '';
     console.log(`${r.label.padEnd(38)} ${String(r.cycles).padStart(7)}  ${r.cpi.toFixed(3)}  ${String(r.mispredicts).padStart(11)}  ${(100 * r.accuracy).toFixed(1).padStart(7)}%${mark}`);
   }
   console.log('\naccuracy = conditional branches predicted correctly / all conditional branches');

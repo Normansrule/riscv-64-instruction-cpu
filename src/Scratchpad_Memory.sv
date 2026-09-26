@@ -4,7 +4,7 @@ import const_pkg::*;
 
 // Scratchpad Memory: 64 KiB of unified, byte-addressed, little-endian memory with two ports.
 //
-// This replaces the EECS 151 memory system (instruction cache + data cache + DRAM model) so the
+// In the baseline build this is the whole memory (single cycle, no stalls) so the
 // pipeline can be studied without cache-miss stalls. Both ports read combinationally; the pipeline
 // registers right after them (FETCH2_INSTRUCTION and MEMORY_DATA_CACHE_DATA) play the role of the
 // SRAM's output register, exactly like a synchronous SRAM macro:
@@ -20,7 +20,12 @@ module ScratchpadMemory (
     input  logic [63:0] DATA_ADDRESS,
     input  logic [7:0]  DATA_WRITE_MASK, // One bit per byte lane, from Store Control
     input  logic [63:0] DATA_WRITE_DATA, // Already shifted into the right lanes by Store Control
-    output logic [63:0] DATA_READ_DATA // The whole aligned doubleword, Load Control picks the lanes
+    output logic [63:0] DATA_READ_DATA, // The whole aligned doubleword, Load Control picks the lanes
+    // ===== Line refill ports (used when the caches are enabled: this memory is then "main memory") =====
+    input  logic [63:0] INSTRUCTION_REFILL_ADDRESS,
+    output logic [255:0] INSTRUCTION_REFILL_LINE,
+    input  logic [63:0] DATA_REFILL_ADDRESS,
+    output logic [255:0] DATA_REFILL_LINE
 );
 
     logic [7:0] MEMORY [0:MEMORY_BYTES-1];
@@ -50,6 +55,16 @@ module ScratchpadMemory (
          MEMORY[DOUBLEWORD_BYTE_ADDRESS + 16'd3], MEMORY[DOUBLEWORD_BYTE_ADDRESS + 16'd2],
          MEMORY[DOUBLEWORD_BYTE_ADDRESS + 16'd1], MEMORY[DOUBLEWORD_BYTE_ADDRESS]};
 
+    // ===== 32-byte line reads for cache refills =====
+    function automatic logic [255:0] read_line(input logic [63:0] address);
+        logic [255:0] LINE;
+        for (int BYTE_INDEX = 0; BYTE_INDEX < 32; BYTE_INDEX = BYTE_INDEX + 1)
+            LINE[8*BYTE_INDEX +: 8] = MEMORY[{address[15:5], 5'd0} + BYTE_INDEX[15:0]];
+        return LINE;
+    endfunction
+    assign INSTRUCTION_REFILL_LINE = read_line(INSTRUCTION_REFILL_ADDRESS);
+    assign DATA_REFILL_LINE = read_line(DATA_REFILL_ADDRESS);
+
     // ===== Synchronous byte-lane writes =====
     always_ff @(posedge clk) begin
         if (IS_PUTCHAR) begin
@@ -71,7 +86,7 @@ module ScratchpadMemory (
 
     /* verilator lint_off UNUSEDSIGNAL */
     logic UNUSED_ADDRESS_BITS; // Only 16 address bits are decoded (the space wraps every 64 KiB)
-    assign UNUSED_ADDRESS_BITS = ^{INSTRUCTION_ADDRESS[63:16], DATA_ADDRESS[63:16]};
+    assign UNUSED_ADDRESS_BITS = ^{INSTRUCTION_ADDRESS[63:16], DATA_ADDRESS[63:16], INSTRUCTION_REFILL_ADDRESS[63:16], INSTRUCTION_REFILL_ADDRESS[4:0], DATA_REFILL_ADDRESS[63:16], DATA_REFILL_ADDRESS[4:0]};
     /* verilator lint_on UNUSEDSIGNAL */
 
 endmodule

@@ -11,7 +11,8 @@ The model tags each bubble with the event that created it, so this equation hold
 every program (`make math` checks all 30 runs):
 
 ```text
-cycles = N + 5 + L + 3F + R + K     (K: multiply/divide busy cycles, performance edition)
+cycles = N + 5 + L + 3F + R + K + I + D
+       (K: multiply/divide busy, I: instruction-cache miss, D: data-cache miss; performance edition)
           |   |   |    |    +-- FETCH2 redirects that survived (1 bubble each)
           |   |   |    +------- flushes from EXECUTE: wrong guesses and JALRs (3 bubbles each)
           |   |   +------------ load stalls (1 bubble each)

@@ -18,7 +18,7 @@ module RegisterFile (
     logic [63:0] MEMORY [1:DEPTH-1]; // x1 to x31 (x0 is not stored at all: it is hard-wired to zero)
 
     // Simulation start-up value. Real register files are usually NOT reset (it costs a mux per bit),
-    // so the original EECS 151 reset loop was replaced: software never reads a register before writing it.
+    // so there is no reset loop: software never reads a register before writing it.
     integer MEMORY_INDEX;
     initial begin
         for (MEMORY_INDEX = 1; MEMORY_INDEX < DEPTH; MEMORY_INDEX = MEMORY_INDEX + 1) begin

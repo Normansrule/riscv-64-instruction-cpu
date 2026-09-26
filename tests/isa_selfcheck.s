@@ -1,7 +1,7 @@
 # =============================================================================
 # tests/isa_selfcheck.s: AUTO-GENERATED self-checking test of every RV64IM +
 # Zicsr instruction (859 test cases, expected values computed by an independent
-# Python reference model). Uses the riscv-tests / EECS 151 convention:
+# Python reference model). Uses the riscv-tests convention:
 #   PASS: tohost = 1           FAIL: tohost = (test number << 1) | 1
 # so the testbench prints "FAIL in test N": search for "tN:" below.
 #

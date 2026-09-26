@@ -1,12 +1,12 @@
 # Silicon: what this CPU looks like as a real chip
 
-Everything on this page is real data: the original EECS 151 design's final layout and reports
-(Cadence Innovus, SkyWater sky130), real sky130 standard-cell drawings, and open-source synthesis of
+Everything on this page is real data: the final layout and reports of a 32-bit prototype of this pipeline
+(SkyWater sky130), real sky130 standard-cell drawings, and open-source synthesis of
 this repository's 64-bit RTL onto the sky130 high-density library.
 
 ## The whole die
 
-![full chip](img/silicon/your_chip_full.png)
+![full chip](img/silicon/prototype_full.png)
 
 A 3 mm x 3 mm die, but the logic covers only a few percent of it (cell density 2.8%): the rest is
 filler and decoupling capacitors. The ten grey blocks at the lower left are SRAM macros from the
@@ -14,7 +14,7 @@ open-source sram22 generator: four data arrays and one tag array for each cache.
 
 ## The core
 
-![core zoom](img/silicon/your_chip_cpu_zoom.png)
+![core zoom](img/silicon/prototype_cpu_zoom.png)
 
 The placer groups cells that talk to each other. The register file (purple) is the largest block;
 the pipeline logic (red) sits between it and the ALU (orange); the gshare predictor (teal) sits near
@@ -22,12 +22,12 @@ the fetch logic; the caches (blue and green) spread toward their SRAMs.
 
 ## The wiring
 
-![routing](img/silicon/your_chip_routing.png)
+![routing](img/silicon/prototype_routing.png)
 
 Five metal layers, alternating direction: met1 purple (inside cells), met2 blue (vertical), met3
 green (horizontal), met4 orange (vertical, also over the SRAMs), met5 red (power and long wires).
 
-![caches](img/silicon/your_chip_caches.png)
+![caches](img/silicon/prototype_caches.png)
 
 These pictures are drawn by `tools/render_def.py` from the placed-and-routed DEF file: every
 rectangle is one standard cell at its real position.
@@ -92,7 +92,8 @@ GShare area versus history length:
 
 ## Tools and flows
 
-* Original: Hammer + Cadence Genus/Innovus at Berkeley (configs in
-  [`original/eecs151-rv32i/physical-design/`](../original/eecs151-rv32i/physical-design)).
+* Prototype: placed and routed with a commercial flow (Cadence Genus/Innovus); its layout and reports
+  are in [`silicon/`](silicon).
+* 7 nm-class timing: `tools/timing.sh performance asap7` maps the RTL onto the ASAP7 predictive library.
 * Open source equivalent: OpenLane / OpenROAD-flow-scripts on the same sky130 PDK, after
   converting the SystemVerilog with sv2v.

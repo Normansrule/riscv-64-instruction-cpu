@@ -38,7 +38,7 @@ stateDiagram-v2
     SN --> SN: not taken
 ```
 
-Counters reset to `10` (weakly taken), the choice made in the EECS 151 design: most branches in real
+Counters reset to `10` (weakly taken): most branches in real
 code are loop branches, which are usually taken.
 
 ## gshare: PC xor history
@@ -63,11 +63,27 @@ wrong-path branches.
 ![sweep](../img/charts/predictor_sweep.svg)
 
 More history distinguishes more situations but spreads training over more counters (each needs its
-own warm-up) and the table grows as 2^bits. The 4-bit tape-out value is best for the prime sieve;
+own warm-up) and the table grows as 2^bits. 4 bits is best for the prime sieve on the baseline;
 bubble sort prefers 6. Chapter 7 shows what each extra bit costs in silicon.
 
 ```bash
 make bp PROG=06_bubble_sort       # the whole sweep for one program
 ```
+
+## Two predictors and a referee: the tournament
+
+gshare learns patterns across branches but warms up slowly; a plain per-branch **Branch History
+Table** (BHT, one 2-bit counter per branch address) learns fast but cannot see patterns. The
+performance edition keeps both and adds a **chooser**: one more 2-bit counter per branch that moves
+toward whichever predictor was right whenever they disagree
+([`src/Tournament_Chooser.sv`](../../src/Tournament_Chooser.sv)). This is the design of the Alpha
+21264 (1998), still the textbook example of a "combining" predictor.
+
+## Knowing *where* before knowing *what*: the BTB
+
+A predicted-taken branch still cost 1 bubble, because the target `PC + imm` is only known in
+FETCH2. The **Branch Target Buffer** ([`src/Branch_Target_Buffer.sv`](../../src/Branch_Target_Buffer.sv))
+remembers "the instruction at this PC jumped to that PC" and lets FETCH1 jump immediately, and the
+**Return Address Stack** predicts `ret`.
 
 Next: [6. Measuring performance](06_performance.md)

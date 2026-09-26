@@ -85,10 +85,10 @@
   <div class="wrap">
     <div class="copy narrow">
       <h2>Guess the branches well and the same program finishes sooner.</h2>
-      <p>Both CPUs below run the same program on the same clock. One always guesses that branches fall through; the other uses the gshare predictor from the tape-out: 2-bit counters indexed by the program counter XOR the last few branch outcomes. Each strip is the WRITEBACK stage over time: a filled tick is an instruction finishing, a coloured gap is a bubble.</p>
+      <p>Both CPUs below run the same program on the same clock. One always guesses that branches fall through; the other uses gshare: 2-bit counters indexed by the program counter XOR the last few branch outcomes. Each strip is the WRITEBACK stage over time: a filled tick is an instruction finishing, a coloured gap is a bubble.</p>
     </div>
     <div class="race-ctl">
-      <label>Compare <select id="r-mode"><option value="bp">predictor off vs gshare</option><option value="build">original design vs performance edition</option></select></label>
+      <label>Compare <select id="r-mode"><option value="bp">predictor off vs gshare</option><option value="build">baseline vs performance edition</option></select></label>
       <label>Program <select id="r-prog"></select></label>
       <label>History bits <input id="r-hist" type="range" min="1" max="10" value="6"> <output id="r-hist-o">6</output></label>
       <button id="r-go" class="primary">Start the race</button>
@@ -120,6 +120,9 @@
           <li><i style="background:var(--F2)"></i>Redirect: a taken branch or <code>jal</code> seen in FETCH2, 1 cycle</li>
           <li><i style="background:var(--stall)"></i>Load stall: data not back from memory yet, 1 cycle</li>
           <li><i style="background:var(--fill)"></i>Pipeline filling up at the start, 5 cycles</li>
+          <li><i style="background:var(--F1)"></i>Instruction cache miss: waiting for main memory</li>
+          <li><i style="background:var(--M)"></i>Data cache miss: a load waiting for its line</li>
+          <li><i style="background:var(--D)"></i>Multiply or divide still working</li>
         </ul>
         <p id="r-verdict" class="verdict" aria-live="polite"></p>
       </div>
@@ -132,12 +135,12 @@
   <div class="wrap">
     <div class="copy narrow">
       <h2>Then it became a chip.</h2>
-      <p>This is the original EECS 151 design after place and route on SkyWater's 130 nm process: every coloured speck is one standard cell at its real position. Drag the divider to peel the metal wiring off, drag the picture to pan, and use the buttons or your scroll wheel over it to zoom.</p>
+      <p>This is a 32-bit prototype of this pipeline after place and route on SkyWater's 130 nm process: every coloured speck is one standard cell at its real position. Drag the divider to peel the metal wiring off, drag the picture to pan, and use the buttons or your scroll wheel over it to zoom.</p>
     </div>
     <div class="scope" id="scope" tabindex="0" aria-label="Chip layout viewer. Arrow keys pan, plus and minus zoom.">
       <div class="scope-inner" id="scope-inner">
-        <img src="docs/img/silicon/your_chip_cpu_zoom.png" alt="Placement of the core: register file, pipeline, ALU and predictor as coloured cell clusters" draggable="false">
-        <img src="docs/img/silicon/your_chip_routing.png" alt="" class="routing" id="scope-routing" draggable="false">
+        <img src="docs/img/silicon/prototype_cpu_zoom.png" alt="Placement of the core: register file, pipeline, ALU and predictor as coloured cell clusters" draggable="false">
+        <img src="docs/img/silicon/prototype_routing.png" alt="" class="routing" id="scope-routing" draggable="false">
       </div>
       <div class="divider" id="scope-div" role="slider" tabindex="0" aria-label="Reveal the metal wiring" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"><span></span></div>
       <div class="scope-ctl"><button id="z-in" aria-label="Zoom in">+</button><button id="z-out" aria-label="Zoom out">−</button><button id="z-reset">Fit</button></div>
@@ -164,7 +167,7 @@
   <div class="wrap">
     <div class="copy narrow">
       <h2>Where every cycle goes, for every program.</h2>
-      <p>Measured right now in your browser by the cycle-exact model. Each bar is one program's run time in clock cycles, split into useful work and each kind of bubble: the performance edition on top, the original EECS 151 design below. Select a program to step through it in the lab.</p>
+      <p>Measured right now in your browser by the cycle-exact model. Each bar is one program's run time in clock cycles, split into useful work and each kind of bubble: the performance edition on top, the baseline design below. Select a program to step through it in the lab.</p>
     </div>
     <div id="dash" class="dash" aria-busy="true"><p class="small">Running 15 programs…</p></div>
   </div>
@@ -174,16 +177,16 @@
 <section class="band" id="faster">
   <div class="wrap">
     <div class="copy narrow">
-      <h2>From 7.5 MHz to 207 MHz, and CPI toward 1.</h2>
-      <p>The original design computed a whole 64-bit division in one clock cycle: 64 subtractions in a row, 133 ns. The performance edition divides one bit per cycle, adds carry-lookahead (Kogge-Stone) adders, and wins the lost cycles back with a branch target buffer, a return address stack and precise load stalls. Both designs are in the repository and both are checked cycle by cycle.</p>
+      <h2>A shorter critical path, and fewer wasted cycles.</h2>
+      <p>The baseline computes a whole 64-bit division in one clock cycle: 64 subtractions in a row, 133 ns. The performance edition divides one bit per cycle, adds carry-lookahead (Kogge-Stone) adders, and wins cycles back with a tournament branch predictor, a branch target buffer, a return address stack and precise load stalls, behind instruction and data caches with prefetching. Both designs are in the repository and both are checked cycle by cycle.</p>
     </div>
     <div class="facts">
-      <div><strong>207 MHz</strong><span>logic-only clock estimate on SkyWater 130 nm, with the multiply/divide unit (was about 7.5 MHz)</span></div>
-      <div><strong>1.02</strong><span>cycles per instruction on the branch-pattern program (was 1.38)</span></div>
-      <div><strong>26×</strong><span>geometric-mean speed-up over all 16 programs, clock and cycles together</span></div>
+      <div><strong>200 MHz</strong><span>logic-only estimate on SkyWater 130 nm with the multiply/divide unit (the baseline: about 7.5 MHz)</span></div>
+      <div><strong>1.34 GHz</strong><span>the same RTL mapped onto ASAP7, a 7 nm-class research library</span></div>
+      <div><strong>1.03</strong><span>cycles per instruction on the branch-pattern program, caches included (baseline 1.38)</span></div>
     </div>
     <figure class="cp"><img src="docs/img/charts/performance.svg" alt="Cycles per instruction per program, original design versus performance edition" loading="lazy"></figure>
-    <p class="small">Why not 2.5 GHz? In this 130 nm process one carry step of an adder alone takes about 330 ps, most of a 400 ps cycle. <a data-repo-doc="docs/PERFORMANCE.md" href="docs/PERFORMANCE.md">How every number was measured</a>.</p>
+    <p class="small">Why not higher? In 130 nm one carry step of an adder takes about 330 ps; in 7 nm the whole core's longest path is 748 ps. Smaller processes are faster, but a process node is chosen by the foundry, not written in RTL. <a data-repo-doc="docs/PERFORMANCE.md" href="docs/PERFORMANCE.md">How every number was measured</a>.</p>
   </div>
 </section>
 
@@ -212,7 +215,7 @@
 </main>
 
 <footer class="foot">
-  <p>Designed by Aleksander Norman, grown from an EECS 151/251A ASIC project at UC Berkeley. MIT license. Cell layouts from the SkyWater PDK (Apache 2.0). Rendering with three.js (MIT).</p>
+  <p>Designed by Aleksander Norman. MIT license. Cell layouts from the SkyWater PDK (Apache 2.0). Rendering with three.js (MIT).</p>
   <p class="foot-links"><a data-repo-link href="#">Source on GitHub</a><a href="web/index.html">Pipeline lab</a><a href="docs/img/cpu_block_diagram.svg">Block diagram</a></p>
 </footer>
 

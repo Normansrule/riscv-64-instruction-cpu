@@ -11,7 +11,7 @@ but has not been written back yet. Reading the register file would give the **ol
 
 ## Fix 1: forwarding (no lost cycles)
 
-Like the EECS 151 Riscv151 design, this CPU forwards **into DECODE**. Each source register goes
+This CPU forwards **into DECODE**. Each source register goes
 through a priority chain and the newest value wins:
 
 ```text

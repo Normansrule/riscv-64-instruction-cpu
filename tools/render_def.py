@@ -1,7 +1,7 @@
 # =============================================================================
 # tools/render_def.py: draw a placed-and-routed chip from its DEF file
 #
-#   python3 tools/render_def.py original/eecs151-rv32i/physical-design/riscv_top.def.gz docs/img/silicon
+#   python3 tools/render_def.py docs/silicon/prototype_layout.def.gz docs/img/silicon
 #
 # Standard-cell widths are inferred from the placement rows (Innovus fills every row with filler
 # cells, so each cell ends where the next begins); SRAM macro sizes from the gaps they leave.
@@ -10,7 +10,7 @@
 # =============================================================================
 import gzip, re, collections, sys, os, json
 from PIL import Image, ImageDraw, ImageFont
-DEF = sys.argv[1] if len(sys.argv) > 1 else 'original/eecs151-rv32i/physical-design/riscv_top.def.gz'
+DEF = sys.argv[1] if len(sys.argv) > 1 else 'docs/silicon/prototype_layout.def.gz'
 OUT = sys.argv[2] if len(sys.argv) > 2 else 'docs/img/silicon'
 os.makedirs(OUT, exist_ok=True)
 txt=gzip.open(DEF,'rt').read()
@@ -116,7 +116,7 @@ def draw(out, box, px, title, routes=False, labels=True):
     img.save(out,optimize=True); print(out,img.size)
 json.dump({'counts':stat,'area_um2':{k:round(v) for k,v in area.items()},'macros':[(m[0],m[1],m[4]/1000,m[5]/1000) for m in mrect]},open(os.path.join(OUT,'chip_stats.json'),'w'),indent=1)
 D=OUT+'/'
-draw(D+'your_chip_full.png',(0,0,3000,3000),1500,'riscv_top (EECS 151, Spring 2026): 3.0 x 3.0 mm die, SkyWater sky130, placed and routed by Cadence Innovus')
-draw(D+'your_chip_cpu_zoom.png',(480,100,1680,1300),1500,'Zoom on the Riscv151 core (1.2 x 1.2 mm): standard cells colored by module')
-draw(D+'your_chip_caches.png',(0,0,1100,900),1400,'Caches: 8 data SRAMs + 2 tag SRAMs (sram22 macros) and their controllers')
-draw(D+'your_chip_routing.png',(480,100,1680,1300),1500,'The same core with its metal wiring: met1 purple, met2 blue, met3 green, met4 orange, met5 red',routes=True,labels=False)
+draw(D+'prototype_full.png',(0,0,3000,3000),1500,'32-bit prototype of this pipeline: 3.0 x 3.0 mm die, SkyWater sky130, placed and routed')
+draw(D+'prototype_cpu_zoom.png',(480,100,1680,1300),1500,'Zoom on the core (1.2 x 1.2 mm): standard cells colored by module')
+draw(D+'prototype_caches.png',(0,0,1100,900),1400,'Caches: 8 data SRAMs + 2 tag SRAMs (sram22 macros) and their controllers')
+draw(D+'prototype_routing.png',(480,100,1680,1300),1500,'The same core with its metal wiring: met1 purple, met2 blue, met3 green, met4 orange, met5 red',routes=True,labels=False)

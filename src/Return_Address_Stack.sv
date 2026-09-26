@@ -4,7 +4,7 @@
 // Return Address Stack (RAS): predicts where "ret" goes.
 //
 // A return is "jalr x0, 0(ra)": its target lives in a register, so FETCH cannot compute it and the
-// EECS 151 design always flushed 3 instructions for it. But returns follow calls in last-in first-out
+// baseline design always flushes 3 instructions for it. But returns follow calls in last-in first-out
 // order, so a tiny stack of return addresses predicts them almost perfectly:
 //
 //   FETCH2 sees a call   (jal or jalr with rd = ra or t0)  : push PC + 4

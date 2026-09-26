@@ -4,7 +4,7 @@
 // Parallel Prefix Adder (Kogge-Stone): SUM = A + B + CARRY_IN in log2(WIDTH) levels of logic.
 //
 // Why: a ripple-carry adder makes bit i wait for the carry of bit i-1, so a 64-bit add is 64 carry
-// steps in a row (about 21 ns on sky130; 14.3 ns of the EECS 151 chip's 26 ns clock was exactly this).
+// steps in a row (14.3 ns of the 32-bit prototype chip's 26 ns clock was exactly this).
 // A prefix adder computes every carry at once from "generate" and "propagate" signals:
 //
 //   level 0 : GENERATE[i] = A[i] & B[i]          PROPAGATE[i] = A[i] ^ B[i]

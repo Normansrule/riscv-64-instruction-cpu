@@ -18,12 +18,12 @@
 #
 # EXPECT: a3 = 204
 # EXPECT: a4 = 204
-# EXPECT[gshare]: a2 = 56
-# EXPECT[bp-off]: a2 = 56
 # EXPECT[gshare]: a0 = 99
 # EXPECT[gshare]: a1 = 43
+# EXPECT[gshare]: a2 = 56
 # EXPECT[bp-off]: a0 = 110
 # EXPECT[bp-off]: a1 = 54
+# EXPECT[bp-off]: a2 = 56
 # EXPECT[perf]: a0 = 118
 # EXPECT[perf]: a1 = 85
 # EXPECT[perf]: a2 = 33
@@ -34,6 +34,8 @@
     li   sp, 0xF000
     li   s4, 0               # sum of squares (called version)
     li   s5, 8
+    li   a0, 1
+    call square              # warm-up call: brings square() into the instruction cache
     nop
     nop
     nop

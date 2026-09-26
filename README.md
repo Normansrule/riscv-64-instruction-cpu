@@ -1,9 +1,9 @@
 # RISC-V 64 Instruction CPU
 
 **A 64-bit RISC-V processor you can read, run, watch, and see as real silicon.** A 6-stage pipelined
-RV64IM core with a gshare branch predictor, written in SystemVerilog in the style of the EECS 151
-(UC Berkeley, Spring 2026) ASIC project it grew from, and built to **teach how a RISC-V CPU works and
-how to read its diagrams**.
+RV64IM core with instruction and data caches, a tournament branch predictor, a branch target buffer
+and a return address stack, written in SystemVerilog and built to **teach how a modern RISC-V CPU works
+and how to read its diagrams**.
 
 ![The Riscv64 datapath](docs/img/cpu_block_diagram.svg)
 
@@ -12,9 +12,10 @@ how to read its diagrams**.
 | **Instruction set** | RV64I + M (multiply/divide) + Zicsr (CSR instructions): 71 instructions, every one documented [in binary](binary/README.md) |
 | **Pipeline** | FETCH1 → FETCH2 → DECODE → EXECUTE → MEMORY → WRITEBACK, in order, one instruction per cycle |
 | **Hazards** | forwarding into DECODE from EXECUTE / MEMORY / WRITEBACK, 1-cycle `LOAD_STALL` |
-| **Branch prediction** | `GSharePredictor` (64 two-bit counters, PC xor global history, checkpoint repair) + a 16-entry Branch Target Buffer (known taken branches cost 0 cycles) + an 8-entry Return Address Stack |
-| **Performance** | CPI down to 1.02 on branchy code; about **207 MHz** logic-only on SkyWater 130 nm with the full M extension, up from about 7.5 MHz: [PERFORMANCE.md](docs/PERFORMANCE.md) |
-| **Two builds** | the performance edition (default) and the original EECS 151 behaviour (`-DBASELINE`), both in the same RTL behind parameters |
+| **Branch prediction** | tournament: a per-branch Branch History Table and `GSharePredictor` (PC xor global history, checkpoint repair) with a chooser; a 16-entry Branch Target Buffer (known taken branches cost 0 cycles); an 8-entry Return Address Stack |
+| **Memory** | 4 KiB instruction cache with next-line prefetch and 4 KiB write-through data cache (32-byte lines) in front of a 10-cycle main memory |
+| **Clock (logic only)** | about **200 MHz** on SkyWater 130 nm and **1.34 GHz** on the ASAP7 7 nm research kit, with the full M extension: [PERFORMANCE.md](docs/PERFORMANCE.md) |
+| **Two builds** | the performance edition (default) and a simple baseline pipeline (`-DBASELINE`), both in the same RTL behind parameters |
 | **Verified** | 15 programs + an 859-case self-checking test, predictor on and off, **both builds**: the RTL matches a software twin on **every clock cycle** (64 runs) |
 | **Silicon** | the original design's real sky130 layout, timing and area, plus sky130 synthesis of this RTL |
 | **Runs on** | Icarus Verilog, Verilator, Yosys, any web browser |
@@ -86,14 +87,15 @@ Every instruction has a page in [`binary/`](binary/README.md) with its bit patte
 encoding, the exact control signals `ControlUnit` produces for it, and its journey through the six
 stages. Try `node tools/rv.mjs encode "ld a0, 16(sp)"`.
 
-## Faster: CPI toward 1, clock up 27x
+## Faster: shorter critical path, fewer wasted cycles
 
 ![CPI per program, original vs performance edition](docs/img/charts/performance.svg)
 
-The original design divided 64 bits in a single 133 ns cycle; the performance edition divides one bit
-per cycle, uses Kogge-Stone prefix adders, and wins the cycles back with a Branch Target Buffer, a
-Return Address Stack and precise load stalls. Result: about 207 MHz (logic-only, sky130 typical
-corner) instead of about 7.5 MHz, and a **26x** geometric-mean speed-up across all programs.
+The baseline divides 64 bits in a single 133 ns cycle; the performance edition divides one bit per
+cycle, uses Kogge-Stone prefix adders, and wins cycles back with a tournament predictor, a Branch
+Target Buffer, a Return Address Stack and precise load stalls, while its caches make the memory
+realistic. Result: about 200 MHz (logic-only, sky130 typical corner) instead of about 7.5 MHz, and
+1.34 GHz for the same RTL on a 7 nm-class library.
 [PERFORMANCE.md](docs/PERFORMANCE.md) has every step, every trade-off (divide-heavy code needs more
 cycles), and why 2.5 GHz is not possible in a 130 nm process.
 
@@ -108,7 +110,7 @@ make timing                                 # sky130 logic-only clock estimate o
 
 ![predictor sweep](docs/img/charts/predictor_sweep.svg)
 
-The tape-out used 4 history bits (16 counters); the performance edition uses 6. The sweep shows why
+The baseline uses 4 history bits (16 counters); the performance edition uses 6, plus a per-branch table and a chooser. The sweep shows why
 the "right" size depends on the program, and [SILICON.md](docs/SILICON.md#this-repositorys-64-bit-rtl-on-sky130)
 shows the price: the predictor's area grows about 4x for every 2 extra bits.
 
@@ -122,29 +124,29 @@ performance edition.
 
 | program | what it shows | cycles (gshare) | CPI | cycles (predictor off) | CPI |
 |---|---|---:|---:|---:|---:|
-| [`00_pipeline_fill`](programs/00_pipeline_fill.s) | watch an empty pipeline fill up | 10 | 2.00 | 10 | 2.00 |
-| [`01_hello`](programs/01_hello.s) | print a string through memory-mapped I/O | 125 | 1.29 | 122 | 1.26 |
-| [`02_forwarding`](programs/02_forwarding.s) | a chain of dependent instructions with ZERO stalls | 12 | 1.71 | 12 | 1.71 |
-| [`03_load_use`](programs/03_load_use.s) | the one data hazard forwarding cannot fix | 18 | 1.64 | 18 | 1.64 |
-| [`04_branch_penalty`](programs/04_branch_penalty.s) | what a branch costs in this 6-stage pipe | 42 | 1.27 | 65 | 1.97 |
-| [`05_fibonacci`](programs/05_fibonacci.s) | iterative Fibonacci, fib(50) in a 64-bit register | 317 | 1.04 | 314 | 1.03 |
-| [`06_bubble_sort`](programs/06_bubble_sort.s) | sort 10 signed 64-bit numbers in memory | 1022 | 1.42 | 1058 | 1.47 |
-| [`07_factorial_recursive`](programs/07_factorial_recursive.s) | recursion, the stack, CALL and RET | 385 | 1.63 | 382 | 1.62 |
-| [`08_gcd_euclid`](programs/08_gcd_euclid.s) | greatest common divisor with REM (M extension) | 65 | 3.42 | 62 | 3.26 |
-| [`09_primes_sieve`](programs/09_primes_sieve.s) | Sieve of Eratosthenes | 16800 | 1.13 | 18649 | 1.26 |
-| [`10_print_numbers`](programs/10_print_numbers.s) | print Fibonacci numbers in decimal using DIVU/REMU | 986 | 1.83 | 1109 | 2.06 |
-| [`11_gshare_patterns`](programs/11_gshare_patterns.s) | a branch that ALTERNATES taken / not-taken | 1121 | 1.02 | 2007 | 1.82 |
-| [`12_measure_cpi`](programs/12_measure_cpi.s) | a program that measures its OWN performance | 126 | 1.33 | 179 | 1.88 |
-| [`13_function_call_cost`](programs/13_function_call_cost.s) | why function calls are not free on this pipeline | 227 | 2.08 | 261 | 2.39 |
-| [`14_false_load_stall`](programs/14_false_load_stall.s) | a stall caused by bits that only LOOK like a register | 24 | 1.26 | 24 | 1.26 |
+| [`00_pipeline_fill`](programs/00_pipeline_fill.s) | watch an empty pipeline fill up | 21 | 4.20 | 21 | 4.20 |
+| [`01_hello`](programs/01_hello.s) | print a string through memory-mapped I/O | 147 | 1.52 | 144 | 1.48 |
+| [`02_forwarding`](programs/02_forwarding.s) | a chain of dependent instructions with ZERO stalls | 23 | 3.29 | 23 | 3.29 |
+| [`03_load_use`](programs/03_load_use.s) | the one data hazard forwarding cannot fix | 40 | 3.64 | 40 | 3.64 |
+| [`04_branch_penalty`](programs/04_branch_penalty.s) | what a branch costs in this 6-stage pipe | 53 | 1.61 | 76 | 2.30 |
+| [`05_fibonacci`](programs/05_fibonacci.s) | iterative Fibonacci, fib(50) in a 64-bit register | 328 | 1.08 | 328 | 1.08 |
+| [`06_bubble_sort`](programs/06_bubble_sort.s) | sort 10 signed 64-bit numbers in memory | 1003 | 1.39 | 1116 | 1.55 |
+| [`07_factorial_recursive`](programs/07_factorial_recursive.s) | recursion, the stack, CALL and RET | 518 | 2.19 | 518 | 2.19 |
+| [`08_gcd_euclid`](programs/08_gcd_euclid.s) | greatest common divisor with REM (M extension) | 76 | 4.00 | 73 | 3.84 |
+| [`09_primes_sieve`](programs/09_primes_sieve.s) | Sieve of Eratosthenes | 17044 | 1.15 | 19023 | 1.28 |
+| [`10_print_numbers`](programs/10_print_numbers.s) | print Fibonacci numbers in decimal using DIVU/REMU | 1024 | 1.90 | 1148 | 2.13 |
+| [`11_gshare_patterns`](programs/11_gshare_patterns.s) | a branch that ALTERNATES taken / not-taken | 1139 | 1.03 | 2020 | 1.83 |
+| [`12_measure_cpi`](programs/12_measure_cpi.s) | a program that measures its OWN performance | 151 | 1.59 | 204 | 2.15 |
+| [`13_function_call_cost`](programs/13_function_call_cost.s) | why function calls are not free on this pipeline | 277 | 2.45 | 300 | 2.65 |
+| [`14_false_load_stall`](programs/14_false_load_stall.s) | a stall caused by bits that only LOOK like a register | 82 | 2.16 | 81 | 2.13 |
 
 ## Down to silicon
 
 | | |
 |---|---|
-| ![core](docs/img/silicon/your_chip_cpu_zoom.png) | ![routing](docs/img/silicon/your_chip_routing.png) |
+| ![core](docs/img/silicon/prototype_cpu_zoom.png) | ![routing](docs/img/silicon/prototype_routing.png) |
 
-The original EECS 151 design as placed and routed on SkyWater sky130: register file in purple,
+A 32-bit prototype of this pipeline as placed and routed on SkyWater sky130: register file in purple,
 pipeline in red, ALU in orange, gshare in teal, then the metal wiring layer by layer. 26 ns clock,
 +0.163 ns slack, 15,753 cells. More than half the clock period is the ALU's ripple-carry adder:
 
@@ -180,11 +182,11 @@ faster adder for the critical path, forwarding into EXECUTE, and putting the cac
 | [`model/`](model) | ISA table, assembler, cycle-exact pipeline model (JavaScript) |
 | [`programs/`](programs), [`tests/`](tests) | example programs and the self-check |
 | [`binary/`](binary/README.md) | every instruction and every program in binary |
-| [`docs/`](docs) | [learning path](docs/learn/README.md), [architecture](docs/ARCHITECTURE.md), [performance](docs/PERFORMANCE.md), [math](docs/MATH.md), [experiments](docs/EXPERIMENTS.md), [silicon](docs/SILICON.md), [from EECS 151](docs/FROM_EECS151.md), [references](docs/REFERENCES.md) |
+| [`docs/`](docs) | [learning path](docs/learn/README.md), [architecture](docs/ARCHITECTURE.md), [performance](docs/PERFORMANCE.md), [math](docs/MATH.md), [experiments](docs/EXPERIMENTS.md), [silicon](docs/SILICON.md), [references](docs/REFERENCES.md) |
 | [`index.html`](index.html), [`site/`](site) | the GitHub Pages front page: 3D pipeline, bit playground, predictor race, chip scope, dashboard (vanilla JavaScript modules + vendored three.js, no build step) |
 | [`web/`](web/index.html) | the pipeline lab: step-by-step simulator |
 | [`tools/`](tools) | CLI, test runner, doc/chart/diagram generators, chip and cell renderers |
-| [`original/eecs151-rv32i/`](original/eecs151-rv32i) | the student-written RV32I original, its physical-design configs, final DEF and reports |
+| [`docs/silicon/`](docs/silicon) | the 32-bit prototype's placed-and-routed layout (DEF) and timing/power reports |
 
 ## Every command
 
@@ -211,6 +213,6 @@ Transformer Explainer; the 3D view uses three.js (MIT, vendored in `site/vendor/
 
 ## Credits and license
 
-Designed by Aleksander Norman. The RTL is grown from his EECS 151/251A ASIC project (UC Berkeley,
-Spring 2026); course-staff files are not included. SkyWater sky130 cell layouts are Apache-2.0.
+Designed by Aleksander Norman. SkyWater sky130 cell layouts are Apache-2.0; ASAP7 is used through its
+published liberty files for timing only.
 Everything else is under the [MIT license](LICENSE).

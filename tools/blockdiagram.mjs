@@ -195,7 +195,7 @@ export function blockDiagramSVG() {
   });
   const notes = [
     'Every clock edge, each thick bar captures the results of the stage to its left: 6 instructions are in flight at once.',
-    'Data hazards are fixed by forwarding INTO DECODE (EECS 151 style): the newest value of rs1/rs2 is latched into EXECUTE with the instruction.',
+    'Data hazards are fixed by forwarding INTO DECODE: the newest value of rs1/rs2 is latched into EXECUTE with the instruction.',
     'Branches are guessed twice: FETCH1 reads a gshare counter, FETCH2 redirects predicted-taken branches and every JAL; EXECUTE checks the guess.',
     'Numbers to remember: pipeline fill 5 cycles, load stall 1, FETCH2 redirect 1, wrong guess 3. Exact: cycles = N + 5 + L + 3F + R + K (docs/MATH.md).',
     'Performance edition (default): a Branch Target Buffer beside the GSharePredictor makes known taken branches free, and a Return Address Stack in FETCH2 predicts ret (docs/PERFORMANCE.md).',

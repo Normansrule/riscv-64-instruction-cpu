@@ -3,8 +3,8 @@
 #
 # Each instruction needs the result of the one right before it. Without
 # forwarding, DECODE would have to wait until the producer had written the
-# register file in WRITEBACK. This core forwards INTO DECODE (like the EECS 151
-# Riscv151 design): the value is taken from EXECUTE (1 instruction back),
+# register file in WRITEBACK. This core forwards INTO DECODE: the value is
+# taken from EXECUTE (1 instruction back),
 # MEMORY (2 back) or WRITEBACK (3 back), nearest first, and latched into
 # EXECUTE together with the instruction.
 #

@@ -1,123 +1,115 @@
-# Performance: pushing CPI toward 1 and the clock up
+# Performance: a shorter critical path, fewer wasted cycles, a realistic memory
 
-This page records how the "performance edition" of the core was built from the original EECS 151
-design, what each change bought, and what it cost. Every number is measured by a script in this
-repository, and every behavioural change is verified cycle by cycle against the RTL by `make test`,
-which builds **both** designs.
+How the performance edition was built from the baseline pipeline, what each change bought, and what
+it cost. Every number is produced by a script in this repository, and every behavioural change is
+verified cycle by cycle against the RTL by `make test`, which builds **both** designs.
 
 | build | how to get it | what it is |
 |---|---|---|
-| **performance** (default) | `make test`, `make run PROG=...` | all features below enabled, 6 history bits |
-| **baseline** | `-DBASELINE`, `CONFIG=baseline` | the original EECS 151 behaviour widened to RV64: no BTB, no return stack, field-based load stalls, single-cycle M unit, 4 history bits |
+| **performance** (default) | `make test`, `make run PROG=...` | 4 KiB instruction cache with next-line prefetch, 4 KiB write-through data cache, tournament predictor (per-branch history table + gshare + chooser), 16-entry branch target buffer, 8-entry return address stack, precise load stalls, iterative multiply/divide, Kogge-Stone adders |
+| **baseline** | `-DBASELINE`, `CONFIG=baseline` | the plain 6-stage pipeline: single-cycle 64 KiB memory, 4-bit gshare only, single-cycle multiply/divide |
 
-Each feature is a parameter of [`src/Riscv64.sv`](../src/Riscv64.sv), so you can switch any one
-off and measure it on its own: `BTB_ENABLE`, `RAS_ENABLE`, `PRECISE_LOAD_STALL`,
-`ITERATIVE_MULTIPLY_DIVIDE`, `GSHARE_HISTORY_BITS`.
+Every feature is a parameter of [`src/Riscv64.sv`](../src/Riscv64.sv) / [`src/Riscv64_top.sv`](../src/Riscv64_top.sv)
+(`CACHES_ENABLE`, `MISS_LATENCY`, `TOURNAMENT_PREDICTOR`, `BTB_ENABLE`, `RAS_ENABLE`,
+`PRECISE_LOAD_STALL`, `ITERATIVE_MULTIPLY_DIVIDE`, `GSHARE_HISTORY_BITS`), with the same switches in
+`CONFIGS` in [`model/core.js`](../model/core.js), so each one can be measured on its own.
 
 ## The result
 
 ![CPI per program](img/charts/performance.svg)
 
-| program | M ops | original: cycles | CPI | performance: cycles | CPI | run time, original (7.5 MHz) | run time, performance (207 MHz) | speed-up |
+| program | M ops | baseline: cycles | CPI | performance: cycles | CPI | time, baseline 130 nm (7.5 MHz) | time, performance 130 nm (200 MHz) | time, performance 7 nm (1.34 GHz) |
 |---|:-:|---:|---:|---:|---:|---:|---:|---:|
-| `00_pipeline_fill` |  | 10 | 2.00 | 10 | **2.00** | 1.3 µs | 0.05 µs | 27.6x |
-| `01_hello` |  | 139 | 1.43 | 125 | **1.29** | 18.5 µs | 0.60 µs | 30.7x |
-| `02_forwarding` |  | 12 | 1.71 | 12 | **1.71** | 1.6 µs | 0.06 µs | 27.6x |
-| `03_load_use` |  | 18 | 1.64 | 18 | **1.64** | 2.4 µs | 0.09 µs | 27.6x |
-| `04_branch_penalty` |  | 50 | 1.52 | 42 | **1.27** | 6.7 µs | 0.20 µs | 32.9x |
-| `05_fibonacci` |  | 366 | 1.20 | 317 | **1.04** | 48.8 µs | 1.53 µs | 31.9x |
-| `06_bubble_sort` | yes | 1,124 | 1.56 | 1,022 | **1.42** | 149.9 µs | 4.94 µs | 30.4x |
-| `07_factorial_recursive` | yes | 327 | 1.39 | 385 | **1.63** | 43.6 µs | 1.86 µs | 23.4x |
-| `08_gcd_euclid` | yes | 33 | 1.74 | 65 | **3.42** | 4.4 µs | 0.31 µs | 14.0x |
-| `09_primes_sieve` | yes | 19,773 | 1.33 | 16,800 | **1.13** | 2636.4 µs | 81.16 µs | 32.5x |
-| `10_print_numbers` | yes | 737 | 1.37 | 986 | **1.83** | 98.3 µs | 4.76 µs | 20.6x |
-| `11_gshare_patterns` |  | 1,519 | 1.38 | 1,121 | **1.02** | 202.5 µs | 5.42 µs | 37.4x |
-| `12_measure_cpi` | yes | 122 | 1.28 | 126 | **1.33** | 16.3 µs | 0.61 µs | 26.7x |
-| `13_function_call_cost` | yes | 166 | 1.52 | 227 | **2.08** | 22.1 µs | 1.10 µs | 20.2x |
-| `14_false_load_stall` |  | 25 | 1.32 | 24 | **1.26** | 3.3 µs | 0.12 µs | 28.8x |
-| `isa_selfcheck` | yes | 7,420 | 1.16 | 12,644 | **1.97** | 989.3 µs | 61.08 µs | 16.2x |
+| `00_pipeline_fill` |  | 10 | 2.00 | 21 | **4.20** | 1.3 µs | 0.10 µs | 0.02 µs |
+| `01_hello` |  | 139 | 1.43 | 147 | **1.52** | 18.5 µs | 0.73 µs | 0.11 µs |
+| `02_forwarding` |  | 12 | 1.71 | 23 | **3.29** | 1.6 µs | 0.12 µs | 0.02 µs |
+| `03_load_use` |  | 18 | 1.64 | 40 | **3.64** | 2.4 µs | 0.20 µs | 0.03 µs |
+| `04_branch_penalty` |  | 50 | 1.52 | 53 | **1.61** | 6.7 µs | 0.27 µs | 0.04 µs |
+| `05_fibonacci` |  | 366 | 1.20 | 328 | **1.08** | 48.8 µs | 1.64 µs | 0.25 µs |
+| `06_bubble_sort` | yes | 1,124 | 1.56 | 1,003 | **1.39** | 149.9 µs | 5.01 µs | 0.75 µs |
+| `07_factorial_recursive` | yes | 327 | 1.39 | 518 | **2.19** | 43.6 µs | 2.59 µs | 0.39 µs |
+| `08_gcd_euclid` | yes | 33 | 1.74 | 76 | **4.00** | 4.4 µs | 0.38 µs | 0.06 µs |
+| `09_primes_sieve` | yes | 19,773 | 1.33 | 17,044 | **1.15** | 2636.4 µs | 85.22 µs | 12.75 µs |
+| `10_print_numbers` | yes | 737 | 1.37 | 1,024 | **1.90** | 98.3 µs | 5.12 µs | 0.77 µs |
+| `11_gshare_patterns` |  | 1,519 | 1.38 | 1,139 | **1.03** | 202.5 µs | 5.70 µs | 0.85 µs |
+| `12_measure_cpi` | yes | 122 | 1.28 | 151 | **1.59** | 16.3 µs | 0.76 µs | 0.11 µs |
+| `13_function_call_cost` | yes | 174 | 1.54 | 277 | **2.45** | 23.2 µs | 1.39 µs | 0.21 µs |
+| `14_false_load_stall` |  | 49 | 1.29 | 82 | **2.16** | 6.5 µs | 0.41 µs | 0.06 µs |
+| `isa_selfcheck` | yes | 7,420 | 1.16 | 18,088 | **2.82** | 989.3 µs | 90.44 µs | 13.53 µs |
 
-Geometric-mean speed-up over all 16 programs: **26.0x** (clock and CPI together).
-
-Clock rates: see *Frequency* below. The original design's single-cycle multiply/divide unit limits a
-chip that must run M instructions to about 7.5 MHz; without the M extension (as in the RV32I
-tape-out) the same pipeline reaches about 242 MHz on the same flow, and the programs without M
-instructions would then run about 1.2x faster on the baseline than on the performance edition's
-207 MHz clock, cycle counts aside.
+Geometric-mean speed-up of the performance edition over the baseline, both on 130 nm: **19.1x** (clock and cycles together). Cache misses are included: these programs are tiny, so their few cold misses weigh heavily.
 
 ## Part 1: cycles per instruction
 
-`cycles = N + 5 + L + 3F + R + K` ([MATH.md](MATH.md)) says exactly where the cycles above 1 per
-instruction come from. Each change below removes one term, or makes it cheaper.
+`cycles = N + 5 + L + 3F + R + K + I + D` ([MATH.md](MATH.md)) says exactly where every cycle above
+one per instruction comes from.
 
-| change | term it attacks | how | cost |
+| change | term | how | cost |
 |---|---|---|---|
-| **Branch Target Buffer** (`src/Branch_Target_Buffer.sv`) | R: 1 bubble per taken branch / JAL | 16 entries remember "the instruction at this PC jumped to that PC"; FETCH1 redirects immediately, with the gshare counter deciding the direction | 960 flip-flops; FETCH1's next-PC mux gets one more input |
-| **Return Address Stack** (`src/Return_Address_Stack.sv`) | F: every `ret` flushed 3 | calls push PC + 4 in FETCH2, returns pop and redirect (1 bubble); EXECUTE only flushes if the prediction was wrong; the stack pointer is checkpointed and restored on flushes | 8 x 64-bit entries |
-| **Precise load stalls** | L: false stalls | `ControlUnit` now reports `USES_REGISTER1/2`; `LOAD_STALL` ignores fields an instruction does not read | a few gates |
-| **6 history bits** (was 4) | F: branch mispredictions | 64 counters instead of 16; see the [history sweep](img/charts/predictor_sweep.svg) | 3.7x the predictor area |
+| **Branch Target Buffer** | R | 16 entries remember "the instruction at this PC jumped to that PC"; FETCH1 redirects immediately | 960 flip-flops |
+| **Return Address Stack** | F | calls push PC + 4 in FETCH2, returns pop and redirect (1 bubble instead of a 3-bubble flush); the pointer is checkpointed and restored on flushes | 8 x 64-bit entries |
+| **Tournament predictor** | F | a per-branch history table (fast learner) next to gshare (pattern learner), and a chooser per branch that learns which to trust (Alpha 21264 style) | 2 x 128 two-bit counters |
+| **Precise load stalls** | L | `ControlUnit` reports `USES_REGISTER1/2`, so only real dependences stall | a few gates |
+| **Instruction cache + next-line prefetch** | I | after a miss on line X, line X + 1 is fetched in the background: sequential code misses half as often (self-check: 917 → 459 misses) | 4 KiB SRAM + tags |
+| **Data cache** | D | write-through: stores never wait; only loads that miss wait for their line | 4 KiB SRAM + tags |
 
-Measured examples (gshare on):
-
-* `11_gshare_patterns`: CPI **1.38 → 1.02**. The BTB turns 398 redirect bubbles into zero.
-* `09_primes_sieve`: CPI **1.33 → 1.13**. 3,572 taken branches now cost nothing; only 5 redirect bubbles remain.
-* `12_measure_cpi`: the loop the program times itself runs at CPI **1.25 → 1.03**.
-* `13_function_call_cost`: 8 calls cost **56 → 33** extra cycles (calls are free, returns cost 1).
-
-What is left above 1.0 is mostly **load stalls** (a load followed immediately by its use: fix it in
-software by scheduling, as `03_load_use.s` shows) and **wrong branch guesses** (3 cycles each).
+Why add caches if they add cycles? The baseline assumes 64 KiB of memory that answers in one cycle.
+That is fine in a simulator but not in silicon: a memory that large cannot be read in one short clock
+cycle. Real CPUs keep small, fast caches next to the pipeline and pay a miss penalty now and then.
+The penalty here is `MISS_LATENCY + 1 = 11` cycles; long-running code hides it (the sieve runs at CPI
+1.15 with caches), while programs of a few dozen instructions are dominated by their cold misses.
 
 ## Part 2: frequency
 
-### How it is measured
-
 ```bash
-make timing        # tools/timing.sh performance && tools/timing.sh baseline
+make timing                              # both builds on SkyWater 130 nm
+tools/timing.sh performance asap7        # the same RTL on ASAP7, a 7 nm-class library
 ```
 
 sv2v converts the SystemVerilog, Yosys synthesizes it without area-oriented rewriting, and ABC maps
-it onto the SkyWater `sky130_fd_sc_hd` library (typical corner, 25 °C, 1.80 V) and reports the
-longest register-to-register path. This is **logic only**: no wires, clock skew, setup time or slow
-corner. After real place and route expect roughly 1.5x to 2.5x longer. For calibration, the EECS 151
-chip was signed off at 26 ns in the slow corner, with caches, including wires.
+it onto the cell library and reports the longest register-to-register path. **Logic only**: no
+wires, clock skew or slow corner; after place and route expect 1.5x to 2.5x longer. The cache
+memories are left out (a real chip uses SRAM macros for them).
 
-### What changed
-
-| step | path that limited the clock | logic delay |
+| step | limiting path | 130 nm |
 |---|---|---:|
-| original RTL, area-oriented flow | ALU ripple-carry adder into the store lanes | 12.8 ns |
-| original RTL, timing-driven flow, M unit excluded | `EXECUTE_PC + 4` incrementer on the flush path | 4.6 ns |
-| original single-cycle multiply/divide unit alone | 64 subtract steps in a row | **133 ns** |
-| Kogge-Stone prefix adders in the ALU, branch comparator and FETCH2 target (`src/Parallel_Prefix_Adder.sv`); PC + 4 carried down the pipeline | | 4.1 ns (baseline build, M excluded) |
-| **iterative multiply/divide unit** (`src/Iterative_Multiply_Divide_Unit.sv`): 64 x 16 bits per multiply step, 1 quotient bit per divide step, leading zeros skipped | the unit's setup, then its negation | 11.1 → 5.9 ns |
-| negation as a prefix OR (`src/Prefix_Negate.sv`) instead of `~x + 1`; magnitudes taken one cycle earlier; return prediction checked against `rs1` instead of the ALU | | **4.8 ns (207 MHz)** |
+| baseline RTL, timing-driven flow, M unit excluded | `EXECUTE_PC + 4` incrementer on the flush path | 4.6 ns |
+| baseline single-cycle multiply/divide unit alone | 64 subtract steps in a row | **133 ns** |
+| Kogge-Stone prefix adders (ALU, branch compare, FETCH2 target), PC + 4 carried down the pipeline | | 4.1 ns (M excluded) |
+| iterative multiply/divide unit | its setup, then its negation | 11.1 → 5.9 ns |
+| prefix-OR negation, magnitudes a cycle earlier, return check against `rs1` | | 4.8 ns |
+| tournament predictor, prefix incrementers for the counters and PCs | FETCH2 target → next-PC mux | **5.0 ns (200 MHz)** |
 
-The multiply/divide change is the big one: the single-cycle unit alone was 133 ns, bigger than the
-rest of the core (465,000 µm²). Iterating trades cycles for clock rate: a multiply now takes 7
-cycles, a divide 3 + the number of significant bits of the dividend (so `1234 / 10` takes 14, not 67).
+| build | SkyWater 130 nm | ASAP7 7 nm-class |
+|---|---:|---:|
+| baseline (single-cycle M unit excluded) | 4.1 ns | 0.64 ns (1.57 GHz) |
+| **performance** (everything included) | **5.0 ns (200 MHz)** | **0.75 ns (1.34 GHz)** |
 
-### Why not 2.5 GHz?
+## Why not 2 nm, or 0.42 nm?
 
-A 2.5 GHz clock gives 400 ps per cycle. On sky130, measured with the same flow:
+A process node is a property of the **factory**, not of the Verilog. The RTL describes logic; a
+foundry's library of transistors decides how fast that logic switches. The same RTL here gives
+5.0 ns on 130 nm and 0.75 ns on a 7 nm-class library, 6.7x faster, without changing a line.
 
-* one carry step of an adder (`maj3` cell): about **330 ps**;
-* the first three gates of the ALU path, before any adding: about **480 ps**;
-* the whole 64-bit ALU with its prefix adder and result multiplexer: **2.98 ns**.
+* **2 nm** processes exist commercially (for example at TSMC, Samsung and Intel), but their design
+  kits are under non-disclosure agreements; no open library below 7 nm exists to measure with.
+  "2 nm" is also a marketing name: the actual gate pitch in such processes is tens of nanometres.
+* **0.42 nm** is about the distance between neighbouring silicon atoms (0.235 nm bond length, 0.543 nm
+  lattice constant). No transistor can be built at that scale; it is not a process node.
 
-So in this 130 nm process, even a pipeline that did one gate's worth of work per stage could not
-reach 2.5 GHz. Application-class RISC-V cores that run at 2 GHz and above are built in far more
-advanced processes (12 nm and below), whose gates are many times faster, with deep pipelines of
-10 or more stages, custom-tuned critical circuits and careful floorplanning. What *does* carry over is
-the method used here: measure the critical path, then either make it shallower (prefix adders,
-prefix negation) or spread it over more cycles (the iterative M unit), and pay for the extra cycles
-with better prediction (BTB, return stack).
+What this repository *can* show is the design side, which carries over to any node: measure the
+critical path, make it shallower (prefix adders, prefix negation), spread long work over several
+cycles (the iterative M unit), and win the cycles back with prediction and caching. Chips at 2 GHz
+and above add deeper pipelines (10 or more stages), out-of-order execution and hand-tuned circuits.
 
-### Ideas for the next step
+## What to try next
 
-* **Split EXECUTE**: the ALU result feeds the forwarding muxes into DECODE in the same cycle
-  (the EECS 151 forwarding style). A 7-stage version would raise the clock and add a bubble to
-  back-to-back dependent instructions.
-* **Make the flush decision one cycle later** (resolve branches in MEMORY) and see whether the clock
-  gain beats the extra bubble per wrong guess.
-* **Radix-4 division** (2 quotient bits per step) to halve divide time at a small clock cost.
-* **Real sign-off**: run OpenROAD/OpenLane on the sv2v output to get placed-and-routed numbers.
+* **Split the 64-bit counters** (`cycle`, `instret`) into halves with a delayed carry: at 7 nm their
+  increment is the longest path.
+* **Time the cache hit path**: address → tag compare → `DATA_CACHE_STALL` → every pipeline enable.
+  With the tag SRAM included this is likely the next critical path (it was on the 32-bit prototype).
+* **Split EXECUTE** into two stages, or resolve branches one stage later, and compare the clock gain
+  with the extra bubbles.
+* **Radix-4 division**, a 2-way set-associative data cache, or a bigger tournament predictor
+  (Labs 10 and 11 in [EXPERIMENTS.md](EXPERIMENTS.md)).
+* **Real sign-off**: run OpenROAD on the sv2v output for placed-and-routed numbers.

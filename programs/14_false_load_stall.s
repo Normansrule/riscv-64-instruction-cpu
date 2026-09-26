@@ -21,18 +21,23 @@
 # EXPECT: a2 = 5
 # EXPECT: a3 = 6
 # EXPECT[gshare]: a0 = 4
+# EXPECT[gshare]: a1 = 3
 # EXPECT[bp-off]: a0 = 4
+# EXPECT[bp-off]: a1 = 3
 # EXPECT[perf]: a0 = 3
+# EXPECT[perf]: a1 = 3
 # EXPECT[perf-bp-off]: a0 = 3
-# EXPECT: a1 = 3
+# EXPECT[perf-bp-off]: a1 = 3
 # =============================================================================
     la   s0, value
+    li   s1, 2               # two passes: the first warms both caches, the second is the one kept
+pass:
     nop
     nop
     nop
     rdcycle t2
     ld   t0, 0(s0)
-    addi a2, zero, 5         # false LOAD_STALL: imm 5 sits where rs2 would be
+    addi a2, zero, 5         # false LOAD_STALL on the baseline: imm 5 sits where rs2 would be
     rdcycle t3
     nop
     nop
@@ -41,6 +46,8 @@
     ld   t0, 0(s0)
     addi a3, zero, 6         # no stall
     rdcycle t5
+    addi s1, s1, -1
+    bnez s1, pass
     sub  a0, t3, t2
     sub  a1, t5, t4
     halt

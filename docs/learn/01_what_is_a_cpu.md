@@ -24,8 +24,9 @@ flowchart LR
 * **Registers**: 32 small, very fast storage slots, `x0` to `x31`, each 64 bits wide on this RV64 CPU.
   `x0` always reads 0. Software gives them nicknames (Application Binary Interface (ABI) names):
   `a0` is `x10`, `sp` is `x2`, `ra` is `x1`, and so on.
-* **Memory**: a big array of bytes. Here it is 64 KiB (kibibytes); programs start at address `0x2000`,
-  exactly like the EECS 151 project this design grew from.
+* **Memory**: a big array of bytes. Here it is 64 KiB (kibibytes); programs start at address `0x2000`.
+  Main memory is slow, so small fast **caches** keep copies of recently used instructions and data
+  (chapter 6).
 * **The clock**: a square wave. On every rising edge each flip-flop in the chip captures its new value.
   Everything a CPU "does" happens between two clock edges.
 

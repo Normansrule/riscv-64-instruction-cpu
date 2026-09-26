@@ -17,10 +17,13 @@ src/Branch_Control_Unit.sv
 src/GShare_Branch_Predictor.sv
 src/Branch_Target_Buffer.sv
 src/Return_Address_Stack.sv
+src/Tournament_Chooser.sv
 src/Load_Control_Unit.sv
 src/Store_Control_Unit.sv
 src/Write_Control_Unit.sv
 src/Control_Status_Register_File.sv
+src/Instruction_Cache.sv
+src/Data_Cache.sv
 src/Scratchpad_Memory.sv
 src/Riscv64.sv
 src/Riscv64_top.sv

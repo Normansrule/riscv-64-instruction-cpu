@@ -8,8 +8,8 @@
 //   +MAXCYCLES=N             safety limit (default 2000000)
 // =====================================================================================================
 //   Build-time configuration (make test builds both):
-//     default               the performance edition (BTB, RAS, precise load stalls, iterative M unit, 6 history bits)
-//     -DBASELINE            the original EECS 151 behaviour widened to RV64 (all features off, 4 history bits)
+//     default               the performance edition (caches, tournament predictor, BTB, RAS, precise load stalls, iterative M unit)
+//     -DBASELINE            the baseline pipeline (all features off, 4 history bits, single-cycle memory)
 `timescale 1ns/1ps
 `default_nettype none
 `ifdef BASELINE
@@ -31,14 +31,16 @@ module riscv64_testbench;
   logic [4:0]  DEBUG_REGISTER_ADDRESS = 5'd0;
   logic [5:0]  TRACE_VALID;
   logic [63:0] TRACE_FETCH1_PC, TRACE_FETCH2_PC, TRACE_DECODE_PC, TRACE_EXECUTE_PC, TRACE_MEMORY_PC, TRACE_WRITEBACK_PC;
-  logic        TRACE_LOAD_STALL, TRACE_FLUSH, TRACE_REDIRECT, TRACE_MULTIPLY_DIVIDE_STALL;
+  logic        TRACE_LOAD_STALL, TRACE_FLUSH, TRACE_REDIRECT, TRACE_MULTIPLY_DIVIDE_STALL, TRACE_INSTRUCTION_MISS, TRACE_DATA_MISS;
 
   riscv64_top #(
     .GSHARE_HISTORY_BITS (`CONFIG_HISTORY),
     .BTB_ENABLE (`CONFIG_FEATURES),
     .RAS_ENABLE (`CONFIG_FEATURES),
     .PRECISE_LOAD_STALL (`CONFIG_FEATURES),
-    .ITERATIVE_MULTIPLY_DIVIDE (`CONFIG_FEATURES)
+    .ITERATIVE_MULTIPLY_DIVIDE (`CONFIG_FEATURES),
+    .TOURNAMENT_PREDICTOR (`CONFIG_FEATURES),
+    .CACHES_ENABLE (`CONFIG_FEATURES)
   ) dut (.*);
 
   integer TRACE_FILE = 0, MAX_CYCLES, CYCLE = 0, RETIRED = 0, INDEX, BP_ARGUMENT;
@@ -77,6 +79,8 @@ module riscv64_testbench;
       if (TRACE_FLUSH) $fwrite(TRACE_FILE, " FLUSH");
       if (TRACE_REDIRECT) $fwrite(TRACE_FILE, " REDIRECT");
       if (TRACE_MULTIPLY_DIVIDE_STALL) $fwrite(TRACE_FILE, " BUSY");
+      if (TRACE_INSTRUCTION_MISS) $fwrite(TRACE_FILE, " IMISS");
+      if (TRACE_DATA_MISS) $fwrite(TRACE_FILE, " DMISS");
       $fwrite(TRACE_FILE, "\n");
     end
     if (CYCLE >= MAX_CYCLES) begin

@@ -131,6 +131,8 @@ export function createHero({ canvas, programs, ui, reducedMotion }) {
     if (ev.flush) return ev.resolve?.kind === 'jalr'
       ? `<b>Flush.</b> <code>${t(ev.stages.EXECUTE.id)}</code> jumps to an address held in a register, which FETCH could not know. The 3 instructions behind it are thrown away.`
       : `<b>Wrong guess, flush.</b> The branch in EXECUTE went the other way. The 3 younger instructions were on the wrong path and are thrown away.`;
+    if (ev.dmiss) return `<b>Data cache miss.</b> <code>${t(ev.stages.EXECUTE.id)}</code> needs a line that is not in the data cache; it waits while main memory sends 32 bytes.`;
+    if (ev.imiss) return `<b>Instruction cache miss.</b> The next instructions are not in the instruction cache yet, so FETCH1 waits for main memory (and the following line is prefetched).`;
     if (ev.busy) return `<b>Multiply/divide busy.</b> <code>${t(ev.stages.EXECUTE.id)}</code> is computed a little each cycle so the clock can stay fast; everything behind it waits.`;
     if (ev.stall) return `<b>Load stall.</b> DECODE needs a value that the load in EXECUTE has not fetched from memory yet, so the front of the pipeline waits one cycle${ev.loadStallReal ? '' : ' (a false alarm: the bits only look like that register)'}.`;
     if (ev.redirect) return `<b>Redirect.</b> FETCH2 sees ${ev.predecode?.kind === 'jal' ? 'a jump' : ev.predecode?.kind === 'return' ? 'a return and takes its address from the return address stack' : 'a branch predicted taken'} and sends FETCH1 there; the instruction fetched behind it is dropped.`;
@@ -166,6 +168,8 @@ export function createHero({ canvas, programs, ui, reducedMotion }) {
     if (ev.flush) { arc(SX.EXECUTE, SX.FETCH1, col('--W'), 3.4, 0, 0.09); for (const s of ['FETCH1', 'FETCH2', 'DECODE']) { platforms[s].pulse = 1; platforms[s].pulseColor.copy(col('--W')); } }
     if (ev.stall) for (const s of ['FETCH1', 'FETCH2', 'DECODE']) { platforms[s].pulse = 1; platforms[s].pulseColor.copy(col('--stall')); }
     if (ev.busy) { platforms.EXECUTE.pulse = 1; platforms.EXECUTE.pulseColor.copy(col('--D')); }
+    if (ev.dmiss) { platforms.EXECUTE.pulse = 1; platforms.EXECUTE.pulseColor.copy(col('--M')); }
+    if (ev.imiss) { platforms.FETCH1.pulse = 1; platforms.FETCH1.pulseColor.copy(col('--F1')); }
     if (ev.btb?.redirect && !ev.flush && !ev.redirect && !ev.stall && !ev.busy) arc(SX.FETCH1 + 0.9, SX.FETCH1 - 0.9, col('--F1'), 1.1, 0.9, 0.05);
     for (const r of regs) r.material.emissiveIntensity = 0.5;
     const st = core.stats;

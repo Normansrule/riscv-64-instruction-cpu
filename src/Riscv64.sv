@@ -8,7 +8,6 @@ import writeback_op_pkg::*;
 
 // =====================================================================================================
 // Riscv64: the RISC-V 64 Instruction CPU. A 6 stage, in-order, single issue RV64IM + Zicsr core,
-// grown from the EECS 151 Riscv151 design (original/eecs151-rv32i/src/Riscv151.sv).
 //
 // 6 Stage Datapath:
 //   Fetch1 (GSharePredictor)                                                    ->
@@ -27,12 +26,13 @@ import writeback_op_pkg::*;
 // model/core.js is a cycle-exact software twin of this file; `make test` compares them every cycle.
 // =====================================================================================================
 module Riscv64 #(
-  parameter int GSHARE_HISTORY_BITS = 6, // 64 counters (the EECS 151 tape-out used 4 = 16 counters)
-  // ===== Performance edition features (all 0 = the original EECS 151 behaviour, widened to RV64) =====
+  parameter int GSHARE_HISTORY_BITS = 6, // 64 counters (the baseline build uses 4 = 16 counters)
+  // ===== Performance edition features (all 0 = the baseline build) =====
   parameter bit BTB_ENABLE = 1'b1, // Branch Target Buffer: taken branches and JALs redirect in FETCH1 with 0 bubbles
   parameter bit RAS_ENABLE = 1'b1, // Return Address Stack: returns redirect in FETCH2 (1 bubble instead of a 3 bubble flush)
   parameter bit PRECISE_LOAD_STALL = 1'b1, // LOAD_STALL only for registers an instruction really reads
-  parameter bit ITERATIVE_MULTIPLY_DIVIDE = 1'b1 // Multi-cycle M extension (short clock) instead of a single huge cycle
+  parameter bit ITERATIVE_MULTIPLY_DIVIDE = 1'b1, // Multi-cycle M extension (short clock) instead of a single huge cycle
+  parameter bit TOURNAMENT_PREDICTOR = 1'b1 // Per-branch history table + chooser alongside GShare
 ) (
   input  logic        clk,
   input  logic        reset,
@@ -45,6 +45,9 @@ module Riscv64 #(
   output logic [63:0] dcache_din,
   input  logic [63:0] dcache_dout,
   input  logic [31:0] icache_dout,
+  input  logic        icache_hit, // 0: the instruction cache is fetching FETCH1's line from main memory
+  output logic        dcache_re, // A load is in Execute
+  input  logic        dcache_hit, // 0: that load must wait for its line
   output logic [63:0] csr, // TOHOST: 1 = PASS, anything else odd = FAIL test (csr >> 1)
 
   // Status and debug ports (testbench only)
@@ -53,20 +56,25 @@ module Riscv64 #(
   output logic [63:0] DEBUG_REGISTER_DATA,
   output logic [5:0]  TRACE_VALID, // {WRITEBACK, MEMORY, EXECUTE, DECODE, FETCH2, FETCH1}
   output logic [63:0] TRACE_FETCH1_PC, TRACE_FETCH2_PC, TRACE_DECODE_PC, TRACE_EXECUTE_PC, TRACE_MEMORY_PC, TRACE_WRITEBACK_PC,
-  output logic        TRACE_LOAD_STALL, TRACE_FLUSH, TRACE_REDIRECT, TRACE_MULTIPLY_DIVIDE_STALL
+  output logic        TRACE_LOAD_STALL, TRACE_FLUSH, TRACE_REDIRECT, TRACE_MULTIPLY_DIVIDE_STALL,
+  output logic        TRACE_INSTRUCTION_MISS, TRACE_DATA_MISS
 );
 
   logic LOAD_STALL; // Load Hazard: Instead of a full stall only hold the Fetch and Decode, send a NOP to Execute, and advance the load logic for the Memory and Writeback
   logic FLUSH_FETCH1_FETCH2_DECODE; // Control Hazard: Fetch1 & Fetch2 & Decode FLUSH for mispredicted branching
   logic ADVANCE_FRONT_END; // Fetch1, Fetch2 and Decode move forward this cycle (no flush and no stall)
   logic MULTIPLY_DIVIDE_STALL; // An M instruction in Execute is still iterating: hold Fetch1 to Execute, bubble into Memory
+  logic DATA_CACHE_STALL; // The load in Execute missed in the data cache: hold Fetch1 to Execute, bubble into Memory
   logic HALT_NOW; // The TOHOST writing instruction is in Writeback this cycle: it finishes, everything else freezes
   logic FREEZE; // No side effects this cycle (halting now, or already halted)
 
   // ========== Fetch 1 Stage Signals: ==========
   logic [63:0] FETCH1_PC; // The Current Program Counter to send to Instruction Memory
   logic [63:0] FETCH1_PC_ADD_4; // Next sequential Program Counter
-  assign FETCH1_PC_ADD_4 = FETCH1_PC + 64'd4; // Program Counter + 4
+  logic FETCH1_INCREMENT_CARRY_UNUSED;
+  ParallelPrefixAdder #(.WIDTH(64)) fetch1_incrementer ( // Program Counter + 4 (prefix adder: no carry chain on the next-PC path)
+    .A (FETCH1_PC), .B (64'd4), .CARRY_IN (1'b0), .SUM (FETCH1_PC_ADD_4), .CARRY_OUT (FETCH1_INCREMENT_CARRY_UNUSED)
+  );
   assign icache_addr = FETCH1_PC; // Provide Instruction Memory with Program Counter Address
 
   // Global Share Branch Prediction Scheme:
@@ -108,8 +116,9 @@ module Riscv64 #(
     .UPDATE_TARGET (EXECUTE_PC_TARGET),
     .UPDATE_IS_JAL (EXECUTE_IS_A_JAL_INSTRUCTION)
   );
-  assign FETCH1_BTB_REDIRECT = BTB_ENABLE && BTB_HIT && (BTB_HIT_IS_JAL || FETCH1_PREDICTED_BRANCH_TAKEN);
-  assign FETCH1_NEXT_PC = FETCH1_BTB_REDIRECT ? BTB_PREDICTED_TARGET : FETCH1_PC_ADD_4;
+  assign FETCH1_BTB_REDIRECT = BTB_ENABLE && icache_hit && BTB_HIT && (BTB_HIT_IS_JAL || FETCH1_PREDICTED_BRANCH_TAKEN);
+  // An instruction cache miss: stay on this PC until the line arrives
+  assign FETCH1_NEXT_PC = !icache_hit ? FETCH1_PC : FETCH1_BTB_REDIRECT ? BTB_PREDICTED_TARGET : FETCH1_PC_ADD_4;
 
   // ========== Fetch 2 Stage Signals: ==========
   logic [63:0] FETCH2_PC; // The Program Counter of the instruction that just arrived from Instruction Memory
@@ -122,7 +131,10 @@ module Riscv64 #(
   logic [GSHARE_HISTORY_BITS-1:0] FETCH2_GSHARE_INDEX; // Index for the Branch History Table
   logic FETCH2_BTB_REDIRECTED; // FETCH1 already jumped to this instruction's target (via the BTB)
   logic [63:0] FETCH2_PC_ADD_4; // Computed once here and carried down the pipeline (keeps adders off the flush path)
-  assign FETCH2_PC_ADD_4 = FETCH2_PC + 64'd4;
+  logic FETCH2_INCREMENT_CARRY_UNUSED;
+  ParallelPrefixAdder #(.WIDTH(64)) fetch2_incrementer (
+    .A (FETCH2_PC), .B (64'd4), .CARRY_IN (1'b0), .SUM (FETCH2_PC_ADD_4), .CARRY_OUT (FETCH2_INCREMENT_CARRY_UNUSED)
+  );
 
   assign FETCH2_OPCODE = FETCH2_INSTRUCTION[6:0]; // Assign FETCH Instruction's opcode
   assign FETCH2_IS_A_BRANCH_INSTRUCTION = (FETCH2_OPCODE == OPC_BRANCH); // If opcode is the same as B-type then its a branch
@@ -182,6 +194,28 @@ module Riscv64 #(
   assign FETCH2_REDIRECT_TARGET = FETCH2_RETURN_PREDICTED ? RETURN_ADDRESS_STACK_TOP : FETCH2_PC_TARGET;
   assign FETCH2_PREDICTED_NEXT_PC = FETCH2_BRANCH_OFF_OR_CONTINUE ? FETCH2_REDIRECT_TARGET : FETCH1_NEXT_PC;
 
+  // ===== Tournament: per-branch history table + chooser =====
+  logic FETCH1_GSHARE_PREDICTED_TAKEN; // GShare's guess
+  logic FETCH1_BHT_PREDICTED_TAKEN; // The per-branch table's guess
+  logic FETCH1_CHOOSE_GSHARE; // The chooser trusts GShare for this branch
+  logic FETCH2_GSHARE_PREDICTED_TAKEN, FETCH2_BHT_PREDICTED_TAKEN;
+  logic DECODE_GSHARE_PREDICTED_TAKEN, DECODE_BHT_PREDICTED_TAKEN;
+  logic EXECUTE_GSHARE_PREDICTED_TAKEN, EXECUTE_BHT_PREDICTED_TAKEN;
+  TournamentChooser #(.INDEX_BITS(7)) tournament_chooser (
+    .clk (clk),
+    .reset (reset),
+    .ENABLE (BRANCH_PREDICTION_ENABLE),
+    .FETCH_PC (FETCH1_PC),
+    .BHT_PREDICTED_TAKEN (FETCH1_BHT_PREDICTED_TAKEN),
+    .CHOOSE_GSHARE (FETCH1_CHOOSE_GSHARE),
+    .UPDATE (TOURNAMENT_PREDICTOR && !FREEZE && EXECUTE_VALID && EXECUTE_UPDATE_BRANCH_PREDICTOR),
+    .UPDATE_PC (EXECUTE_PC),
+    .ACTUAL_BRANCH_TAKEN (EXECUTE_BRANCH_WAS_ACTUALLY_TAKEN),
+    .BHT_WAS_TAKEN (EXECUTE_BHT_PREDICTED_TAKEN),
+    .GSHARE_WAS_TAKEN (EXECUTE_GSHARE_PREDICTED_TAKEN)
+  );
+  assign FETCH1_PREDICTED_BRANCH_TAKEN = TOURNAMENT_PREDICTOR ? (FETCH1_CHOOSE_GSHARE ? FETCH1_GSHARE_PREDICTED_TAKEN : FETCH1_BHT_PREDICTED_TAKEN) : FETCH1_GSHARE_PREDICTED_TAKEN;
+
   GSharePredictor #(
     .HISTORY_BITS (GSHARE_HISTORY_BITS)
   ) gshare_branch_predictor (
@@ -189,7 +223,7 @@ module Riscv64 #(
     .reset (reset),
     .ENABLE (BRANCH_PREDICTION_ENABLE),
     .FETCH_PC (FETCH1_PC),
-    .FETCH_PREDICTED_TAKEN (FETCH1_PREDICTED_BRANCH_TAKEN),
+    .FETCH_PREDICTED_TAKEN (FETCH1_GSHARE_PREDICTED_TAKEN),
     .FETCH_PREDICTION_INDEX (FETCH1_GSHARE_INDEX),
     .GLOBAL_HISTORY (GLOBAL_HISTORY),
     .SPECULATIVE_UPDATE (!FREEZE && ADVANCE_FRONT_END && FETCH2_VALID && FETCH2_IS_A_BRANCH_INSTRUCTION), // Fetch 2 branch moving to Decode
@@ -453,7 +487,9 @@ module Riscv64 #(
   );
 
   assign FLUSH_FETCH1_FETCH2_DECODE = EXECUTE_VALID && EXECUTE_FLUSH; // Control Hazard: Branch Control Required Flush from Misprediction
-  assign ADVANCE_FRONT_END = !FLUSH_FETCH1_FETCH2_DECODE && !LOAD_STALL && !MULTIPLY_DIVIDE_STALL; // The front of the pipeline moves only when nothing is being flushed or stalled
+  assign dcache_re = EXECUTE_VALID && EXECUTE_MEMORY_READ_ENABLE;
+  assign DATA_CACHE_STALL = dcache_re && !dcache_hit;
+  assign ADVANCE_FRONT_END = !FLUSH_FETCH1_FETCH2_DECODE && !DATA_CACHE_STALL && !LOAD_STALL && !MULTIPLY_DIVIDE_STALL; // The front of the pipeline moves only when nothing is being flushed or stalled
   assign EXECUTE_BTB_UPDATE = BTB_ENABLE && !FREEZE && EXECUTE_VALID && ((EXECUTE_IS_A_BRANCH_INSTRUCTION && EXECUTE_BRANCH_TAKEN) || EXECUTE_IS_A_JAL_INSTRUCTION);
 
   // Rewind the Global History on a flush: the checkpoint, plus the real direction if the flushing instruction is itself a branch
@@ -549,6 +585,12 @@ module Riscv64 #(
       FETCH2_PREDICTED_BRANCH_TAKEN <= 1'b0;
       FETCH2_GSHARE_INDEX <= '0;
       FETCH2_BTB_REDIRECTED <= 1'b0;
+      FETCH2_GSHARE_PREDICTED_TAKEN <= 1'b0;
+      FETCH2_BHT_PREDICTED_TAKEN <= 1'b0;
+      DECODE_GSHARE_PREDICTED_TAKEN <= 1'b0;
+      DECODE_BHT_PREDICTED_TAKEN <= 1'b0;
+      EXECUTE_GSHARE_PREDICTED_TAKEN <= 1'b0;
+      EXECUTE_BHT_PREDICTED_TAKEN <= 1'b0;
        // ========== Decode ==========
       DECODE_VALID <= 1'b0;
       DECODE_PC <= 64'd0;
@@ -661,6 +703,12 @@ module Riscv64 #(
         FETCH2_VALID <= 1'b0;
         FETCH2_INSTRUCTION <= INSTR_NOP;
       end
+      else if (DATA_CACHE_STALL) begin // The load in Execute is waiting for its cache line (checked before LOAD_STALL:
+        // the load must not move on without its data). Everything up to Execute holds; a bubble goes into Memory.
+        MEMORY_VALID <= 1'b0;
+        MEMORY_REGISTER_WRITE_ENABLE <= 1'b0;
+        MEMORY_WRITES_TOHOST <= 1'b0;
+      end
       else if (LOAD_STALL) begin // Load Stall:
         // Fetch 1, Fetch 2, Decode do not update for load hazard stall
         // Advance Execute to No Operation (Decode cannot proceed yet so do not do anything in Execute in the meantime)
@@ -714,6 +762,8 @@ module Riscv64 #(
         EXECUTE_IS_A_CALL <= DECODE_IS_A_CALL;
         EXECUTE_IS_A_RETURN <= DECODE_IS_A_RETURN;
         EXECUTE_RAS_CHECKPOINT <= DECODE_RAS_CHECKPOINT;
+        EXECUTE_GSHARE_PREDICTED_TAKEN <= DECODE_GSHARE_PREDICTED_TAKEN;
+        EXECUTE_BHT_PREDICTED_TAKEN <= DECODE_BHT_PREDICTED_TAKEN;
 
         // Fetch 2 to Decode
         DECODE_VALID <= FETCH2_VALID;
@@ -728,9 +778,13 @@ module Riscv64 #(
         DECODE_IS_A_CALL <= RAS_ENABLE && FETCH2_IS_A_CALL;
         DECODE_IS_A_RETURN <= RAS_ENABLE && FETCH2_IS_A_RETURN;
         DECODE_RAS_CHECKPOINT <= RETURN_ADDRESS_STACK_POINTER; // Stack pointer BEFORE this instruction's own push or pop
+        DECODE_GSHARE_PREDICTED_TAKEN <= FETCH2_GSHARE_PREDICTED_TAKEN;
+        DECODE_BHT_PREDICTED_TAKEN <= FETCH2_BHT_PREDICTED_TAKEN;
 
         // Fetch 1 to Fetch 2 (the instruction fetched behind a predicted-taken branch or a JAL is on the wrong path)
-        FETCH2_VALID <= !FETCH2_BRANCH_OFF_OR_CONTINUE;
+        FETCH2_VALID <= !FETCH2_BRANCH_OFF_OR_CONTINUE && icache_hit; // wrong path behind a redirect, or no instruction yet (cache miss)
+        FETCH2_GSHARE_PREDICTED_TAKEN <= FETCH1_GSHARE_PREDICTED_TAKEN;
+        FETCH2_BHT_PREDICTED_TAKEN <= FETCH1_BHT_PREDICTED_TAKEN;
         FETCH2_PC <= FETCH1_PC;
         FETCH2_INSTRUCTION <= icache_dout;
         FETCH2_PREDICTED_BRANCH_TAKEN <= FETCH1_PREDICTED_BRANCH_TAKEN;
@@ -749,7 +803,9 @@ module Riscv64 #(
   assign TRACE_EXECUTE_PC = EXECUTE_PC;
   assign TRACE_MEMORY_PC = MEMORY_PC;
   assign TRACE_WRITEBACK_PC = WRITEBACK_PC;
-  assign TRACE_LOAD_STALL = LOAD_STALL && !FLUSH_FETCH1_FETCH2_DECODE;
+  assign TRACE_LOAD_STALL = LOAD_STALL && !FLUSH_FETCH1_FETCH2_DECODE && !DATA_CACHE_STALL;
+  assign TRACE_INSTRUCTION_MISS = ADVANCE_FRONT_END && !FETCH2_BRANCH_OFF_OR_CONTINUE && !icache_hit;
+  assign TRACE_DATA_MISS = DATA_CACHE_STALL && !FLUSH_FETCH1_FETCH2_DECODE;
   assign TRACE_FLUSH = FLUSH_FETCH1_FETCH2_DECODE;
   assign TRACE_REDIRECT = FETCH2_BRANCH_OFF_OR_CONTINUE && ADVANCE_FRONT_END;
   assign TRACE_MULTIPLY_DIVIDE_STALL = MULTIPLY_DIVIDE_STALL && !FLUSH_FETCH1_FETCH2_DECODE;

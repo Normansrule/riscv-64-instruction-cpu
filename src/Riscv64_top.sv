@@ -8,7 +8,10 @@ module riscv64_top #(
   parameter bit BTB_ENABLE = 1'b1,
   parameter bit RAS_ENABLE = 1'b1,
   parameter bit PRECISE_LOAD_STALL = 1'b1,
-  parameter bit ITERATIVE_MULTIPLY_DIVIDE = 1'b1
+  parameter bit ITERATIVE_MULTIPLY_DIVIDE = 1'b1,
+  parameter bit TOURNAMENT_PREDICTOR = 1'b1,
+  parameter bit CACHES_ENABLE = 1'b1,
+  parameter int MISS_LATENCY = 10
 ) (
   input  logic        clk,
   input  logic        reset,
@@ -19,7 +22,8 @@ module riscv64_top #(
   output logic [63:0] DEBUG_REGISTER_DATA,
   output logic [5:0]  TRACE_VALID,
   output logic [63:0] TRACE_FETCH1_PC, TRACE_FETCH2_PC, TRACE_DECODE_PC, TRACE_EXECUTE_PC, TRACE_MEMORY_PC, TRACE_WRITEBACK_PC,
-  output logic        TRACE_LOAD_STALL, TRACE_FLUSH, TRACE_REDIRECT, TRACE_MULTIPLY_DIVIDE_STALL
+  output logic        TRACE_LOAD_STALL, TRACE_FLUSH, TRACE_REDIRECT, TRACE_MULTIPLY_DIVIDE_STALL,
+  output logic        TRACE_INSTRUCTION_MISS, TRACE_DATA_MISS
 );
 
   logic [63:0] dcache_addr; // From cpu of Riscv64
@@ -27,17 +31,56 @@ module riscv64_top #(
   logic [63:0] dcache_dout; // From mem of ScratchpadMemory
   logic [7:0]  dcache_we;   // From cpu of Riscv64
   logic [63:0] icache_addr; // From cpu of Riscv64
-  logic [31:0] icache_dout; // From mem of ScratchpadMemory
+  logic [31:0] icache_dout; // To cpu: the instruction at icache_addr
+  logic        icache_hit;  // To cpu: 0 = the instruction cache is refilling
+  logic        dcache_re;   // From cpu: a load is in Execute
+  logic        dcache_hit;  // To cpu: 0 = the load in Execute must wait for its line
+  logic        HALT_FREEZE; // The core has halted: caches stop too
+  logic [31:0] MEMORY_INSTRUCTION; // Main memory ports
+  logic [63:0] MEMORY_DATA, INSTRUCTION_REFILL_ADDRESS, DATA_REFILL_ADDRESS;
+  logic [255:0] INSTRUCTION_REFILL_LINE, DATA_REFILL_LINE;
+  logic [63:0] CACHE_DATA;
 
+  // Main memory (with the caches) or the single-cycle scratchpad (without)
   ScratchpadMemory mem (
-    .clk                 (clk),
-    .INSTRUCTION_ADDRESS (icache_addr),
-    .INSTRUCTION_DATA    (icache_dout),
-    .DATA_ADDRESS        (dcache_addr),
-    .DATA_WRITE_MASK     (dcache_we),
-    .DATA_WRITE_DATA     (dcache_din),
-    .DATA_READ_DATA      (dcache_dout)
+    .clk                        (clk),
+    .INSTRUCTION_ADDRESS        (icache_addr),
+    .INSTRUCTION_DATA           (MEMORY_INSTRUCTION),
+    .DATA_ADDRESS               (dcache_addr),
+    .DATA_WRITE_MASK            (dcache_we),
+    .DATA_WRITE_DATA            (dcache_din),
+    .DATA_READ_DATA             (MEMORY_DATA),
+    .INSTRUCTION_REFILL_ADDRESS (INSTRUCTION_REFILL_ADDRESS),
+    .INSTRUCTION_REFILL_LINE    (INSTRUCTION_REFILL_LINE),
+    .DATA_REFILL_ADDRESS        (DATA_REFILL_ADDRESS),
+    .DATA_REFILL_LINE           (DATA_REFILL_LINE)
   );
+  assign HALT_FREEZE = HALTED;
+
+  generate
+    if (CACHES_ENABLE) begin : caches
+      InstructionCache #(.MISS_LATENCY(MISS_LATENCY)) instruction_cache (
+        .clk (clk), .reset (reset), .FREEZE (HALT_FREEZE),
+        .FETCH_ADDRESS (icache_addr), .INSTRUCTION (icache_dout), .HIT (icache_hit),
+        .REFILL_ADDRESS (INSTRUCTION_REFILL_ADDRESS), .REFILL_LINE (INSTRUCTION_REFILL_LINE)
+      );
+      DataCache #(.MISS_LATENCY(MISS_LATENCY)) data_cache (
+        .clk (clk), .reset (reset), .FREEZE (HALT_FREEZE),
+        .LOAD_REQUEST (dcache_re), .ADDRESS (dcache_addr), .WRITE_MASK (dcache_we), .WRITE_DATA (dcache_din),
+        .READ_DATA (CACHE_DATA), .HIT (dcache_hit),
+        .REFILL_ADDRESS (DATA_REFILL_ADDRESS), .REFILL_LINE (DATA_REFILL_LINE)
+      );
+      // Memory-mapped I/O is not cached (loads from the putchar address read 0 from the memory itself)
+      assign dcache_dout = (dcache_addr == MMIO_PUTCHAR) ? MEMORY_DATA : CACHE_DATA;
+    end else begin : no_caches
+      assign icache_dout = MEMORY_INSTRUCTION;
+      assign icache_hit = 1'b1;
+      assign dcache_dout = MEMORY_DATA;
+      assign dcache_hit = 1'b1;
+      assign INSTRUCTION_REFILL_ADDRESS = 64'd0;
+      assign DATA_REFILL_ADDRESS = 64'd0;
+    end
+  endgenerate
 
   // RISC-V 64 CPU
   Riscv64 #(
@@ -45,7 +88,8 @@ module riscv64_top #(
     .BTB_ENABLE (BTB_ENABLE),
     .RAS_ENABLE (RAS_ENABLE),
     .PRECISE_LOAD_STALL (PRECISE_LOAD_STALL),
-    .ITERATIVE_MULTIPLY_DIVIDE (ITERATIVE_MULTIPLY_DIVIDE)
+    .ITERATIVE_MULTIPLY_DIVIDE (ITERATIVE_MULTIPLY_DIVIDE),
+    .TOURNAMENT_PREDICTOR (TOURNAMENT_PREDICTOR)
   ) cpu (
     .clk                      (clk),
     .reset                    (reset),
@@ -56,6 +100,9 @@ module riscv64_top #(
     .dcache_din               (dcache_din),
     .dcache_dout              (dcache_dout),
     .icache_dout              (icache_dout),
+    .icache_hit               (icache_hit),
+    .dcache_re                (dcache_re),
+    .dcache_hit               (dcache_hit),
     .csr                      (csr),
     .HALTED                   (HALTED),
     .DEBUG_REGISTER_ADDRESS   (DEBUG_REGISTER_ADDRESS),
@@ -70,7 +117,9 @@ module riscv64_top #(
     .TRACE_LOAD_STALL         (TRACE_LOAD_STALL),
     .TRACE_FLUSH              (TRACE_FLUSH),
     .TRACE_REDIRECT           (TRACE_REDIRECT),
-    .TRACE_MULTIPLY_DIVIDE_STALL (TRACE_MULTIPLY_DIVIDE_STALL)
+    .TRACE_MULTIPLY_DIVIDE_STALL (TRACE_MULTIPLY_DIVIDE_STALL),
+    .TRACE_INSTRUCTION_MISS (TRACE_INSTRUCTION_MISS),
+    .TRACE_DATA_MISS (TRACE_DATA_MISS)
   );
 
 endmodule

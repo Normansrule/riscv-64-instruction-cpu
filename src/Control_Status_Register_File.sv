@@ -21,6 +21,12 @@ module CSRFile (
     logic [63:0] CSR_INSTRET_COUNTER; // Counts every retired instruction since reset (read with rdinstret)
     logic [63:0] CSR_NEW_VALUE; // Value after applying the read-modify-write operation
 
+    // The counters' + 1 is an increment whose carry would ripple through 64 bits: use prefix adders
+    logic [63:0] CYCLE_COUNTER_NEXT, INSTRET_COUNTER_NEXT;
+    logic CYCLE_CARRY_UNUSED, INSTRET_CARRY_UNUSED;
+    ParallelPrefixAdder #(.WIDTH(64)) cycle_incrementer (.A (CSR_CYCLE_COUNTER), .B (64'd0), .CARRY_IN (1'b1), .SUM (CYCLE_COUNTER_NEXT), .CARRY_OUT (CYCLE_CARRY_UNUSED));
+    ParallelPrefixAdder #(.WIDTH(64)) instret_incrementer (.A (CSR_INSTRET_COUNTER), .B (64'd0), .CARRY_IN (1'b1), .SUM (INSTRET_COUNTER_NEXT), .CARRY_OUT (INSTRET_CARRY_UNUSED));
+
     // Read-Modify-Write: CSRRW replaces, CSRRS sets the 1 bits, CSRRC clears the 1 bits
     always_comb begin
         unique case (CSR_OPERATION)
@@ -38,9 +44,9 @@ module CSRFile (
             CSR_CYCLE_COUNTER <= 64'd0;
             CSR_INSTRET_COUNTER <= 64'd0;
         end else begin
-            CSR_CYCLE_COUNTER <= CSR_CYCLE_COUNTER + 64'd1; // One more clock cycle has passed
+            CSR_CYCLE_COUNTER <= CYCLE_COUNTER_NEXT; // One more clock cycle has passed
             if (INSTRUCTION_RETIRED) begin
-                CSR_INSTRET_COUNTER <= CSR_INSTRET_COUNTER + 64'd1; // One more instruction has finished
+                CSR_INSTRET_COUNTER <= INSTRET_COUNTER_NEXT; // One more instruction has finished
             end
             if (CSR_WRITE_ENABLE) begin
                 unique case (CSR_ADDRESS)

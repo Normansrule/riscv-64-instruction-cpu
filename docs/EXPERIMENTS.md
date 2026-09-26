@@ -21,7 +21,7 @@ make bp PROG=09_primes_sieve
 
 Measured cycles on the original design ([performance edition table](img/charts/predictor_sweep.md)):
 
-| program | off | 2 bits | **4 bits (tape-out)** | 6 bits | 10 bits |
+| program | off | 2 bits | **4 bits (baseline)** | 6 bits | 10 bits |
 |---|---:|---:|---:|---:|---:|
 | 06_bubble_sort | **1069** | 1091 | 1124 | 1073 | 1143 |
 | 09_primes_sieve | 20897 | 20152 | **19773** | 19847 | 19876 |
@@ -90,9 +90,15 @@ output) in front of the EXECUTE pipeline register: ALU -> forwarding mux -> regi
 Textbook pipelines forward into EXECUTE instead. Sketch both paths on the block diagram and explain
 which is longer, and what that means for the clock period.
 
-## Lab 10: put the caches back
+## Lab 10: cache experiments
 
-The original design used a student-written cache ([`original/eecs151-rv32i/src/cache.sv`](../original/eecs151-rv32i/src/cache.sv))
-with a `stall` input. Add a stall input to `Riscv64` that freezes every pipeline register (the
-original's `CONTINUE_PIPELINE`), model a fixed miss latency in `ScratchpadMemory`, and add a
-`miss` term to the cycle equation.
+The caches are parameters of `riscv64_top` (`MISS_LATENCY`) and `CONFIGS` in `model/core.js`
+(`missLatency`). Set the latency to 2, 10, 50 and 100 cycles and plot CPI for `09_primes_sieve` and
+`tests/isa_selfcheck.s` (17 KiB of code, bigger than the 4 KiB instruction cache). Then turn off the
+next-line prefetch in `src/Instruction_Cache.sv` (and `irefill` in the model) and measure how many
+instruction misses it was hiding. What would a second cache way (2-way set associative) change?
+
+## Lab 11: a bigger or smarter predictor
+
+Try 8 or 10 history bits with the tournament chooser, or give the chooser its own history bits. Use
+`make bp` and the area numbers from `make synth` to decide whether it is worth the silicon.

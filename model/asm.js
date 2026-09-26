@@ -18,7 +18,7 @@
 // =============================================================================
 import { BY_NAME, encode, regNum, CSR_NAMES } from './isa.js';
 
-export const RESET_PC = 0x2000; // programs start here, like the EECS 151 core (src/const_pkg.sv PC_RESET)
+export const RESET_PC = 0x2000; // programs start here (src/const_pkg.sv PC_RESET)
 
 const MEM_SIZE = 0x10000;
 
