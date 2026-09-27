@@ -1,16 +1,15 @@
 `default_nettype none
 
 // =====================================================================================================
-// Instruction Cache: 4 KiB, direct-mapped, 32-byte lines (8 instructions per line), 128 lines.
+// Instruction Cache: 4 KiB, 2-way set-associative, 32-byte lines (8 instructions), 64 sets x 2 ways.
 //
-//   address bits:  [31:12] tag   [11:5] line index   [4:2] word in the line   [1:0] always 00
+//   address bits:  [31:11] tag   [10:5] set index   [4:2] word in the line   [1:0] always 00
 //
-// FETCH1 looks up its PC every cycle. A hit returns the instruction the same cycle (like the
-// scratchpad did). A miss makes HIT = 0: the core sends a bubble to FETCH2 and keeps its PC while
-// the refill engine fetches the whole line from main memory, which takes MISS_LATENCY cycles.
-// A miss therefore costs MISS_LATENCY + 1 cycles (1 to notice it). One refill at a time.
-// Next-line prefetch: after a demand miss fills line X, the engine fetches line X + 1 on its own
-// (if it is not already cached and FETCH1 is not missing), because code mostly runs straight on.
+// Each set holds two lines ("ways"), so two pieces of code that land in the same set can both stay.
+// A hit in either way returns the instruction the same cycle. On a miss FETCH1 waits while the refill
+// engine fetches the line from main memory (MISS_LATENCY cycles; MISS_LATENCY + 1 in total).
+// Replacement: an empty way first, otherwise the LEAST RECENTLY USED way of the set (1 LRU bit per set).
+// Next-line prefetch: after a demand miss fills line X, line X + 1 is fetched in the background.
 // Instruction memory is never written by the program (no self-modifying code), so no invalidation.
 // =====================================================================================================
 module InstructionCache #(
@@ -27,14 +26,20 @@ module InstructionCache #(
     input  logic [255:0] REFILL_LINE // The 32 bytes at REFILL_ADDRESS (main memory answers after MISS_LATENCY cycles)
 );
 
-    logic [127:0] LINE_VALID;
-    logic [19:0] LINE_TAG [0:127];
-    logic [255:0] LINE_DATA [0:127];
+    logic [63:0] WAY0_VALID, WAY1_VALID;
+    logic [20:0] WAY0_TAG [0:63];
+    logic [20:0] WAY1_TAG [0:63];
+    logic [255:0] WAY0_DATA [0:63];
+    logic [255:0] WAY1_DATA [0:63];
+    logic [63:0] LEAST_RECENTLY_USED; // per set: which way to replace next (0 or 1)
 
-    logic [6:0] FETCH_INDEX;
-    assign FETCH_INDEX = FETCH_ADDRESS[11:5];
-    assign HIT = LINE_VALID[FETCH_INDEX] && (LINE_TAG[FETCH_INDEX] == FETCH_ADDRESS[31:12]) && (FETCH_ADDRESS[63:32] == 32'd0);
-    assign INSTRUCTION = LINE_DATA[FETCH_INDEX][32*FETCH_ADDRESS[4:2] +: 32];
+    logic [5:0] FETCH_SET;
+    logic HIT_WAY0, HIT_WAY1;
+    assign FETCH_SET = FETCH_ADDRESS[10:5];
+    assign HIT_WAY0 = WAY0_VALID[FETCH_SET] && (WAY0_TAG[FETCH_SET] == FETCH_ADDRESS[31:11]) && (FETCH_ADDRESS[63:32] == 32'd0);
+    assign HIT_WAY1 = WAY1_VALID[FETCH_SET] && (WAY1_TAG[FETCH_SET] == FETCH_ADDRESS[31:11]) && (FETCH_ADDRESS[63:32] == 32'd0);
+    assign HIT = HIT_WAY0 || HIT_WAY1;
+    assign INSTRUCTION = HIT_WAY1 ? WAY1_DATA[FETCH_SET][32*FETCH_ADDRESS[4:2] +: 32] : WAY0_DATA[FETCH_SET][32*FETCH_ADDRESS[4:2] +: 32];
 
     // Refill engine
     logic REFILL_BUSY;
@@ -44,12 +49,22 @@ module InstructionCache #(
     logic PREFETCH_PENDING; // Line X + 1 should be fetched when the engine is free
     logic [63:0] PREFETCH_LINE_ADDRESS;
     logic PREFETCH_PRESENT; // ... but it may already be in the cache
-    assign PREFETCH_PRESENT = LINE_VALID[PREFETCH_LINE_ADDRESS[11:5]] && (LINE_TAG[PREFETCH_LINE_ADDRESS[11:5]] == PREFETCH_LINE_ADDRESS[31:12]);
+    logic [5:0] REFILL_SET, PREFETCH_SET;
+    logic REFILL_VICTIM_WAY; // Empty way first, else the least recently used one
+    logic INSTALL; // The line arrives this cycle
+    assign REFILL_SET = REFILL_LINE_ADDRESS[10:5];
+    assign PREFETCH_SET = PREFETCH_LINE_ADDRESS[10:5];
+    assign PREFETCH_PRESENT = (WAY0_VALID[PREFETCH_SET] && (WAY0_TAG[PREFETCH_SET] == PREFETCH_LINE_ADDRESS[31:11]))
+                           || (WAY1_VALID[PREFETCH_SET] && (WAY1_TAG[PREFETCH_SET] == PREFETCH_LINE_ADDRESS[31:11]));
+    assign REFILL_VICTIM_WAY = !WAY0_VALID[REFILL_SET] ? 1'b0 : !WAY1_VALID[REFILL_SET] ? 1'b1 : LEAST_RECENTLY_USED[REFILL_SET];
+    assign INSTALL = REFILL_BUSY && (REFILL_CYCLES_LEFT == 6'd1);
     assign REFILL_ADDRESS = REFILL_LINE_ADDRESS;
 
     always_ff @(posedge clk) begin
         if (reset) begin
-            LINE_VALID <= '0;
+            WAY0_VALID <= '0;
+            WAY1_VALID <= '0;
+            LEAST_RECENTLY_USED <= '0;
             REFILL_BUSY <= 1'b0;
             REFILL_CYCLES_LEFT <= 6'd0;
             REFILL_LINE_ADDRESS <= 64'd0;
@@ -57,6 +72,7 @@ module InstructionCache #(
             PREFETCH_PENDING <= 1'b0;
             PREFETCH_LINE_ADDRESS <= 64'd0;
         end else if (!FREEZE) begin
+            if (HIT) LEAST_RECENTLY_USED[FETCH_SET] <= HIT_WAY0; // the OTHER way is now the least recently used
             if (!REFILL_BUSY) begin
                 if (!HIT) begin // Start fetching the missing line (demand first)
                     REFILL_BUSY <= 1'b1;
@@ -72,9 +88,10 @@ module InstructionCache #(
                         REFILL_IS_DEMAND <= 1'b0;
                     end
                 end
-            end else if (REFILL_CYCLES_LEFT == 6'd1) begin // Main memory delivers the line: install it
+            end else if (INSTALL) begin // Main memory delivers the line: install it in the victim way
                 REFILL_BUSY <= 1'b0;
-                LINE_VALID[REFILL_LINE_ADDRESS[11:5]] <= 1'b1;
+                if (REFILL_VICTIM_WAY) WAY1_VALID[REFILL_SET] <= 1'b1; else WAY0_VALID[REFILL_SET] <= 1'b1;
+                LEAST_RECENTLY_USED[REFILL_SET] <= !REFILL_VICTIM_WAY; // the new line is the most recently used
                 if (REFILL_IS_DEMAND) begin
                     PREFETCH_PENDING <= 1'b1;
                     PREFETCH_LINE_ADDRESS <= REFILL_LINE_ADDRESS + 64'd32;
@@ -86,9 +103,14 @@ module InstructionCache #(
     end
 
     always_ff @(posedge clk) begin
-        if (!reset && !FREEZE && REFILL_BUSY && (REFILL_CYCLES_LEFT == 6'd1)) begin
-            LINE_TAG[REFILL_LINE_ADDRESS[11:5]] <= REFILL_LINE_ADDRESS[31:12];
-            LINE_DATA[REFILL_LINE_ADDRESS[11:5]] <= REFILL_LINE;
+        if (!reset && !FREEZE && INSTALL) begin
+            if (REFILL_VICTIM_WAY) begin
+                WAY1_TAG[REFILL_SET] <= REFILL_LINE_ADDRESS[31:11];
+                WAY1_DATA[REFILL_SET] <= REFILL_LINE;
+            end else begin
+                WAY0_TAG[REFILL_SET] <= REFILL_LINE_ADDRESS[31:11];
+                WAY0_DATA[REFILL_SET] <= REFILL_LINE;
+            end
         end
     end
 

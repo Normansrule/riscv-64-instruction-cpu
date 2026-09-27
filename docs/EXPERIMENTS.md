@@ -96,7 +96,7 @@ The caches are parameters of `riscv64_top` (`MISS_LATENCY`) and `CONFIGS` in `mo
 (`missLatency`). Set the latency to 2, 10, 50 and 100 cycles and plot CPI for `09_primes_sieve` and
 `tests/isa_selfcheck.s` (17 KiB of code, bigger than the 4 KiB instruction cache). Then turn off the
 next-line prefetch in `src/Instruction_Cache.sv` (and `irefill` in the model) and measure how many
-instruction misses it was hiding. What would a second cache way (2-way set associative) change?
+instruction misses it was hiding. The caches are 2-way set-associative: make them direct-mapped (1 way) or 4-way and rerun `16_cache_conflicts.s`, which shows 2 arrays fitting and 3 thrashing in the same sets.
 
 ## Lab 11: a bigger or smarter predictor
 

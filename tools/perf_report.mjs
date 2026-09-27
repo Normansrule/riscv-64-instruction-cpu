@@ -9,7 +9,7 @@ import fs from 'node:fs';
 import { assemble } from '../model/asm.js';
 import { Core, CONFIGS } from '../model/core.js';
 
-export const CLOCK = { baselineWithM: 7.5, performance: 182, performance7nm: 1373 }; // MHz, logic only, from tools/timing.sh (sky130, and asap7 for the 7 nm column)
+export const CLOCK = { baselineWithM: 7.5, performance: 180, performance7nm: 1372 }; // MHz, logic only, from tools/timing.sh (sky130, and asap7 for the 7 nm column)
 const FONT = "font-family=\"'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif\"";
 const MONO = "font-family=\"'IBM Plex Mono',Consolas,monospace\"";
 const rows = [];

@@ -15,8 +15,9 @@ and how to read its diagrams**.
 | **Pipeline** | FETCH1 → FETCH2 → DECODE → EXECUTE → MEMORY → WRITEBACK, in order, one instruction per cycle |
 | **Hazards** | forwarding into DECODE from EXECUTE / MEMORY / WRITEBACK, 1-cycle `LOAD_STALL` |
 | **Branch prediction** | tournament: a per-branch Branch History Table and `GSharePredictor` (PC xor global history, checkpoint repair) with a chooser; a 16-entry Branch Target Buffer (known taken branches cost 0 cycles); an 8-entry Return Address Stack |
-| **Memory** | 4 KiB instruction cache with next-line prefetch and 4 KiB write-through data cache (32-byte lines) in front of a 10-cycle main memory |
-| **Clock (logic only)** | about **182 MHz** on SkyWater 130 nm and **1.37 GHz** on the ASAP7 7 nm research kit, with the full M extension: [PERFORMANCE.md](docs/PERFORMANCE.md) |
+| **Memory** | 4 KiB instruction cache with next-line prefetch and 4 KiB write-through data cache, both 2-way set-associative with LRU replacement (32-byte lines), in front of a 10-cycle main memory |
+| **Traps** | `ecall`, `ebreak`, `mret` with `mtvec`, `mepc`, `mcause`, `mstatus`, `mscratch`: enough to run a tiny kernel ([`15_system_calls.s`](programs/15_system_calls.s)) |
+| **Clock (logic only)** | about **180 MHz** on SkyWater 130 nm and **1.37 GHz** on the ASAP7 7 nm research kit, with the full M extension: [PERFORMANCE.md](docs/PERFORMANCE.md) |
 | **Two builds** | the performance edition (default) and a simple baseline pipeline (`-DBASELINE`), both in the same RTL behind parameters |
 | **Verified** | 15 programs + an 859-case self-checking test, predictor on and off, **both builds**: the RTL matches a software twin on **every clock cycle** (64 runs) |
 | **Silicon** | the original design's real sky130 layout, timing and area, plus sky130 synthesis of this RTL |
@@ -96,7 +97,7 @@ stages. Try `node tools/rv.mjs encode "ld a0, 16(sp)"`.
 The baseline divides 64 bits in a single 133 ns cycle; the performance edition divides one bit per
 cycle, uses Kogge-Stone prefix adders, and wins cycles back with a tournament predictor, a Branch
 Target Buffer, a Return Address Stack and precise load stalls, while its caches make the memory
-realistic. Result: about 182 MHz (logic-only, sky130 typical corner) instead of about 7.5 MHz, and
+realistic. Result: about 180 MHz (logic-only, sky130 typical corner) instead of about 7.5 MHz, and
 1.37 GHz for the same RTL on a 7 nm-class library.
 [PERFORMANCE.md](docs/PERFORMANCE.md) has every step, every trade-off (divide-heavy code needs more
 cycles), and why 2.5 GHz is not possible in a 130 nm process.
@@ -141,6 +142,8 @@ performance edition.
 | [`12_measure_cpi`](programs/12_measure_cpi.s) | a program that measures its OWN performance | 151 | 1.59 | 204 | 2.15 |
 | [`13_function_call_cost`](programs/13_function_call_cost.s) | why function calls are not free on this pipeline | 277 | 2.45 | 300 | 2.65 |
 | [`14_false_load_stall`](programs/14_false_load_stall.s) | a stall caused by bits that only LOOK like a register | 82 | 2.16 | 81 | 2.13 |
+| [`15_system_calls`](programs/15_system_calls.s) | traps, the way an operating system gets control | 116 | 2.19 | 119 | 2.25 |
+| [`16_cache_conflicts`](programs/16_cache_conflicts.s) | why caches have "ways" | 499 | 2.92 | 507 | 2.96 |
 
 ## Down to silicon
 

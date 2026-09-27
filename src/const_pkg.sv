@@ -42,6 +42,15 @@ package const_pkg;
   localparam logic [11:0] CSR_INSTRET = 12'hC02; // rdinstret : instructions retired since reset
   localparam logic [11:0] CSR_MHARTID = 12'hF14; // Machine Hardware Thread ID (always 0 on this single core)
   // ===============================================
+  // Machine-mode trap CSRs (RISC-V privileged specification):
+  localparam logic [11:0] CSR_MSTATUS  = 12'h300; // bit 3 MIE (interrupts enabled), bit 7 MPIE (MIE before the trap)
+  localparam logic [11:0] CSR_MTVEC    = 12'h305; // trap handler address (direct mode: low 2 bits ignored)
+  localparam logic [11:0] CSR_MSCRATCH = 12'h340; // free register for the handler
+  localparam logic [11:0] CSR_MEPC     = 12'h341; // address of the instruction that trapped
+  localparam logic [11:0] CSR_MCAUSE   = 12'h342; // why: 3 = breakpoint (ebreak), 11 = environment call (ecall)
+  localparam logic [63:0] CAUSE_BREAKPOINT = 64'd3;
+  localparam logic [63:0] CAUSE_ENVIRONMENT_CALL = 64'd11;
+  // ===============================================
 
 endpackage : const_pkg
 

@@ -9,15 +9,16 @@ introduction read the [learning path](learn/README.md) first.
 
 | property | value |
 |---|---|
-| instruction set | RV64I + M (multiply/divide) + Zicsr (CSR instructions): 71 instructions, see [`binary/`](../binary/README.md) |
+| instruction set | RV64I + M (multiply/divide) + Zicsr (CSR instructions) + machine-mode traps (`ecall`, `ebreak`, `mret`): 72 instructions, see [`binary/`](../binary/README.md) |
+| traps | `ecall` / `ebreak` save the PC in `mepc` and the cause in `mcause` (11 / 3) and jump to `mtvec`; `mret` returns to `mepc`; `mstatus` MIE/MPIE are saved and restored |
 | pipeline | 6 stages, in order, single issue: FETCH1, FETCH2, DECODE, EXECUTE, MEMORY, WRITEBACK |
 | data hazards | forwarding **into DECODE** from EXECUTE, MEMORY, WRITEBACK; 1-cycle `LOAD_STALL` |
 | branch prediction | tournament: `TournamentChooser` (128-entry per-branch history table + 128-entry chooser) with `GSharePredictor` (2^`GSHARE_HISTORY_BITS` counters, default 6 bits = 64), speculative global history with checkpoint repair; a 16-entry `BranchTargetBuffer` in FETCH1; an 8-entry `ReturnAddressStack` in FETCH2 |
 | branch penalties | taken branch or JAL found in the BTB: 0 bubbles; otherwise a FETCH2 redirect: 1; predicted return: 1; wrong guess or unpredicted JALR: 3 (flush) |
 | multiply / divide | `IterativeMultiplyDivideUnit`: multiply 7 cycles, divide 3 + significant bits of the dividend (baseline build: single cycle) |
-| clock (logic only) | sky130 130 nm: 5.5 ns, about 182 MHz; ASAP7 7 nm: 0.73 ns, about 1.37 GHz; see [PERFORMANCE.md](PERFORMANCE.md) |
+| clock (logic only) | sky130 130 nm: 5.5 ns, about 180 MHz; ASAP7 7 nm: 0.73 ns, about 1.37 GHz; see [PERFORMANCE.md](PERFORMANCE.md) |
 | builds | performance (default) and baseline (`-DBASELINE`, the plain pipeline); `make test` checks both |
-| memory | performance build: `InstructionCache` (4 KiB, direct-mapped, 32-byte lines, next-line prefetch) and `DataCache` (4 KiB, write-through, no store allocation) in front of a 64 KiB main memory with a 10-cycle line refill; baseline: single-cycle 64 KiB `ScratchpadMemory` |
+| memory | performance build: `InstructionCache` (4 KiB, 2-way set-associative with LRU replacement, 32-byte lines, next-line prefetch) and `DataCache` (4 KiB, 2-way LRU, write-through, no store allocation) in front of a 64 KiB main memory with a 10-cycle line refill; baseline: single-cycle 64 KiB `ScratchpadMemory` |
 | reset PC | `0x2000` (`PC_RESET` in [`src/const_pkg.sv`](../src/const_pkg.sv)) |
 | program end | write a nonzero value to the `tohost` CSR; the core halts when that instruction reaches WRITEBACK |
 | verification | every program, every cycle, RTL vs [`model/core.js`](../model/core.js), predictor on and off (`make test`) |
@@ -44,8 +45,8 @@ introduction read the [learning path](learn/README.md) first.
 | [`Branch_Target_Buffer.sv`](../src/Branch_Target_Buffer.sv) | `BranchTargetBuffer` | FETCH1 (read), EXECUTE (write) | zero-bubble taken branches and jumps |
 | [`Return_Address_Stack.sv`](../src/Return_Address_Stack.sv) | `ReturnAddressStack` | FETCH2 | predicts `ret` |
 | [`Tournament_Chooser.sv`](../src/Tournament_Chooser.sv) | `TournamentChooser` | FETCH1 (read), EXECUTE (train) | per-branch history table + chooser |
-| [`Instruction_Cache.sv`](../src/Instruction_Cache.sv) | `InstructionCache` | FETCH1 | 4 KiB, next-line prefetch |
-| [`Data_Cache.sv`](../src/Data_Cache.sv) | `DataCache` | EXECUTE | 4 KiB, write-through |
+| [`Instruction_Cache.sv`](../src/Instruction_Cache.sv) | `InstructionCache` | FETCH1 | 4 KiB, 2-way LRU, next-line prefetch |
+| [`Data_Cache.sv`](../src/Data_Cache.sv) | `DataCache` | EXECUTE | 4 KiB, 2-way LRU, write-through |
 | [`Branch_Comparator.sv`](../src/Branch_Comparator.sv) | `BranchComparator` | EXECUTE | beq bne blt bge bltu bgeu |
 | [`Branch_Control_Unit.sv`](../src/Branch_Control_Unit.sv) | `BranchControl` | EXECUTE | prediction check, `FLUSH`, `ADJUST_NEXT_PC` |
 | [`Control_Status_Register_File.sv`](../src/Control_Status_Register_File.sv) | `CSRFile` | EXECUTE | tohost, status, cycle, instret, hartid |
@@ -126,6 +127,11 @@ result: `tohost = 1` is PASS, `(n << 1) | 1` is FAIL in test n (the riscv-tests 
 | CSR `0x50B` `hartid`, `0xF14` `mhartid` | always 0 |
 | CSR `0xC00` `cycle` | clock cycles since reset (read-only) |
 | CSR `0xC02` `instret` | instructions retired since reset (read-only) |
+| CSR `0x300` `mstatus` | bit 3 MIE, bit 7 MPIE |
+| CSR `0x305` `mtvec` | trap handler address (direct mode) |
+| CSR `0x340` `mscratch` | scratch register for the handler |
+| CSR `0x341` `mepc` | address of the instruction that trapped |
+| CSR `0x342` `mcause` | 3 = breakpoint, 11 = environment call |
 
 ## Timing rules (exact)
 
@@ -135,7 +141,7 @@ result: `tohost = 1` is PASS, `(n << 1) | 1` is FAIL in test n (the riscv-tests 
 | `LOAD_STALL` | 1 |
 | FETCH2 redirect (predicted-taken branch or JAL not in the BTB, predicted return) | 1 (0 if a flush squashes the redirecting instruction) |
 | taken branch or JAL found in the BTB | 0 |
-| flush (wrong branch guess, JALR not predicted or predicted wrong) | 3 |
+| flush (wrong branch guess, JALR not predicted or predicted wrong, `ecall`, `ebreak`, `mret`) | 3 |
 | M instruction (performance build) | multiply 6, divide 2 + significant bits of the dividend (EXECUTE held, bubbles into MEMORY) |
 | instruction-cache miss | 11 (bubbles into FETCH2; a prefetched line costs 0) |
 | data-cache miss (loads) | 11 (the load waits in EXECUTE; stores never wait) |

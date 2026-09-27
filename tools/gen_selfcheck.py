@@ -121,13 +121,19 @@ csr_case("csrrci", ["    csrrci a3, status, 1", "    csrr a3, status"], 'a3', 24
 csr_case("csr read then forward to next instruction", ["    csrwi status, 5", "    csrr t0, status", "    addi a3, t0, 1"], 'a3', 6)
 csr_case("hartid reads 0", ["    csrr a3, hartid"], 'a3', 0)
 csr_case("mhartid reads 0", ["    csrr a3, mhartid"], 'a3', 0)
+# ---------------- traps (machine mode): ecall / ebreak jump to mtvec, mret returns to mepc ----------------
+csr_case("ecall traps to mtvec and mret returns (the handler counts in a5)", ["    la   t0, trap_handler", "    csrw mtvec, t0", "    li   a5, 0", "    ecall", "    ecall", "    mv   a3, a5"], 'a3', 2)
+csr_case("mcause = 11 after ecall", ["    ecall", "    csrr a3, mcause"], 'a3', 11)
+csr_case("mcause = 3 after ebreak", ["    ebreak", "    csrr a3, mcause"], 'a3', 3)
+csr_case("mepc = address of the ecall (the handler added 4)", ["trap_site:", "    ecall", "    csrr a3, mepc", "    la   t1, trap_site", "    sub  a3, a3, t1"], 'a3', 4)
+csr_case("mret restores MIE from MPIE", ["    csrsi mstatus, 8", "    ecall", "    csrr a3, mstatus", "    andi a3, a3, 0x88"], 'a3', 0x88)
 csr_case("cycle counter moves forward", ["    rdcycle t0", "    nop", "    nop", "    rdcycle t1", "    sltu a3, t0, t1"], 'a3', 1)
 csr_case("instret counts 3 retired instructions between reads (3 nops first so no earlier bubble is still draining)", ["    nop", "    nop", "    nop", "    rdinstret t0", "    nop", "    nop", "    rdinstret t1", "    sub  a3, t1, t0"], 'a3', 3)
 csr_case("cycle counter is read-only", ["    rdcycle t0", "    csrw cycle, zero", "    rdcycle t1", "    sltu a3, t0, t1"], 'a3', 1)
 
 hdr=f"""# =============================================================================
 # tests/isa_selfcheck.s: AUTO-GENERATED self-checking test of every RV64IM +
-# Zicsr instruction ({n} test cases, expected values computed by an independent
+# Zicsr + trap instruction ({n} test cases, expected values computed by an independent
 # Python reference model). Uses the riscv-tests convention:
 #   PASS: tohost = 1           FAIL: tohost = (test number << 1) | 1
 # so the testbench prints "FAIL in test N": search for "tN:" below.
@@ -145,6 +151,13 @@ fail:
     ori  t0, t0, 1
     csrw tohost, t0    # tohost = (n << 1) | 1: FAIL in test n
     j    .
+
+trap_handler:          # counts traps in a5 and returns to the instruction after the ecall/ebreak
+    addi a5, a5, 1
+    csrr t5, mepc
+    addi t5, t5, 4
+    csrw mepc, t5
+    mret
 
     .align 3
 scratch:

@@ -63,5 +63,5 @@ Rows are `inst[6:5]`, columns are `inst[4:2]`.
 
 ### SYSTEM `1110011`
 
-[`ecall`](RV64I/ecall.md) · [`ebreak`](RV64I/ebreak.md) · [`csrrw`](Zicsr/csrrw.md) · [`csrrs`](Zicsr/csrrs.md) · [`csrrc`](Zicsr/csrrc.md) · [`csrrwi`](Zicsr/csrrwi.md) · [`csrrsi`](Zicsr/csrrsi.md) · [`csrrci`](Zicsr/csrrci.md)
+[`ecall`](RV64I/ecall.md) · [`ebreak`](RV64I/ebreak.md) · [`mret`](Priv/mret.md) · [`csrrw`](Zicsr/csrrw.md) · [`csrrs`](Zicsr/csrrs.md) · [`csrrc`](Zicsr/csrrc.md) · [`csrrwi`](Zicsr/csrrwi.md) · [`csrrsi`](Zicsr/csrrsi.md) · [`csrrci`](Zicsr/csrrci.md)
 

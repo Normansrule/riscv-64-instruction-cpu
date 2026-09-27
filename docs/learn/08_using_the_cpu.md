@@ -44,6 +44,22 @@ Use `# EXPECT[gshare]:` / `# EXPECT[bp-off]:` for timing numbers that depend on 
   `beqz`, `bnez`, `bgt`, `ble`, `csrr`, `csrw`, `rdcycle`, `rdinstret`, `halt`.
 * Data: `.byte .half .word .dword .zero .string .align .org`. Labels end with `:`. `.` is the current address.
 
+## System calls: traps
+
+`ecall` does not jump anywhere you wrote: the CPU saves its address in `mepc`, sets `mcause` to 11,
+and jumps to the address in `mtvec`, the **trap handler**. The handler does the work and returns
+with `mret` (after adding 4 to `mepc`, so the `ecall` is not repeated). This is how an operating
+system gets control. [`15_system_calls.s`](../../programs/15_system_calls.s) is a complete tiny
+"kernel" with two services:
+
+```asm
+    la   t0, kernel
+    csrw mtvec, t0      # traps go to "kernel"
+    li   a7, 1          # service 1: print the character in a0
+    li   a0, 79         # 'O'
+    ecall
+```
+
 ## Debugging
 
 * `make cycle PROG=my_program C=12`: everything that happens in cycle 12.

@@ -23,7 +23,8 @@ export const STAGES = ['FETCH1', 'FETCH2', 'DECODE', 'EXECUTE', 'MEMORY', 'WRITE
 export const SHORT = { FETCH1: 'F1', FETCH2: 'F2', DECODE: 'D', EXECUTE: 'E', MEMORY: 'M', WRITEBACK: 'W' };
 export const RESET_PC = 0x2000;
 export const MMIO_PUTCHAR = 0x10000000n;
-export const CSR = { TOHOST: 0x51E, STATUS: 0x50A, HARTID: 0x50B, CYCLE: 0xC00, INSTRET: 0xC02, MHARTID: 0xF14 };
+export const CSR = { TOHOST: 0x51E, STATUS: 0x50A, HARTID: 0x50B, CYCLE: 0xC00, INSTRET: 0xC02, MHARTID: 0xF14,
+  MSTATUS: 0x300, MTVEC: 0x305, MSCRATCH: 0x340, MEPC: 0x341, MCAUSE: 0x342 };
 export const DEFAULT_HISTORY_BITS = 6; // GSHARE_HISTORY_BITS in src/Riscv64.sv
 // The two builds `make test` checks (parameters of src/Riscv64.sv):
 export const CONFIGS = {
@@ -68,7 +69,7 @@ const MULDIV = ['MUL', 'MULH', 'MULHSU', 'MULHU', 'DIV', 'DIVU', 'REM', 'REMU'];
 export function control(word) {
   const op = word & 0x7f, f3 = bits(word, 14, 12), f7 = bits(word, 31, 25), b30 = bits(word, 30, 30), rs1f = bits(word, 19, 15);
   const c = { regWrite: 0, memRead: 0, memWrite: 0, csrWrite: 0, csrImm: 0, aIsPC: 0, bIsImm: 0, isWord: 0, isMulDiv: 0,
-    isBranch: 0, isJal: 0, isJalr: 0, immType: 'I', wbSel: WB.ALU, aluOp: 'XXX' };
+    isBranch: 0, isJal: 0, isJalr: 0, isEcall: 0, isEbreak: 0, isMret: 0, immType: 'I', wbSel: WB.ALU, aluOp: 'XXX' };
   const md = f7 === 0b0000001;
   const arith = () => { const n = ARITH[f3]; return n === 'SRL_SRA' ? (b30 ? 'SRA' : 'SRL') : n; };
   switch (op) {
@@ -92,6 +93,10 @@ export function control(word) {
       if (f3 === 0b001 || f3 === 0b101) c.csrWrite = 1; else if (f3 !== 0) c.csrWrite = rs1f !== 0 ? 1 : 0;
       if (f3 === 0b101 || f3 === 0b110 || f3 === 0b111) { c.csrImm = 1; c.immType = 'Z'; }
       c.aluOp = (f3 === 0b001 || f3 === 0b101) ? 'COPY_B' : 'XXX';
+      if (f3 === 0 && rs1f === 0 && bits(word, 11, 7) === 0) { // ecall / ebreak / mret (ControlUnit IS_AN_*)
+        const f12 = bits(word, 31, 20);
+        c.isEcall = f12 === 0 ? 1 : 0; c.isEbreak = f12 === 1 ? 1 : 0; c.isMret = f12 === 0x302 ? 1 : 0;
+      }
       break;
     default: break; // FENCE and unknown opcodes: no operation
   }
@@ -231,7 +236,8 @@ export class Core {
     this.opts = { bp, historyBits, btb, ras, preciseStall, iterativeMdu, tournament, caches, missLatency };
     this.bht = new Uint8Array(128).fill(2); // TournamentChooser: per-branch history table (weakly taken)
     this.chooser = new Uint8Array(128).fill(1); // ... and chooser (weakly trust the BHT)
-    const cache = () => ({ valid: new Uint8Array(128), tag: new Uint32Array(128), busy: false, left: 0, line: 0, demand: false, pf: false, pfLine: 0 });
+    // 2-way set-associative: slot = way * 64 + set (64 sets x 2 ways), one LRU bit per set
+    const cache = () => ({ valid: new Uint8Array(128), tag: new Uint32Array(128), lru: new Uint8Array(64), busy: false, left: 0, line: 0, demand: false, pf: false, pfLine: 0 });
     this.icache = cache(); this.dcache = cache();
     this.btb = Array.from({ length: 16 }, () => ({ valid: false, tag: 0, target: 0, isJal: false }));
     this.ras = { stack: new Array(8).fill(0n), top: 0 };
@@ -240,7 +246,7 @@ export class Core {
     this.mem.set((image.bytes || image).slice(0, 65536)); // absolute addresses: code starts at RESET_PC
     this.regs = new Array(32).fill(0n);
     this.bp = new GShare(historyBits, bp);
-    this.csr = { tohost: 0n, status: 0n, cycle: 0n, instret: 0n };
+    this.csr = { tohost: 0n, status: 0n, cycle: 0n, instret: 0n, mstatus: 0n, mtvec: 0n, mscratch: 0n, mepc: 0n, mcause: 0n };
     this.F1PC = RESET_PC;
     this.f2 = BUBBLE('fill'); this.d = BUBBLE('fill'); this.e = BUBBLE('fill'); this.m = BUBBLE('fill'); this.w = BUBBLE('fill');
     this.cycle = 0; this.halted = false; this.output = '';
@@ -251,15 +257,27 @@ export class Core {
       bubbles: { fill: 0, loaduse: 0, flush: 0, redirect: 0, muldiv: 0, imiss: 0, dmiss: 0 } };
   }
 
-  cacheHit(c, addr) { // addr: Number (fetch) or BigInt (data)
+  cacheSlot(c, addr) { // way * 64 + set of the line holding addr, or -1 (InstructionCache / DataCache lookup)
     const a = typeof addr === 'bigint' ? addr : BigInt(addr >>> 0);
-    if (a >> 32n) return false;
-    const idx = Number((a >> 5n) & 127n);
-    return !!c.valid[idx] && c.tag[idx] === Number((a >> 12n) & 0xfffffn);
+    if (a >> 32n) return -1;
+    const set = Number((a >> 5n) & 63n), tag = Number((a >> 11n) & 0x1fffffn);
+    for (const way of [0, 1]) if (c.valid[way * 64 + set] && c.tag[way * 64 + set] === tag) return way * 64 + set;
+    return -1;
   }
-  refill(c, missing, addr) { // one clock edge of a refill engine (Instruction/DataCache)
+  cacheHit(c, addr) { return this.cacheSlot(c, addr) >= 0; }
+  victimSlot(c, line) { // an empty way first, otherwise the least recently used one
+    const set = (line >>> 5) & 63;
+    const way = !c.valid[set] ? 0 : !c.valid[64 + set] ? 1 : c.lru[set];
+    return way * 64 + set;
+  }
+  touch(c, slot) { if (slot >= 0) c.lru[slot & 63] = slot < 64 ? 1 : 0; } // the other way becomes least recently used
+  install(c) {
+    const slot = this.victimSlot(c, c.line), set = slot & 63;
+    c.valid[slot] = 1; c.tag[slot] = (c.line >>> 11) & 0x1fffff; c.lru[set] = slot < 64 ? 1 : 0;
+  }
+  refill(c, missing, addr) { // one clock edge of the DataCache refill engine
     if (!c.busy) { if (missing) { c.busy = true; c.left = this.opts.missLatency; c.line = Number(BigInt.asUintN(32, (typeof addr === 'bigint' ? addr : BigInt(addr >>> 0))) & ~31n); return true; } }
-    else if (c.left === 1) { c.busy = false; const idx = (c.line >>> 5) & 127; c.valid[idx] = 1; c.tag[idx] = (c.line >>> 12) & 0xfffff; }
+    else if (c.left === 1) { c.busy = false; this.install(c); }
     else c.left--;
     return false;
   }
@@ -269,7 +287,7 @@ export class Core {
       if (missing) { c.busy = true; c.left = this.opts.missLatency; c.line = (pc & ~31) >>> 0; c.demand = true; return true; }
       if (c.pf) { c.pf = false; if (!this.cacheHit(c, c.pfLine)) { c.busy = true; c.left = this.opts.missLatency; c.line = c.pfLine; c.demand = false; this.stats.prefetches = (this.stats.prefetches || 0) + 1; } }
     } else if (c.left === 1) {
-      c.busy = false; const idx = (c.line >>> 5) & 127; c.valid[idx] = 1; c.tag[idx] = (c.line >>> 12) & 0xfffff;
+      c.busy = false; this.install(c);
       if (c.demand) { c.pf = true; c.pfLine = (c.line + 32) >>> 0; }
     } else c.left--;
     return false;
@@ -287,6 +305,11 @@ export class Core {
       case CSR.STATUS: return this.csr.status;
       case CSR.CYCLE: return this.csr.cycle;
       case CSR.INSTRET: return this.csr.instret;
+      case CSR.MSTATUS: return this.csr.mstatus;
+      case CSR.MTVEC: return this.csr.mtvec;
+      case CSR.MSCRATCH: return this.csr.mscratch;
+      case CSR.MEPC: return this.csr.mepc;
+      case CSR.MCAUSE: return this.csr.mcause;
       default: return 0n; // HARTID, MHARTID and unknown CSRs read 0
     }
   }
@@ -319,7 +342,7 @@ export class Core {
 
     // ================= EXECUTE =================
     let FLUSH = false, adjust = 0, fwdE = 0n, exNext = null, storeOp = null, csrWrite = null, bpTrain = null, restoreGhr = null, btbWrite = null, MDU_STALL = false, mduSteps = 0;
-    let dReq = false, dHit = true, dAddr = 0n, D_STALL = false;
+    let dReq = false, dHit = true, dAddr = 0n, D_STALL = false, trap = null, mret = false, dStoreSlot = -1;
     if (e.valid) {
       const A = e.aIsPC ? BigInt(e.pc) : e.rs1v, B = e.bIsImm ? e.imm : e.rs2v;
       const aluOut = alu(A, B, e.aluOp, e.isWord);
@@ -342,6 +365,8 @@ export class Core {
         ev.resolve = { kind: 'jalr', predicted: !!e.returnPredicted, actual: true, mispredict: !right, target: adjust };
         if (right) this.stats.returnsPredicted++;
       }
+      if (e.isEcall || e.isEbreak) { FLUSH = true; adjust = Number(this.csr.mtvec & 0xfffffffcn); trap = { pc: e.pc, cause: e.isEbreak ? 3n : 11n }; ev.trap = { kind: e.isEbreak ? 'ebreak' : 'ecall', to: adjust }; }
+      else if (e.isMret) { FLUSH = true; adjust = Number(this.csr.mepc & 0xffffffffn); mret = true; ev.trap = { kind: 'mret', to: adjust }; }
       if (FLUSH) restoreGhr = e.isBranch ? ((e.ckpt << 1) | (taken ? 1 : 0)) & this.bp.mask : e.ckpt;
       if (this.opts.btb && ((e.isBranch && taken) || e.isJal)) btbWrite = { idx: (e.pc >>> 2) & 15, tag: (e.pc >>> 6) & 0x3ffffff, target: e.target >>> 0, isJal: !!e.isJal };
       if (e.memRead && this.opts.caches) { dReq = true; dHit = this.cacheHit(this.dcache, result); dAddr = result; D_STALL = !dHit; ev.dcacheAccess = { addr: Number(result & 0xffffffffn), hit: dHit }; }
@@ -354,7 +379,7 @@ export class Core {
         csrWrite = { addr: e.csrAddr, value: nv };
         ev.csrWrite = csrWrite;
       }
-      if (e.memWrite) { const s = storeControl(e.funct3, result, e.rs2v); storeOp = { addr: result, ...s }; ev.memAccess = { kind: 'store', addr: result, value: e.rs2v, mask: s.mask, funct3: e.funct3 }; }
+      if (e.memWrite) { const s = storeControl(e.funct3, result, e.rs2v); storeOp = { addr: result, ...s }; if (this.opts.caches) dStoreSlot = this.cacheSlot(this.dcache, result); ev.memAccess = { kind: 'store', addr: result, value: e.rs2v, mask: s.mask, funct3: e.funct3 }; }
       exNext = { valid: true, id: e.id, pc: e.pc, rd: e.rd, regWrite: e.regWrite, memRead: e.memRead, funct3: e.funct3, result, pc4, csrData,
         wbSel: e.wbSel, dcData: this.readDouble(result), writesTohost: !!(e.csrWrite && e.csrAddr === CSR.TOHOST) };
       ev.stages.EXECUTE = { id: e.id, pc: e.pc };
@@ -442,7 +467,13 @@ export class Core {
       if (storeOp.addr === MMIO_PUTCHAR) { this.output += String.fromCharCode(Number(storeOp.data & 0xffn)); ev.putchar = true; }
       else { const base = Number(storeOp.addr & 0xfff8n); for (let k = 0; k < 8; k++) if (storeOp.mask & (1 << k)) this.mem[(base + k) & 0xffff] = Number((storeOp.data >> BigInt(8 * k)) & 0xffn); }
     }
-    if (csrWrite) { if (csrWrite.addr === CSR.TOHOST) this.csr.tohost = csrWrite.value; else if (csrWrite.addr === CSR.STATUS) this.csr.status = csrWrite.value; }
+    if (trap) { this.csr.mepc = BigInt(trap.pc) & ~1n; this.csr.mcause = trap.cause; const mie = (this.csr.mstatus >> 3n) & 1n; this.csr.mstatus = (this.csr.mstatus & ~0x88n) | (mie << 7n); this.stats.traps = (this.stats.traps || 0) + 1; }
+    else if (mret) { const mpie = (this.csr.mstatus >> 7n) & 1n; this.csr.mstatus = (this.csr.mstatus & ~0x88n) | (mpie << 3n) | 0x80n; }
+    if (csrWrite) {
+      const v = csrWrite.value, a = csrWrite.addr, c = this.csr;
+      if (a === CSR.TOHOST) c.tohost = v; else if (a === CSR.STATUS) c.status = v; else if (a === CSR.MSTATUS) c.mstatus = v;
+      else if (a === CSR.MTVEC) c.mtvec = v; else if (a === CSR.MSCRATCH) c.mscratch = v; else if (a === CSR.MEPC) c.mepc = v & ~1n; else if (a === CSR.MCAUSE) c.mcause = v;
+    }
     this.csr.cycle++; if (w.valid) this.csr.instret++;
     if (bpTrain) {
       ev.bpUpdate = { ...this.bp.train(bpTrain.idx, bpTrain.taken), taken: bpTrain.taken }; this.stats.branches++;
@@ -453,6 +484,9 @@ export class Core {
       }
     }
     if (this.opts.caches) {
+      if (iHit) this.touch(this.icache, this.cacheSlot(this.icache, this.F1PC)); // LRU first, the install below wins
+      if (dReq && dHit) this.touch(this.dcache, this.cacheSlot(this.dcache, dAddr));
+      if (storeOp && storeOp.mask && dStoreSlot >= 0) this.touch(this.dcache, dStoreSlot);
       if (this.irefill(!iHit, this.F1PC)) this.stats.icacheMisses++;
       if (this.refill(this.dcache, dReq && !dHit, dAddr)) this.stats.dcacheMisses++;
     }
@@ -475,7 +509,7 @@ export class Core {
 
     // statistics
     if (ev.stall) { this.stats.loadStalls++; if (!ev.loadStallReal) this.stats.falseLoadStalls++; }
-    if (FLUSH) { this.stats.flushes++; if (e.isJalr) this.stats.jalrFlushes++; else this.stats.mispredicts++; }
+    if (FLUSH) { this.stats.flushes++; if (e.isJalr) this.stats.jalrFlushes++; else if (!(e.isEcall || e.isEbreak || e.isMret)) this.stats.mispredicts++; }
     if (ev.redirect) this.stats.redirects++;
     if (ev.busy) this.stats.multiplyDivideBusy++;
     if (ADVANCE && !REDIRECT && F1_BTB_REDIRECT) this.stats.btbRedirects++;

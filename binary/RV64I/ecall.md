@@ -3,7 +3,7 @@
 [← all instructions](../README.md) · extension **RV64I** · format **SYS** · category *System*
 
 ```
-trap to the environment (no operation on this core: programs stop by writing the tohost CSR)
+trap: mepc = pc, mcause = 11, jump to mtvec (a system call)
 ```
 
 ## Encoding

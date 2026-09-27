@@ -1,18 +1,18 @@
-# `ebreak`: Environment Breakpoint
+# `mret`: Machine-mode Return
 
-[← all instructions](../README.md) · extension **RV64I** · format **SYS** · category *System*
+[← all instructions](../README.md) · extension **Priv** · format **SYS** · category *System*
 
 ```
-trap: mepc = pc, mcause = 3, jump to mtvec (a breakpoint)
+return from a trap: pc = mepc, mstatus.MIE = mstatus.MPIE
 ```
 
 ## Encoding
 
-![ebreak encoding](../../docs/img/instructions/ebreak.svg)
+![mret encoding](../../docs/img/instructions/mret.svg)
 
 ```
 bit:  31                              0
-      0000 0000 0001 0000 0000 0000 0111 0011
+      0000 0000 0000 0000 0000 0000 0111 0011
 ```
 
 Fixed bits are `0`/`1`. Letters are filled in by the assembler:
@@ -20,13 +20,13 @@ Fixed bits are `0`/`1`. Letters are filled in by the assembler:
 
 ## Example
 
-`ebreak` assembles to **`0x00100073`** = `00000000000100000000000001110011`
+`mret` assembles to **`0x30200073`** = `00110000001000000000000001110011`
 
-![example](../../docs/img/instructions/ebreak_example.svg)
+![example](../../docs/img/instructions/mret_example.svg)
 
 | field | bits | template | example |
 |---|---|---|---|
-| `funct12` | 31:20 | `000000000001` | `000000000001` |
+| `funct12` | 31:20 | `000000000000` | `001100000010` |
 | `rs1` | 19:15 | `00000` | `00000` |
 | `funct3` | 14:12 | `000` | `000` |
 | `rd` | 11:7 | `00000` | `00000` |
@@ -35,8 +35,8 @@ Fixed bits are `0`/`1`. Letters are filled in by the assembler:
 Try it yourself:
 
 ```bash
-node tools/rv.mjs encode "ebreak"
-node tools/rv.mjs decode 00100073
+node tools/rv.mjs encode "mret"
+node tools/rv.mjs decode 30200073
 ```
 
 ## Control signals from the Control Unit ([`src/Control_Unit.sv`](../../src/Control_Unit.sv))
@@ -57,11 +57,11 @@ bit-exact twin in `model/core.js`, which `make test` checks against the RTL ever
 
 ## Journey through the 6-stage pipeline
 
-| stage | what happens to `ebreak` |
+| stage | what happens to `mret` |
 |---|---|
 | **FETCH1** | The PC is sent to the instruction memory. At the same time the **GSharePredictor** reads the 2-bit counter at `PC[5:2] XOR GLOBAL_HISTORY_REGISTER` (it does not know yet what instruction this is). |
 | **FETCH2** | The 32-bit word arrives from memory. It is not a branch or JAL, so fetching simply continues at `PC + 4`. |
-| **DECODE** | **ControlUnit** + **ALUdec** recognise `ebreak` from opcode `1110011`, funct3 `000`; the **ImmediateGenerator** builds the I-type immediate. No registers are needed. |
+| **DECODE** | **ControlUnit** + **ALUdec** recognise `mret` from opcode `1110011`, funct3 `000`; the **ImmediateGenerator** builds the I-type immediate. No registers are needed. |
 | **EXECUTE** | Nothing: on this core ECALL/EBREAK are no-ops; programs finish by writing the `tohost` CSR (`halt`). |
 | **MEMORY** | No memory work. **WriteControl** picks the result value. |
 | **WRITEBACK** | Nothing to write. The instruction retires (`instret` + 1). |

@@ -141,5 +141,7 @@ tournament (local + global + chooser) branch predictor used by `TournamentChoose
 Journal*, vol. 53, 2016. The 7 nm-class library used by `tools/timing.sh ... asap7`; liberty files from
 https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts (platforms/asap7).
 
+**[31]** A. Waterman, K. Asanović (eds.), *The RISC-V Instruction Set Manual, Volume II: Privileged Architecture*, https://github.com/riscv/riscv-isa-manual . Machine-mode traps: `mtvec`, `mepc`, `mcause`, `mstatus`, `mret` (used by `CSRFile`).
+
 **[30]** A. J. Smith, "Cache Memories," *ACM Computing Surveys*, vol. 14, no. 3, 1982. Direct-mapped
 caches, write-through, and sequential (next-line) prefetching.

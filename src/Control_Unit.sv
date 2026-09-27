@@ -19,6 +19,9 @@ module ControlUnit (
     output logic IS_A_BRANCH_INSTRUCTION,
     output logic IS_A_JAL_INSTRUCTION,
     output logic IS_A_JALR_INSTRUCTION,
+    output logic IS_AN_ECALL, // Environment call: trap to mtvec with mcause 11
+    output logic IS_AN_EBREAK, // Breakpoint: trap to mtvec with mcause 3
+    output logic IS_AN_MRET, // Return from a trap to mepc
     output logic USES_REGISTER1, // This instruction really reads rs1 (used for precise load stalls)
     output logic USES_REGISTER2, // This instruction really reads rs2
     output immediate_type_select_t IMMEDIATE_TYPE_SELECT,
@@ -47,6 +50,13 @@ module ControlUnit (
         .multiply_divide_type(INSTRUCTION_MULTIPLY_DIVIDE_TYPE),
         .ALUop(ALU_OPERATION)
     );
+
+    // System instructions with funct3 = 000 are told apart by bits 31:20 (rd and rs1 must be x0)
+    logic IS_A_PRIVILEGED_SYSTEM_INSTRUCTION;
+    assign IS_A_PRIVILEGED_SYSTEM_INSTRUCTION = (INSTRUCTION_OPCODE == OPC_CSR) && (INSTRUCTION_FUNCT3 == FNC_PRIV) && (INSTRUCTION[19:15] == 5'd0) && (INSTRUCTION[11:7] == 5'd0);
+    assign IS_AN_ECALL = IS_A_PRIVILEGED_SYSTEM_INSTRUCTION && (INSTRUCTION[31:20] == 12'h000);
+    assign IS_AN_EBREAK = IS_A_PRIVILEGED_SYSTEM_INSTRUCTION && (INSTRUCTION[31:20] == 12'h001);
+    assign IS_AN_MRET = IS_A_PRIVILEGED_SYSTEM_INSTRUCTION && (INSTRUCTION[31:20] == 12'h302);
 
     // Which source registers are REALLY read. LOAD_STALL can use these instead of the raw rs1/rs2 fields,
     // so "addi a1, zero, 5" right after "ld t0" no longer stalls just because its immediate looks like x5.

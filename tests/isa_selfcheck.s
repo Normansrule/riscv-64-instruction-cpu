@@ -1,6 +1,6 @@
 # =============================================================================
 # tests/isa_selfcheck.s: AUTO-GENERATED self-checking test of every RV64IM +
-# Zicsr instruction (859 test cases, expected values computed by an independent
+# Zicsr + trap instruction (864 test cases, expected values computed by an independent
 # Python reference model). Uses the riscv-tests convention:
 #   PASS: tohost = 1           FAIL: tohost = (test number << 1) | 1
 # so the testbench prints "FAIL in test N": search for "tN:" below.
@@ -7613,19 +7613,68 @@ t856: # mhartid reads 0
     beq  a3, t6, t856_ok
     j    fail
 t856_ok:
-t857: # cycle counter moves forward
+t857: # ecall traps to mtvec and mret returns (the handler counts in a5)
     li   a0, 857
+    la   t0, trap_handler
+    csrw mtvec, t0
+    li   a5, 0
+    ecall
+    ecall
+    mv   a3, a5
+    li   t6, 0x2
+    beq  a3, t6, t857_ok
+    j    fail
+t857_ok:
+t858: # mcause = 11 after ecall
+    li   a0, 858
+    ecall
+    csrr a3, mcause
+    li   t6, 0xb
+    beq  a3, t6, t858_ok
+    j    fail
+t858_ok:
+t859: # mcause = 3 after ebreak
+    li   a0, 859
+    ebreak
+    csrr a3, mcause
+    li   t6, 0x3
+    beq  a3, t6, t859_ok
+    j    fail
+t859_ok:
+t860: # mepc = address of the ecall (the handler added 4)
+    li   a0, 860
+trap_site:
+    ecall
+    csrr a3, mepc
+    la   t1, trap_site
+    sub  a3, a3, t1
+    li   t6, 0x4
+    beq  a3, t6, t860_ok
+    j    fail
+t860_ok:
+t861: # mret restores MIE from MPIE
+    li   a0, 861
+    csrsi mstatus, 8
+    ecall
+    csrr a3, mstatus
+    andi a3, a3, 0x88
+    li   t6, 0x88
+    beq  a3, t6, t861_ok
+    j    fail
+t861_ok:
+t862: # cycle counter moves forward
+    li   a0, 862
     rdcycle t0
     nop
     nop
     rdcycle t1
     sltu a3, t0, t1
     li   t6, 0x1
-    beq  a3, t6, t857_ok
+    beq  a3, t6, t862_ok
     j    fail
-t857_ok:
-t858: # instret counts 3 retired instructions between reads (3 nops first so no earlier bubble is still draining)
-    li   a0, 858
+t862_ok:
+t863: # instret counts 3 retired instructions between reads (3 nops first so no earlier bubble is still draining)
+    li   a0, 863
     nop
     nop
     nop
@@ -7635,19 +7684,19 @@ t858: # instret counts 3 retired instructions between reads (3 nops first so no 
     rdinstret t1
     sub  a3, t1, t0
     li   t6, 0x3
-    beq  a3, t6, t858_ok
+    beq  a3, t6, t863_ok
     j    fail
-t858_ok:
-t859: # cycle counter is read-only
-    li   a0, 859
+t863_ok:
+t864: # cycle counter is read-only
+    li   a0, 864
     rdcycle t0
     csrw cycle, zero
     rdcycle t1
     sltu a3, t0, t1
     li   t6, 0x1
-    beq  a3, t6, t859_ok
+    beq  a3, t6, t864_ok
     j    fail
-t859_ok:
+t864_ok:
 pass:
     li   a0, 0
     halt               # tohost = 1: PASS
@@ -7656,6 +7705,13 @@ fail:
     ori  t0, t0, 1
     csrw tohost, t0    # tohost = (n << 1) | 1: FAIL in test n
     j    .
+
+trap_handler:          # counts traps in a5 and returns to the instruction after the ecall/ebreak
+    addi a5, a5, 1
+    csrr t5, mepc
+    addi t5, t5, 4
+    csrw mepc, t5
+    mret
 
     .align 3
 scratch:

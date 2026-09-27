@@ -247,6 +247,7 @@ module Riscv64 #(
   logic DECODE_RETURN_PREDICTED, DECODE_IS_A_CALL, DECODE_IS_A_RETURN;
   logic [RAS_POINTER_BITS-1:0] DECODE_RAS_CHECKPOINT;
   logic DECODE_USES_REGISTER1, DECODE_USES_REGISTER2;
+  logic DECODE_IS_AN_ECALL, DECODE_IS_AN_EBREAK, DECODE_IS_AN_MRET; // Traps (machine mode)
   logic [4:0] DECODE_REGISTER1_ADDRESS; // register file read port 1 (rs1)
   logic [4:0] DECODE_REGISTER2_ADDRESS; // register file read port 2 (rs2)
   logic [4:0] DECODE_DESTINATION_REGISTER_ADDRESS; // destination register (rd)
@@ -365,6 +366,9 @@ module Riscv64 #(
     .IS_A_BRANCH_INSTRUCTION (DECODE_IS_A_BRANCH_INSTRUCTION),
     .IS_A_JAL_INSTRUCTION (DECODE_IS_A_JAL_INSTRUCTION),
     .IS_A_JALR_INSTRUCTION (DECODE_IS_A_JALR_INSTRUCTION),
+    .IS_AN_ECALL (DECODE_IS_AN_ECALL),
+    .IS_AN_EBREAK (DECODE_IS_AN_EBREAK),
+    .IS_AN_MRET (DECODE_IS_AN_MRET),
     .USES_REGISTER1 (DECODE_USES_REGISTER1),
     .USES_REGISTER2 (DECODE_USES_REGISTER2),
     .IMMEDIATE_TYPE_SELECT (DECODE_IMMEDIATE_TYPE_SELECT),
@@ -396,6 +400,11 @@ module Riscv64 #(
   logic EXECUTE_IS_A_JALR_INSTRUCTION; // Is JALR Instruction? at the Execute Stage
   logic EXECUTE_PREDICTED_BRANCH_TAKEN; // Store Fetch prediction at the Execute Stage
   logic EXECUTE_RETURN_PREDICTED; // FETCH2 redirected this return using the Return Address Stack
+  logic EXECUTE_IS_AN_ECALL, EXECUTE_IS_AN_EBREAK, EXECUTE_IS_AN_MRET;
+  logic EXECUTE_TAKES_TRAP; // ecall or ebreak: jump to mtvec
+  logic EXECUTE_RETURNS_FROM_TRAP; // mret: jump to mepc
+  logic [63:0] TRAP_VECTOR, EXCEPTION_PC; // mtvec, mepc
+  logic [63:0] EXECUTE_REDIRECT_PC; // Where Fetch 1 restarts after a flush
   writeback_select_t EXECUTE_WRITEBACK_SELECT; // Writeback logic in Execute Stage
   alu_op_t EXECUTE_ALU_OPERATION; // ALU operation in the Execute Stage
 
@@ -486,7 +495,11 @@ module Riscv64 #(
     .ADJUST_NEXT_PC (EXECUTE_ADJUST_NEXT_PC)
   );
 
-  assign FLUSH_FETCH1_FETCH2_DECODE = EXECUTE_VALID && EXECUTE_FLUSH; // Control Hazard: Branch Control Required Flush from Misprediction
+  // Traps: ecall / ebreak jump to mtvec, mret jumps back to mepc. Both flush like a mispredicted branch.
+  assign EXECUTE_TAKES_TRAP = EXECUTE_VALID && (EXECUTE_IS_AN_ECALL || EXECUTE_IS_AN_EBREAK);
+  assign EXECUTE_RETURNS_FROM_TRAP = EXECUTE_VALID && EXECUTE_IS_AN_MRET;
+  assign EXECUTE_REDIRECT_PC = EXECUTE_TAKES_TRAP ? TRAP_VECTOR : EXECUTE_RETURNS_FROM_TRAP ? EXCEPTION_PC : EXECUTE_ADJUST_NEXT_PC;
+  assign FLUSH_FETCH1_FETCH2_DECODE = EXECUTE_VALID && (EXECUTE_FLUSH || EXECUTE_IS_AN_ECALL || EXECUTE_IS_AN_EBREAK || EXECUTE_IS_AN_MRET); // Control Hazard: misprediction, JALR, or a trap
   assign dcache_re = EXECUTE_VALID && EXECUTE_MEMORY_READ_ENABLE;
   assign DATA_CACHE_STALL = dcache_re && !dcache_hit;
   assign ADVANCE_FRONT_END = !FLUSH_FETCH1_FETCH2_DECODE && !DATA_CACHE_STALL && !LOAD_STALL && !MULTIPLY_DIVIDE_STALL; // The front of the pipeline moves only when nothing is being flushed or stalled
@@ -516,6 +529,12 @@ module Riscv64 #(
     .CSR_OPERATION (EXECUTE_FUNCT3),
     .CSR_WRITE_DATA (EXECUTE_CSR_WRITE_DATA),
     .INSTRUCTION_RETIRED (WRITEBACK_VALID),
+    .TAKE_TRAP (!FREEZE && EXECUTE_TAKES_TRAP),
+    .TRAP_PC (EXECUTE_PC),
+    .TRAP_CAUSE (EXECUTE_IS_AN_EBREAK ? CAUSE_BREAKPOINT : CAUSE_ENVIRONMENT_CALL),
+    .RETURN_FROM_TRAP (!FREEZE && EXECUTE_RETURNS_FROM_TRAP),
+    .TRAP_VECTOR (TRAP_VECTOR),
+    .EXCEPTION_PC (EXCEPTION_PC),
     .CSR_READ_DATA (EXECUTE_CSR_READ_DATA),
     .TOHOST (csr)
   );
@@ -637,6 +656,9 @@ module Riscv64 #(
       EXECUTE_IS_A_CALL <= 1'b0;
       EXECUTE_IS_A_RETURN <= 1'b0;
       EXECUTE_RAS_CHECKPOINT <= '0;
+      EXECUTE_IS_AN_ECALL <= 1'b0;
+      EXECUTE_IS_AN_EBREAK <= 1'b0;
+      EXECUTE_IS_AN_MRET <= 1'b0;
       // ========== Memory ==========
       MEMORY_VALID <= 1'b0;
       MEMORY_PC <= 64'd0;
@@ -695,11 +717,14 @@ module Riscv64 #(
         EXECUTE_IS_A_BRANCH_INSTRUCTION <= 1'b0;
         EXECUTE_IS_A_JAL_INSTRUCTION <= 1'b0;
         EXECUTE_IS_A_JALR_INSTRUCTION <= 1'b0;
+        EXECUTE_IS_AN_ECALL <= 1'b0;
+        EXECUTE_IS_AN_EBREAK <= 1'b0;
+        EXECUTE_IS_AN_MRET <= 1'b0;
         // Fetch 2 transition to Decode: the Decode instruction was on the wrong path
         DECODE_VALID <= 1'b0;
         DECODE_INSTRUCTION <= INSTR_NOP;
         // Fetch 1 Transition to Fetch 2 with Program Counter Update for Fetch 1 and Fetch 2 and Decode Flush
-        FETCH1_PC <= EXECUTE_ADJUST_NEXT_PC;
+        FETCH1_PC <= EXECUTE_REDIRECT_PC;
         FETCH2_VALID <= 1'b0;
         FETCH2_INSTRUCTION <= INSTR_NOP;
       end
@@ -721,6 +746,9 @@ module Riscv64 #(
         EXECUTE_IS_A_BRANCH_INSTRUCTION <= 1'b0;
         EXECUTE_IS_A_JAL_INSTRUCTION <= 1'b0;
         EXECUTE_IS_A_JALR_INSTRUCTION <= 1'b0;
+        EXECUTE_IS_AN_ECALL <= 1'b0;
+        EXECUTE_IS_AN_EBREAK <= 1'b0;
+        EXECUTE_IS_AN_MRET <= 1'b0;
       end
       else if (MULTIPLY_DIVIDE_STALL) begin // The M instruction in Execute needs more cycles:
         // Fetch 1, Fetch 2, Decode and Execute all hold; a bubble goes into Memory (overrides the advance above)
@@ -763,6 +791,9 @@ module Riscv64 #(
         EXECUTE_IS_A_RETURN <= DECODE_IS_A_RETURN;
         EXECUTE_RAS_CHECKPOINT <= DECODE_RAS_CHECKPOINT;
         EXECUTE_GSHARE_PREDICTED_TAKEN <= DECODE_GSHARE_PREDICTED_TAKEN;
+        EXECUTE_IS_AN_ECALL <= DECODE_IS_AN_ECALL;
+        EXECUTE_IS_AN_EBREAK <= DECODE_IS_AN_EBREAK;
+        EXECUTE_IS_AN_MRET <= DECODE_IS_AN_MRET;
         EXECUTE_BHT_PREDICTED_TAKEN <= DECODE_BHT_PREDICTED_TAKEN;
 
         // Fetch 2 to Decode

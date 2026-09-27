@@ -313,20 +313,20 @@ showCmds('Quick start');
   const ig = mkGrid($('c-igrid')), dg = mkGrid($('c-dgrid'));
   $('c-dgrid').style.setProperty('--cv', 'var(--M)');
   let core = null, raf = 0, playing = false, hits = { i: 0, d: 0, dAcc: 0 };
-  const bits = (a, split) => { const b = (a >>> 0).toString(2).padStart(32, '0');
-    return `<span class="t">${b.slice(0, 20)}</span> <span class="x">${b.slice(20, 27)}</span> <span class="o">${b.slice(27)}</span>`; };
-  const describe = (a, label) => `${label} <b>0x${(a >>> 0).toString(16).padStart(8, '0')}</b> = ${bits(a)} &nbsp;line ${((a >>> 5) & 127)}`;
+  const bits = a => { const b = (a >>> 0).toString(2).padStart(32, '0');
+    return `<span class="t">${b.slice(0, 21)}</span> <span class="x">${b.slice(21, 27)}</span> <span class="o">${b.slice(27)}</span>`; };
+  const describe = (a, label) => `${label} <b>0x${(a >>> 0).toString(16).padStart(8, '0')}</b> = ${bits(a)} &nbsp;set ${((a >>> 5) & 63)}`;
   function reset() {
     cancelAnimationFrame(raf); playing = false; $('c-go').textContent = 'Play';
     core = new Core(assemble(PROGRAMS[$('c-prog').value]), { ...CONFIGS.performance, bp: true });
     hits = { i: 0, d: 0, dAcc: 0 }; draw(null);
   }
   function draw(ev) {
-    const paint = (cells, c, hitIdx) => cells.forEach((el, i) => {
-      el.className = (c.valid[i] ? 'v' : '') + (c.busy && ((c.line >>> 5) & 127) === i ? (c.demand === false ? ' pf' : ' fill') : '') + (i === hitIdx ? ' hit' : '');
-    });
-    const iIdx = ev && ev.icacheHit ? ((ev.stages.FETCH1.pc >>> 5) & 127) : -1;
-    const dIdx = ev && ev.dcacheAccess && ev.dcacheAccess.hit ? ((ev.dcacheAccess.addr >>> 5) & 127) : -1;
+    const paint = (cells, c, hitIdx) => { const fill = c.busy ? core.victimSlot(c, c.line) : -1; cells.forEach((el, i) => {
+      el.className = (c.valid[i] ? 'v' : '') + (i === fill ? (c.demand === false ? ' pf' : ' fill') : '') + (i === hitIdx ? ' hit' : '');
+    }); };
+    const iIdx = ev && ev.icacheHit ? core.cacheSlot(core.icache, ev.stages.FETCH1.pc) : -1;
+    const dIdx = ev && ev.dcacheAccess && ev.dcacheAccess.hit ? core.cacheSlot(core.dcache, ev.dcacheAccess.addr) : -1;
     paint(ig, core.icache, iIdx); paint(dg, core.dcache, dIdx);
     if (ev) {
       $('c-iaddr').innerHTML = describe(ev.stages.FETCH1.pc, 'FETCH1 PC');

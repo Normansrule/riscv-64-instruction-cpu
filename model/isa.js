@@ -110,8 +110,9 @@ export const INSTRUCTIONS = [
   I('sraw',  'R', O.OP_32, 0b101, 0b0100000, 'rrr', 'RV64I', 'Word (32-bit)', 'Shift Right Arithmetic Word', 'rd = sext(rs1[31:0] >>s rs2[4:0])'),
   // ---------------- memory ordering & system --------------------------------
   I('fence',  'FENCE', O.MISC_MEM, 0b000, null, 'none', 'RV64I', 'System', 'Memory Fence', 'order memory accesses (a no-op on this in-order core)'),
-  I('ecall',  'SYS', O.SYSTEM, 0b000, null, 'none', 'RV64I', 'System', 'Environment Call', 'trap to the environment (no operation on this core: programs stop by writing the tohost CSR)'),
-  I('ebreak', 'SYS', O.SYSTEM, 0b000, null, 'none', 'RV64I', 'System', 'Environment Breakpoint', 'trap to the debugger (no operation on this core)'),
+  I('ecall',  'SYS', O.SYSTEM, 0b000, null, 'none', 'RV64I', 'System', 'Environment Call', 'trap: mepc = pc, mcause = 11, jump to mtvec (a system call)'),
+  I('ebreak', 'SYS', O.SYSTEM, 0b000, null, 'none', 'RV64I', 'System', 'Environment Breakpoint', 'trap: mepc = pc, mcause = 3, jump to mtvec (a breakpoint)'),
+  I('mret',   'SYS', O.SYSTEM, 0b000, null, 'none', 'Priv', 'System', 'Machine-mode Return', 'return from a trap: pc = mepc, mstatus.MIE = mstatus.MPIE'),
   // ---------------- Zicsr: control and status registers ---------------------
   I('csrrw',  'CSR',   O.SYSTEM, 0b001, null, 'csr',  'Zicsr', 'CSR', 'CSR Read and Write', 't = CSR[csr]; CSR[csr] = rs1; rd = t'),
   I('csrrs',  'CSR',   O.SYSTEM, 0b010, null, 'csr',  'Zicsr', 'CSR', 'CSR Read and Set bits', 't = CSR[csr]; if (rs1 != x0) CSR[csr] = t | rs1; rd = t'),
@@ -138,7 +139,8 @@ export const INSTRUCTIONS = [
 export const BY_NAME = Object.fromEntries(INSTRUCTIONS.map(i => [i.name, i]));
 
 // CSR names understood by the assembler (addresses match src/const_pkg.sv)
-export const CSR_NAMES = { tohost: 0x51E, status: 0x50A, hartid: 0x50B, cycle: 0xC00, instret: 0xC02, mhartid: 0xF14 };
+export const CSR_NAMES = { tohost: 0x51E, status: 0x50A, hartid: 0x50B, cycle: 0xC00, instret: 0xC02, mhartid: 0xF14,
+  mstatus: 0x300, mtvec: 0x305, mscratch: 0x340, mepc: 0x341, mcause: 0x342 };
 export const CSR_BY_ADDRESS = Object.fromEntries(Object.entries(CSR_NAMES).map(([k, v]) => [v, k]));
 
 // ABI register names
@@ -197,7 +199,7 @@ export function encode(name, f) {
       return u32((bits(imm, 20, 20) << 31) | (bits(imm, 10, 1) << 21) | (bits(imm, 11, 11) << 20) |
         (bits(imm, 19, 12) << 12) | (rd << 7) | op);
     case 'SYS':
-      return u32(((name === 'ebreak' ? 1 : 0) << 20) | op);
+      return u32(({ ecall: 0, ebreak: 1, mret: 0x302 }[name] << 20) | op);
     case 'CSR': case 'CSR-I':
       checkRange(imm, 0, 4095, `${name} CSR address`);
       checkRange(rs1, 0, 31, `${name} ${d.fmt === 'CSR' ? 'rs1' : 'immediate'}`);
@@ -225,7 +227,7 @@ export function decode(word) {
     if (d.fmt === 'SYS') {
       if (rd !== 0 || rs1 !== 0 || f3 !== 0) continue;
       const f12 = bits(w, 31, 20);
-      if (!((d.name === 'ecall' && f12 === 0) || (d.name === 'ebreak' && f12 === 1))) continue;
+      if ({ ecall: 0, ebreak: 1, mret: 0x302 }[d.name] !== f12) continue;
     }
     def = d; break;
   }

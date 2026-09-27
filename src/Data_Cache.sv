@@ -1,15 +1,15 @@
 `default_nettype none
 
 // =====================================================================================================
-// Data Cache: 4 KiB, direct-mapped, 32-byte lines (4 doublewords per line), 128 lines, write-through.
+// Data Cache: 4 KiB, 2-way set-associative, 32-byte lines (4 doublewords), 64 sets x 2 ways, write-through.
 //
-//   address bits:  [31:12] tag   [11:5] line index   [4:3] doubleword in the line   [2:0] byte
+//   address bits:  [31:11] tag   [10:5] set index   [4:3] doubleword in the line   [2:0] byte
 //
-// Loads look up the address the ALU computed in EXECUTE. A hit returns the doubleword that cycle;
-// a miss makes HIT = 0 and the core holds the load in EXECUTE (DATA_CACHE_STALL) while the refill
+// Loads look up the address the ALU computed in EXECUTE. A hit (either way) returns the doubleword that
+// cycle; a miss makes HIT = 0 and the core holds the load in EXECUTE (DATA_CACHE_STALL) while the refill
 // engine brings the line from main memory: MISS_LATENCY + 1 cycles in total.
-// Stores go straight to main memory (write-through: memory is always up to date, so a line can be
-// dropped at any time) and also update the cached line if it is present (no allocation on a store miss).
+// Stores go straight to main memory (write-through) and also update the cached line if it is present
+// (no allocation on a store miss). Replacement: an empty way first, otherwise the least recently used.
 // =====================================================================================================
 module DataCache #(
     parameter int MISS_LATENCY = 10
@@ -28,59 +28,81 @@ module DataCache #(
     input  logic [255:0] REFILL_LINE
 );
 
-    logic [127:0] LINE_VALID;
-    logic [19:0] LINE_TAG [0:127];
-    logic [255:0] LINE_DATA [0:127];
+    logic [63:0] WAY0_VALID, WAY1_VALID;
+    logic [20:0] WAY0_TAG [0:63];
+    logic [20:0] WAY1_TAG [0:63];
+    logic [255:0] WAY0_DATA [0:63];
+    logic [255:0] WAY1_DATA [0:63];
+    logic [63:0] LEAST_RECENTLY_USED;
 
-    logic [6:0] INDEX;
-    logic LINE_PRESENT;
-    assign INDEX = ADDRESS[11:5];
-    assign LINE_PRESENT = LINE_VALID[INDEX] && (LINE_TAG[INDEX] == ADDRESS[31:12]) && (ADDRESS[63:32] == 32'd0);
+    logic [5:0] SET;
+    logic HIT_WAY0, HIT_WAY1, LINE_PRESENT;
+    assign SET = ADDRESS[10:5];
+    assign HIT_WAY0 = WAY0_VALID[SET] && (WAY0_TAG[SET] == ADDRESS[31:11]) && (ADDRESS[63:32] == 32'd0);
+    assign HIT_WAY1 = WAY1_VALID[SET] && (WAY1_TAG[SET] == ADDRESS[31:11]) && (ADDRESS[63:32] == 32'd0);
+    assign LINE_PRESENT = HIT_WAY0 || HIT_WAY1;
     assign HIT = !LOAD_REQUEST || LINE_PRESENT;
-    assign READ_DATA = LINE_DATA[INDEX][64*ADDRESS[4:3] +: 64];
+    assign READ_DATA = HIT_WAY1 ? WAY1_DATA[SET][64*ADDRESS[4:3] +: 64] : WAY0_DATA[SET][64*ADDRESS[4:3] +: 64];
 
     logic REFILL_BUSY;
     logic [5:0] REFILL_CYCLES_LEFT;
     logic [63:0] REFILL_LINE_ADDRESS;
+    logic [5:0] REFILL_SET;
+    logic REFILL_VICTIM_WAY;
+    logic INSTALL;
+    logic STORE_HIT; // A store to a line that is cached: update it
+    assign REFILL_SET = REFILL_LINE_ADDRESS[10:5];
+    assign REFILL_VICTIM_WAY = !WAY0_VALID[REFILL_SET] ? 1'b0 : !WAY1_VALID[REFILL_SET] ? 1'b1 : LEAST_RECENTLY_USED[REFILL_SET];
+    assign INSTALL = REFILL_BUSY && (REFILL_CYCLES_LEFT == 6'd1);
+    assign STORE_HIT = (|WRITE_MASK) && LINE_PRESENT;
     assign REFILL_ADDRESS = REFILL_LINE_ADDRESS;
 
     always_ff @(posedge clk) begin
         if (reset) begin
-            LINE_VALID <= '0;
+            WAY0_VALID <= '0;
+            WAY1_VALID <= '0;
+            LEAST_RECENTLY_USED <= '0;
             REFILL_BUSY <= 1'b0;
             REFILL_CYCLES_LEFT <= 6'd0;
             REFILL_LINE_ADDRESS <= 64'd0;
         end else if (!FREEZE) begin
+            if ((LOAD_REQUEST || (|WRITE_MASK)) && LINE_PRESENT) LEAST_RECENTLY_USED[SET] <= HIT_WAY0; // used: the other way is now LRU
             if (!REFILL_BUSY) begin
                 if (LOAD_REQUEST && !LINE_PRESENT) begin
                     REFILL_BUSY <= 1'b1;
                     REFILL_CYCLES_LEFT <= MISS_LATENCY[5:0];
                     REFILL_LINE_ADDRESS <= {ADDRESS[63:5], 5'b00000};
                 end
-            end else if (REFILL_CYCLES_LEFT == 6'd1) begin
+            end else if (INSTALL) begin
                 REFILL_BUSY <= 1'b0;
-                LINE_VALID[REFILL_LINE_ADDRESS[11:5]] <= 1'b1;
+                if (REFILL_VICTIM_WAY) WAY1_VALID[REFILL_SET] <= 1'b1; else WAY0_VALID[REFILL_SET] <= 1'b1;
+                LEAST_RECENTLY_USED[REFILL_SET] <= !REFILL_VICTIM_WAY;
             end else begin
                 REFILL_CYCLES_LEFT <= REFILL_CYCLES_LEFT - 6'd1;
             end
         end
     end
 
-    // Line data: refill writes the whole line; a store hit merges its bytes (stores never happen during a refill:
-    // the missing load is holding EXECUTE)
-    logic [255:0] MERGED_LINE; // The cached line with the store's bytes written in
+    // Line data: refill writes a whole line; a store hit merges its bytes into the way that hit
+    // (stores never happen during a data refill: the missing load is holding EXECUTE)
+    logic [255:0] MERGED_LINE;
     always_comb begin
-        MERGED_LINE = LINE_DATA[INDEX];
+        MERGED_LINE = HIT_WAY1 ? WAY1_DATA[SET] : WAY0_DATA[SET];
         for (int BYTE_LANE = 0; BYTE_LANE < 8; BYTE_LANE = BYTE_LANE + 1)
             if (WRITE_MASK[BYTE_LANE]) MERGED_LINE[64*ADDRESS[4:3] + 8*BYTE_LANE +: 8] = WRITE_DATA[8*BYTE_LANE +: 8];
     end
     always_ff @(posedge clk) begin
         if (!reset && !FREEZE) begin
-            if (REFILL_BUSY && (REFILL_CYCLES_LEFT == 6'd1)) begin
-                LINE_TAG[REFILL_LINE_ADDRESS[11:5]] <= REFILL_LINE_ADDRESS[31:12];
-                LINE_DATA[REFILL_LINE_ADDRESS[11:5]] <= REFILL_LINE;
-            end else if ((|WRITE_MASK) && LINE_PRESENT) begin
-                LINE_DATA[INDEX] <= MERGED_LINE;
+            if (INSTALL) begin
+                if (REFILL_VICTIM_WAY) begin
+                    WAY1_TAG[REFILL_SET] <= REFILL_LINE_ADDRESS[31:11];
+                    WAY1_DATA[REFILL_SET] <= REFILL_LINE;
+                end else begin
+                    WAY0_TAG[REFILL_SET] <= REFILL_LINE_ADDRESS[31:11];
+                    WAY0_DATA[REFILL_SET] <= REFILL_LINE;
+                end
+            end else if (STORE_HIT) begin
+                if (HIT_WAY1) WAY1_DATA[SET] <= MERGED_LINE; else WAY0_DATA[SET] <= MERGED_LINE;
             end
         end
     end

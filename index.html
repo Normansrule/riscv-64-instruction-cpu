@@ -136,7 +136,7 @@
   <div class="wrap">
     <div class="copy narrow">
       <h2>Inside the caches.</h2>
-      <p>Main memory needs 10 cycles to deliver anything, so Sixfold keeps two small, fast copies next to the pipeline: 4 KiB for instructions and 4 KiB for data, each 128 lines of 32 bytes. Every address is cut into three fields: the <b class="f-tag">tag</b> says which piece of memory, the <b class="f-idx">index</b> picks one of the 128 lines, the <b class="f-off">offset</b> picks the byte inside it. Play a program and watch lines fill; after each miss the instruction cache also fetches the next line on its own.</p>
+      <p>Main memory needs 10 cycles to deliver anything, so Sixfold keeps two small, fast copies next to the pipeline: 4 KiB for instructions and 4 KiB for data, each 64 sets of two 32-byte lines. Every address is cut into three fields: the <b class="f-tag">tag</b> says which piece of memory, the <b class="f-idx">set index</b> picks one of the 64 sets, the <b class="f-off">offset</b> picks the byte inside the line. Each set can hold two lines (top half: way 0, bottom half: way 1); when both are full the one used longest ago is replaced. After each miss the instruction cache also fetches the next line on its own.</p>
     </div>
     <div class="race-ctl">
       <label>Program <select id="c-prog"></select></label>
@@ -147,13 +147,13 @@
       <div class="cache-panel">
         <h3>Instruction cache</h3>
         <div class="addr" id="c-iaddr" aria-live="off"></div>
-        <div class="cgrid" id="c-igrid" aria-label="Instruction cache: 128 lines"></div>
+        <div class="cgrid" id="c-igrid" aria-label="Instruction cache: 64 sets by 2 ways"></div>
         <dl class="cstats" id="c-istats"></dl>
       </div>
       <div class="cache-panel">
         <h3>Data cache</h3>
         <div class="addr" id="c-daddr" aria-live="off"></div>
-        <div class="cgrid" id="c-dgrid" aria-label="Data cache: 128 lines"></div>
+        <div class="cgrid" id="c-dgrid" aria-label="Data cache: 64 sets by 2 ways"></div>
         <dl class="cstats" id="c-dstats"></dl>
       </div>
     </div>
@@ -212,7 +212,7 @@
       <p>The baseline computes a whole 64-bit division in one clock cycle: 64 subtractions in a row, 133 ns. The performance edition divides one bit per cycle, adds carry-lookahead (Kogge-Stone) adders, and wins cycles back with a tournament branch predictor, a branch target buffer, a return address stack and precise load stalls, behind instruction and data caches with prefetching. Both designs are in the repository and both are checked cycle by cycle.</p>
     </div>
     <div class="facts">
-      <div><strong>182 MHz</strong><span>logic-only estimate on SkyWater 130 nm with the multiply/divide unit (the baseline: about 7.5 MHz)</span></div>
+      <div><strong>180 MHz</strong><span>logic-only estimate on SkyWater 130 nm with the multiply/divide unit (the baseline: about 7.5 MHz)</span></div>
       <div><strong>1.37 GHz</strong><span>the same RTL mapped onto ASAP7, a 7 nm-class research library</span></div>
       <div><strong>1.03</strong><span>cycles per instruction on the branch-pattern program, caches included (baseline 1.38)</span></div>
     </div>

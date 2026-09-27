@@ -20,3 +20,5 @@ Every file in [`programs/`](../../programs) assembled by `model/asm.js` (code st
 * [12_measure_cpi.lst](12_measure_cpi.lst) · [12_measure_cpi.hex](12_measure_cpi.hex)
 * [13_function_call_cost.lst](13_function_call_cost.lst) · [13_function_call_cost.hex](13_function_call_cost.hex)
 * [14_false_load_stall.lst](14_false_load_stall.lst) · [14_false_load_stall.hex](14_false_load_stall.hex)
+* [15_system_calls.lst](15_system_calls.lst) · [15_system_calls.hex](15_system_calls.hex)
+* [16_cache_conflicts.lst](16_cache_conflicts.lst) · [16_cache_conflicts.hex](16_cache_conflicts.hex)

@@ -11,12 +11,19 @@ module CSRFile (
     input logic [2:0] CSR_OPERATION, // funct3: CSRRW(I) write, CSRRS(I) set bits, CSRRC(I) clear bits
     input logic [63:0] CSR_WRITE_DATA, // rs1 value or the 5-bit zero extended immediate
     input logic INSTRUCTION_RETIRED, // An instruction finished in Writeback this cycle (counts instret)
+    input logic TAKE_TRAP, // ecall / ebreak in Execute: record the trap
+    input logic [63:0] TRAP_PC, // ... the address of that instruction
+    input logic [63:0] TRAP_CAUSE, // ... and why (11 or 3)
+    input logic RETURN_FROM_TRAP, // mret in Execute
+    output logic [63:0] TRAP_VECTOR, // mtvec base: where traps go
+    output logic [63:0] EXCEPTION_PC, // mepc: where mret goes
     output logic [63:0] CSR_READ_DATA,
     output logic [63:0] TOHOST
 );
 
     logic [63:0] CSR_TOHOST_REGISTER;
     logic [63:0] CSR_STATUS_REGISTER;
+    logic [63:0] CSR_MSTATUS_REGISTER, CSR_MTVEC_REGISTER, CSR_MSCRATCH_REGISTER, CSR_MEPC_REGISTER, CSR_MCAUSE_REGISTER;
     logic [63:0] CSR_CYCLE_COUNTER; // Counts every clock cycle since reset (read with rdcycle)
     logic [63:0] CSR_INSTRET_COUNTER; // Counts every retired instruction since reset (read with rdinstret)
     // Split counters: each 64-bit counter is two 32-bit halves. The low half's carry is REGISTERED and added
@@ -46,6 +53,11 @@ module CSRFile (
         if (reset) begin // On reset set all CSRs to 0
             CSR_TOHOST_REGISTER <= 64'd0;
             CSR_STATUS_REGISTER <= 64'd0;
+            CSR_MSTATUS_REGISTER <= 64'd0;
+            CSR_MTVEC_REGISTER <= 64'd0;
+            CSR_MSCRATCH_REGISTER <= 64'd0;
+            CSR_MEPC_REGISTER <= 64'd0;
+            CSR_MCAUSE_REGISTER <= 64'd0;
             CSR_CYCLE_COUNTER <= 64'd0;
             CSR_INSTRET_COUNTER <= 64'd0;
             CYCLE_CARRY_PENDING <= 1'b0;
@@ -58,10 +70,24 @@ module CSRFile (
             if (INSTRUCTION_RETIRED) begin
                 CSR_INSTRET_COUNTER[31:0] <= INSTRET_LOW_NEXT; // One more instruction has finished
             end
+            if (TAKE_TRAP) begin // Enter the trap: remember where and why, disable interrupts (MPIE <= MIE, MIE <= 0)
+                CSR_MEPC_REGISTER <= {TRAP_PC[63:1], 1'b0};
+                CSR_MCAUSE_REGISTER <= TRAP_CAUSE;
+                CSR_MSTATUS_REGISTER[7] <= CSR_MSTATUS_REGISTER[3];
+                CSR_MSTATUS_REGISTER[3] <= 1'b0;
+            end else if (RETURN_FROM_TRAP) begin // Leave the trap: MIE <= MPIE, MPIE <= 1
+                CSR_MSTATUS_REGISTER[3] <= CSR_MSTATUS_REGISTER[7];
+                CSR_MSTATUS_REGISTER[7] <= 1'b1;
+            end
             if (CSR_WRITE_ENABLE) begin
                 unique case (CSR_ADDRESS)
                     CSR_TOHOST: CSR_TOHOST_REGISTER <= CSR_NEW_VALUE;
                     CSR_STATUS: CSR_STATUS_REGISTER <= CSR_NEW_VALUE;
+                    CSR_MSTATUS: CSR_MSTATUS_REGISTER <= CSR_NEW_VALUE;
+                    CSR_MTVEC: CSR_MTVEC_REGISTER <= CSR_NEW_VALUE;
+                    CSR_MSCRATCH: CSR_MSCRATCH_REGISTER <= CSR_NEW_VALUE;
+                    CSR_MEPC: CSR_MEPC_REGISTER <= {CSR_NEW_VALUE[63:1], 1'b0}; // mepc is always even
+                    CSR_MCAUSE: CSR_MCAUSE_REGISTER <= CSR_NEW_VALUE;
                     default: begin
                     // Whatever the previous values are just keep them as is by default (the counters are read-only)
                     end
@@ -76,6 +102,11 @@ module CSRFile (
             CSR_TOHOST: CSR_READ_DATA = CSR_TOHOST_REGISTER;
             CSR_STATUS: CSR_READ_DATA = CSR_STATUS_REGISTER;
             CSR_HARTID: CSR_READ_DATA = 64'd0; // Only one core so just set id to 0
+            CSR_MSTATUS: CSR_READ_DATA = CSR_MSTATUS_REGISTER;
+            CSR_MTVEC: CSR_READ_DATA = CSR_MTVEC_REGISTER;
+            CSR_MSCRATCH: CSR_READ_DATA = CSR_MSCRATCH_REGISTER;
+            CSR_MEPC: CSR_READ_DATA = CSR_MEPC_REGISTER;
+            CSR_MCAUSE: CSR_READ_DATA = CSR_MCAUSE_REGISTER;
             CSR_MHARTID: CSR_READ_DATA = 64'd0; // Standard Machine Hardware Thread ID: also 0
             CSR_CYCLE: CSR_READ_DATA = CSR_CYCLE_COUNTER;
             CSR_INSTRET: CSR_READ_DATA = CSR_INSTRET_COUNTER;
@@ -86,6 +117,8 @@ module CSRFile (
     // Output to host value for testing purposes
     // for real applications this would be used to communicate with actual host hardware
     assign TOHOST = CSR_TOHOST_REGISTER;
+    assign TRAP_VECTOR = {CSR_MTVEC_REGISTER[63:2], 2'b00}; // direct mode
+    assign EXCEPTION_PC = CSR_MEPC_REGISTER;
 
 endmodule
 

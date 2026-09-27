@@ -6,7 +6,7 @@ verified cycle by cycle against the RTL by `make test`, which builds **both** de
 
 | build | how to get it | what it is |
 |---|---|---|
-| **performance** (default) | `make test`, `make run PROG=...` | 4 KiB instruction cache with next-line prefetch, 4 KiB write-through data cache, tournament predictor (per-branch history table + gshare + chooser), 16-entry branch target buffer, 8-entry return address stack, precise load stalls, iterative multiply/divide, Kogge-Stone adders |
+| **performance** (default) | `make test`, `make run PROG=...` | 4 KiB 2-way set-associative instruction cache with next-line prefetch, 4 KiB 2-way write-through data cache (LRU replacement), tournament predictor (per-branch history table + gshare + chooser), 16-entry branch target buffer, 8-entry return address stack, precise load stalls, iterative multiply/divide, Kogge-Stone adders |
 | **baseline** | `-DBASELINE`, `CONFIG=baseline` | the plain 6-stage pipeline: single-cycle 64 KiB memory, 4-bit gshare only, single-cycle multiply/divide |
 
 Every feature is a parameter of [`src/Riscv64.sv`](../src/Riscv64.sv) / [`src/Riscv64_top.sv`](../src/Riscv64_top.sv)
@@ -18,26 +18,28 @@ Every feature is a parameter of [`src/Riscv64.sv`](../src/Riscv64.sv) / [`src/Ri
 
 ![CPI per program](img/charts/performance.svg)
 
-| program | M ops | baseline: cycles | CPI | performance: cycles | CPI | time, baseline 130 nm (7.5 MHz) | time, performance 130 nm (182 MHz) | time, performance 7 nm (1.37 GHz) |
+| program | M ops | baseline: cycles | CPI | performance: cycles | CPI | time, baseline 130 nm (7.5 MHz) | time, performance 130 nm (180 MHz) | time, performance 7 nm (1.37 GHz) |
 |---|:-:|---:|---:|---:|---:|---:|---:|---:|
 | `00_pipeline_fill` |  | 10 | 2.00 | 21 | **4.20** | 1.3 µs | 0.12 µs | 0.02 µs |
-| `01_hello` |  | 139 | 1.43 | 147 | **1.52** | 18.5 µs | 0.81 µs | 0.11 µs |
+| `01_hello` |  | 139 | 1.43 | 147 | **1.52** | 18.5 µs | 0.82 µs | 0.11 µs |
 | `02_forwarding` |  | 12 | 1.71 | 23 | **3.29** | 1.6 µs | 0.13 µs | 0.02 µs |
 | `03_load_use` |  | 18 | 1.64 | 40 | **3.64** | 2.4 µs | 0.22 µs | 0.03 µs |
 | `04_branch_penalty` |  | 50 | 1.52 | 53 | **1.61** | 6.7 µs | 0.29 µs | 0.04 µs |
-| `05_fibonacci` |  | 366 | 1.20 | 328 | **1.08** | 48.8 µs | 1.80 µs | 0.24 µs |
-| `06_bubble_sort` | yes | 1,124 | 1.56 | 1,003 | **1.39** | 149.9 µs | 5.51 µs | 0.73 µs |
-| `07_factorial_recursive` | yes | 327 | 1.39 | 518 | **2.19** | 43.6 µs | 2.85 µs | 0.38 µs |
+| `05_fibonacci` |  | 366 | 1.20 | 328 | **1.08** | 48.8 µs | 1.82 µs | 0.24 µs |
+| `06_bubble_sort` | yes | 1,124 | 1.56 | 1,003 | **1.39** | 149.9 µs | 5.57 µs | 0.73 µs |
+| `07_factorial_recursive` | yes | 327 | 1.39 | 518 | **2.19** | 43.6 µs | 2.88 µs | 0.38 µs |
 | `08_gcd_euclid` | yes | 33 | 1.74 | 76 | **4.00** | 4.4 µs | 0.42 µs | 0.06 µs |
-| `09_primes_sieve` | yes | 19,773 | 1.33 | 17,044 | **1.15** | 2636.4 µs | 93.65 µs | 12.41 µs |
-| `10_print_numbers` | yes | 737 | 1.37 | 1,024 | **1.90** | 98.3 µs | 5.63 µs | 0.75 µs |
-| `11_gshare_patterns` |  | 1,519 | 1.38 | 1,139 | **1.03** | 202.5 µs | 6.26 µs | 0.83 µs |
-| `12_measure_cpi` | yes | 122 | 1.28 | 151 | **1.59** | 16.3 µs | 0.83 µs | 0.11 µs |
-| `13_function_call_cost` | yes | 174 | 1.54 | 277 | **2.45** | 23.2 µs | 1.52 µs | 0.20 µs |
-| `14_false_load_stall` |  | 49 | 1.29 | 82 | **2.16** | 6.5 µs | 0.45 µs | 0.06 µs |
-| `isa_selfcheck` | yes | 7,420 | 1.16 | 18,088 | **2.82** | 989.3 µs | 99.38 µs | 13.17 µs |
+| `09_primes_sieve` | yes | 19,773 | 1.33 | 17,044 | **1.15** | 2636.4 µs | 94.69 µs | 12.42 µs |
+| `10_print_numbers` | yes | 737 | 1.37 | 1,024 | **1.90** | 98.3 µs | 5.69 µs | 0.75 µs |
+| `11_gshare_patterns` |  | 1,519 | 1.38 | 1,139 | **1.03** | 202.5 µs | 6.33 µs | 0.83 µs |
+| `12_measure_cpi` | yes | 122 | 1.28 | 151 | **1.59** | 16.3 µs | 0.84 µs | 0.11 µs |
+| `13_function_call_cost` | yes | 174 | 1.54 | 277 | **2.45** | 23.2 µs | 1.54 µs | 0.20 µs |
+| `14_false_load_stall` |  | 49 | 1.29 | 82 | **2.16** | 6.5 µs | 0.46 µs | 0.06 µs |
+| `15_system_calls` |  | 89 | 1.68 | 116 | **2.19** | 11.9 µs | 0.64 µs | 0.08 µs |
+| `16_cache_conflicts` |  | 208 | 1.22 | 499 | **2.92** | 27.7 µs | 2.77 µs | 0.36 µs |
+| `isa_selfcheck` | yes | 7,526 | 1.16 | 18,229 | **2.81** | 1003.5 µs | 101.27 µs | 13.29 µs |
 
-Geometric-mean speed-up of the performance edition over the baseline, both on 130 nm: **17.4x** (clock and cycles together). Cache misses are included: these programs are tiny, so their few cold misses weigh heavily.
+Geometric-mean speed-up of the performance edition over the baseline, both on 130 nm: **16.7x** (clock and cycles together). Cache misses are included: these programs are tiny, so their few cold misses weigh heavily.
 ## Part 1: cycles per instruction
 
 `cycles = N + 5 + L + 3F + R + K + I + D` ([MATH.md](MATH.md)) says exactly where every cycle above
@@ -51,6 +53,7 @@ one per instruction comes from.
 | **Precise load stalls** | L | `ControlUnit` reports `USES_REGISTER1/2`, so only real dependences stall | a few gates |
 | **Instruction cache + next-line prefetch** | I | after a miss on line X, line X + 1 is fetched in the background: sequential code misses half as often (self-check: 917 → 459 misses) | 4 KiB SRAM + tags |
 | **Data cache** | D | write-through: stores never wait; only loads that miss wait for their line | 4 KiB SRAM + tags |
+| **2 ways + LRU** (both caches) | I, D | two lines per set, so addresses 2 KiB apart no longer evict each other; `16_cache_conflicts.s` shows 2 arrays fitting and 3 thrashing | a second tag compare, 1 LRU bit per set |
 
 Why add caches if they add cycles? The baseline assumes 64 KiB of memory that answers in one cycle.
 That is fine in a simulator but not in silicon: a memory that large cannot be read in one short clock
@@ -78,12 +81,12 @@ memories are left out (a real chip uses SRAM macros for them).
 | iterative multiply/divide unit | its setup, then its negation | 11.1 → 5.9 ns |
 | prefix-OR negation, magnitudes a cycle earlier, return check against `rs1` | | 4.8 ns |
 | tournament predictor, prefix incrementers for the PCs | FETCH2 target → next-PC mux | 5.0 ns |
-| 64-bit counters split into halves with a registered carry (removes the 7 nm counter path) | the multiply step (64 x 16 bits + accumulate) | **5.5 ns (182 MHz)** |
+| 64-bit counters split into halves with a registered carry (removes the 7 nm counter path) | the multiply step (64 x 16 bits + accumulate) | **5.5 ns (180 MHz)** |
 
 | build | SkyWater 130 nm | ASAP7 7 nm-class |
 |---|---:|---:|
 | baseline (single-cycle M unit excluded) | 4.1 ns | 0.64 ns (1.57 GHz) |
-| **performance** (everything included) | **5.5 ns (182 MHz)** | **0.73 ns (1.37 GHz)** |
+| **performance** (everything included) | **5.5 ns (180 MHz)** | **0.73 ns (1.37 GHz)** |
 
 ## Why not 2 nm, or 0.42 nm?
 

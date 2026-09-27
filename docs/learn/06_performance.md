@@ -43,3 +43,20 @@ A subtle point that real hardware shares: the counters are **read** in EXECUTE b
 That is why benchmarks time long loops.
 
 Next: [7. From RTL to silicon](07_silicon.md)
+
+## Caches: fast copies of slow memory
+
+Main memory takes 10 cycles to deliver a 32-byte line, so Sixfold keeps a 4 KiB instruction cache
+and a 4 KiB data cache next to the pipeline. An address is split into a **tag** (bits 31:11), a
+**set index** (bits 10:5) and an **offset** (bits 4:0). Each of the 64 sets holds two lines (two
+**ways**); when both are full, the **least recently used** line is replaced.
+
+[`16_cache_conflicts.s`](../../programs/16_cache_conflicts.s) reads arrays exactly 2 KiB apart, so
+they all fall into the same sets. Two arrays fit in the two ways (only the first pass misses);
+three arrays **thrash**: every load evicts the line needed next. Watch it happen in the
+"Inside the caches" section of the site.
+
+```bash
+make run PROG=16_cache_conflicts     # a0 = cycles with 2 arrays, a1 = with 3
+```
+
