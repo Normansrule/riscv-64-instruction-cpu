@@ -12,16 +12,15 @@ module ALU (
     input  logic [63:0] A,
     input  logic [63:0] B,
     input  alu_op_t ALUop,
+    input  logic SUBTRACT_MODE, // SUB, SLT, SLTU: decoded from ALUop one stage earlier (it steers all 64 adder inputs)
     input  logic ALU_IS_WORD_OPERATION, // 0 means full 64-bit operation, 1 means 32-bit Word operation (sign extended)
     output logic [63:0] ALUOut
 );
 
     // Single Shared Adder and Subtractor, built as a Parallel Prefix (Kogge-Stone) adder:
     // A + B if SUBTRACT_MODE = 0, A - B = A + ~B + 1 if SUBTRACT_MODE = 1 (SUB, SLT, SLTU all need A - B)
-    logic SUBTRACT_MODE;
     logic [63:0] ADDER_SUM;
     logic ADDER_CARRY_OUT;
-    assign SUBTRACT_MODE = (ALUop == ALU_SUB) || (ALUop == ALU_SLT) || (ALUop == ALU_SLTU);
     ParallelPrefixAdder #(.WIDTH(64)) shared_adder (
         .A (A),
         .B (SUBTRACT_MODE ? ~B : B),

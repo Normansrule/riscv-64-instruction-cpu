@@ -48,7 +48,11 @@ fi
 cat > build/synth/abc_timing.scr <<'ABC'
 strash
 &get -n
-
+&st
+&if -g
+&st
+&if -g
+&b
 &dch -f
 &nf {D}
 &put

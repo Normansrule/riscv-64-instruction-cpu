@@ -39,14 +39,14 @@ export function usesRegisters(word) {
   if (op === 0x73) return { rs1: f3 === 1 || f3 === 2 || f3 === 3, rs2: false };
   return { rs1: false, rs2: false };
 }
-// Cycles an M instruction spends iterating in IterativeMultiplyDivideUnit (it occupies EXECUTE for steps + 3 cycles:
-// IDLE capture, PREPARE, the steps, DONE)
+// Cycles an M instruction spends iterating in IterativeMultiplyDivideUnit (it occupies EXECUTE for steps + 4 cycles:
+// IDLE capture, PREPARE, the steps, SIGN, DONE; a divide's ALIGN cycle is counted as one more step)
 export function multiplyDivideSteps(op, isWord, a) {
   if (!['DIV', 'DIVU', 'REM', 'REMU'].includes(op)) return 4;
   const signed = op === 'DIV' || op === 'REM';
   let x = isWord ? (signed ? BigInt.asUintN(64, BigInt.asIntN(32, a)) : BigInt.asUintN(32, a)) : a;
   if (signed && (x >> 63n)) x = BigInt.asUintN(64, -x);
-  return Math.max(1, x.toString(2).replace(/^0+/, '').length);
+  return 1 + Math.max(1, x.toString(2).replace(/^0+/, '').length); // + 1: the ALIGN cycle
 }
 
 const u64 = x => BigInt.asUintN(64, x);
@@ -502,7 +502,8 @@ export class Core {
       const m = this.mdu;
       if (m.state === 'IDLE') { if (e.valid && e.isMulDiv) { m.state = 'PREPARE'; m.left = mduSteps; } }
       else if (m.state === 'PREPARE') m.state = 'BUSY';
-      else if (m.state === 'BUSY') { if (m.left === 1) m.state = 'DONE'; m.left--; }
+      else if (m.state === 'BUSY') { if (m.left === 1) m.state = 'SIGN'; m.left--; }
+      else if (m.state === 'SIGN') m.state = 'DONE';
       else m.state = 'IDLE';
     }
     if (FLUSH) { this.bp.ghr = restoreGhr; ev.ghrRestore = restoreGhr; }

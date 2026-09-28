@@ -146,6 +146,7 @@
     <div class="arena" id="arena-bars"></div>
     <div class="ticker" id="a-ticker" aria-live="off"></div>
     <p class="small">gshare and the tournament are built in Sixfold's SystemVerilog; the perceptron and TAGE are software models (<code>model/predictors.js</code>), the way architects try a predictor before building it.</p>
+    <figure class="cp fig"><img src="docs/img/diagrams/branch_prediction.svg" alt="The Sixfold front end: Branch Target Buffer, Branch History Table, gshare, chooser and Return Address Stack, and how EXECUTE trains and repairs them" loading="lazy"><figcaption>The whole front end in one picture: four tables read every cycle in FETCH1, the Return Address Stack in FETCH2, training and repair in EXECUTE.</figcaption></figure>
   </div>
 </section>
 
@@ -176,6 +177,7 @@
       </div>
     </div>
     <ul class="ckey cache-key"><li class="k-empty">empty line</li><li class="k-valid">holds a copy</li><li class="k-fill">refilling from main memory</li><li class="k-pf">being prefetched</li><li class="k-hit">hit this cycle</li></ul>
+    <figure class="cp fig"><img src="docs/img/diagrams/cache.svg" alt="One cache lookup: the address split into tag, set and offset, two ways compared in parallel, least-recently-used replacement, refill and prefetch" loading="lazy"><figcaption>One lookup, step by step: the set picks a row in both ways, two comparators check the tags, and a miss refills the least recently used way in 11 cycles.</figcaption></figure>
   </div>
 </section>
 
@@ -227,15 +229,16 @@
   <div class="wrap">
     <div class="copy narrow">
       <h2>A shorter critical path, and fewer wasted cycles.</h2>
-      <p>The baseline computes a whole 64-bit division in one clock cycle: 64 subtractions in a row, 133 ns. The performance edition divides one bit per cycle, adds carry-lookahead (Kogge-Stone) adders, and wins cycles back with a tournament branch predictor, a branch target buffer, a return address stack and precise load stalls, behind instruction and data caches with prefetching. Both designs are in the repository and both are checked cycle by cycle.</p>
+      <p>The baseline computes a whole 64-bit division in one clock cycle: 64 subtractions in a row, 133 ns. The performance edition divides one bit per cycle, multiplies with a Wallace tree, adds carry-lookahead (Kogge-Stone) adders, and wins cycles back with a tournament branch predictor, a branch target buffer, a return address stack and precise load stalls, behind instruction and data caches with prefetching. Both designs are in the repository and both are checked cycle by cycle.</p>
     </div>
     <div class="facts">
-      <div><strong>180 MHz</strong><span>logic-only estimate on SkyWater 130 nm with the multiply/divide unit (the baseline: about 7.5 MHz)</span></div>
-      <div><strong>1.37 GHz</strong><span>the same RTL mapped onto ASAP7, a 7 nm-class research library</span></div>
+      <div><strong>265 MHz</strong><span>logic-only estimate on SkyWater 130 nm with the multiply/divide unit (the baseline: about 7.5 MHz)</span></div>
+      <div><strong>1.92 GHz</strong><span>the same RTL mapped onto ASAP7, a 7 nm-class research library (729 ps &rarr; 522 ps in the latest round)</span></div>
       <div><strong>1.03</strong><span>cycles per instruction on the branch-pattern program, caches included (baseline 1.38)</span></div>
     </div>
     <figure class="cp"><img src="docs/img/charts/performance.svg" alt="Cycles per instruction per program, original design versus performance edition" loading="lazy"></figure>
-    <p class="small">Why not higher? In 130 nm one carry step of an adder takes about 330 ps; in 7 nm the whole core's longest path is 728 ps. Smaller processes are faster, but a process node is chosen by the foundry, not written in RTL. <a data-repo-doc="docs/PERFORMANCE.md" href="docs/PERFORMANCE.md">How every number was measured</a>.</p>
+    <figure class="cp fig"><img src="docs/img/diagrams/clock_roadmap.svg" alt="Clock roadmap: measured clock periods from 133 ns to 522 ps against the 400 ps and 200 ps needed for 2.5 and 5 GHz" loading="lazy"><figcaption>From 7.5 MHz to 1.92 GHz, one measured step at a time, and what 2.5 GHz and 5 GHz would take.</figcaption></figure>
+    <p class="small">Why not higher? In 130 nm one carry step of an adder takes about 330 ps; in 7 nm the whole core's longest path is 522 ps; 2.5 GHz needs 400 ps and 5 GHz 200 ps. Smaller processes are faster, but a process node is chosen by the foundry, not written in RTL. <a data-repo-doc="docs/PERFORMANCE.md" href="docs/PERFORMANCE.md">How every number was measured</a>.</p>
   </div>
 </section>
 

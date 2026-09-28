@@ -9,7 +9,7 @@ import fs from 'node:fs';
 import { assemble } from '../model/asm.js';
 import { Core, CONFIGS } from '../model/core.js';
 
-export const CLOCK = { baselineWithM: 7.5, performance: 180, performance7nm: 1372 }; // MHz, logic only, from tools/timing.sh (sky130, and asap7 for the 7 nm column)
+export const CLOCK = { baselineWithM: 7.5, performance: 265, performance7nm: 1917 }; // MHz, logic only, from tools/timing.sh (sky130, and asap7 for the 7 nm column)
 const FONT = "font-family=\"'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif\"";
 const MONO = "font-family=\"'IBM Plex Mono',Consolas,monospace\"";
 const rows = [];
@@ -46,6 +46,6 @@ rows.forEach((r, i) => {
   o += `<rect x="${lx}" y="${y + 15}" width="${X(cpi(r.perf)) - lx}" height="10" rx="2" fill="#2E86C1"/>`;
   o += `<text x="${X(Math.max(cpi(r.base), cpi(r.perf))) + 6}" y="${y + 19}" ${MONO} font-size="10.5" fill="#4A5A50">${cpi(r.base).toFixed(2)} → ${cpi(r.perf).toFixed(2)}${cpi(r.perf) > max ? ' (off scale)' : ''}</text>`;
 });
-o += `<text x="16" y="${H - 18}" ${FONT} font-size="11.5" fill="#4A5A50">* uses multiply or divide: slower per instruction on the performance edition (7 cycles per multiply, 3 + dividend bits per divide), in exchange for a ~27x faster clock. Cold cache misses weigh heavily on the shortest programs.</text></svg>\n`;
+o += `<text x="16" y="${H - 18}" ${FONT} font-size="11.5" fill="#4A5A50">* uses multiply or divide: slower per instruction on the performance edition (8 cycles per multiply, 4 + dividend bits per divide), in exchange for a ~27x faster clock. Cold cache misses weigh heavily on the shortest programs.</text></svg>\n`;
 fs.writeFileSync('docs/img/charts/performance.svg', o);
 console.log(md);

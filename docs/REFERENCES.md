@@ -177,3 +177,21 @@ Journal of Research and Development*, vol. 11, no. 1, 1967.
 **[43]** D. M. Tullsen, S. J. Eggers, H. M. Levy, "Simultaneous Multithreading: Maximizing On-Chip
 Parallelism," *ISCA*, 1995.
 
+
+**[44]** C. S. Wallace, "A Suggestion for a Fast Multiplier," *IEEE Transactions on Electronic
+Computers*, vol. EC-13, no. 1, 1964. The carry-save (3:2 compressor) tree used in
+`src/Carry_Save_Multiplier.sv`.
+
+**[45]** L. Dadda, "Some Schemes for Parallel Multipliers," *Alta Frequenza*, vol. 34, 1965. The
+variant of the tree that uses the fewest adders.
+
+**[46]** V. G. Oklobdzija, "An Algorithmic and Novel Design of a Leading Zero Detector Circuit:
+Comparison with Logic Synthesis," *IEEE Transactions on VLSI Systems*, vol. 2, no. 1, 1994. The
+leading-zero counter tree in `src/Iterative_Multiply_Divide_Unit.sv`.
+
+**[47]** A. Mishchenko, R. Brayton, S. Jang, V. Kravets, "Delay Optimization Using SOP Balancing,"
+*ICCAD*, 2011. The delay-oriented restructuring (`&if -g`) used by `tools/timing.sh`.
+
+**[48]** M. S. Hrishikesh, N. P. Jouppi, K. I. Farkas, D. Burger, S. W. Keckler, P. Shivakumar, "The
+Optimal Logic Depth per Pipeline Stage is 6 to 8 FO4 Inverter Delays," *ISCA*, 2002. Why fast clocks
+need deep pipelines.

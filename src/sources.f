@@ -7,6 +7,7 @@ src/Parallel_Prefix_Adder.sv
 src/Prefix_Negate.sv
 src/ALU.sv
 src/Multiply_Divide_Unit.sv
+src/Carry_Save_Multiplier.sv
 src/Iterative_Multiply_Divide_Unit.sv
 src/ALUdec.sv
 src/Control_Unit.sv

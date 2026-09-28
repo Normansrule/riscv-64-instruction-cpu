@@ -111,3 +111,21 @@ on `17_predictor_challenge.s`. Then pick one and design it for FETCH1 in SystemV
 gate levels does a 16-input perceptron sum need, and does it fit in the clock period
 ([MODERN_CPUS.md](MODERN_CPUS.md))?
 
+
+## Lab 13: chase the critical path at 7 nm
+
+`tools/timing.sh performance asap7` prints the longest path and where it starts
+(`build/synth/timing_performance_asap7.log` has every gate on it). The second round in
+[PERFORMANCE.md](PERFORMANCE.md) took it from 729 ps to 522 ps one change at a time. Undo one of those
+changes (for example put the `SUBTRACT_MODE` decode back inside `src/ALU.sv`, or make
+`EXECUTE_ALU_INPUT_B` a multiplexer again) and measure how much it was worth. Then try the next one on
+the list: register the quotient negation, or split EXECUTE in two and count what the extra bubble
+costs with `make math`.
+
+## Lab 14: Booth recoding for the multiplier
+
+`src/Carry_Save_Multiplier.sv` adds 16 partial products per step. Radix-4 Booth recoding looks at
+the multiplier bits in overlapping groups of three and produces 8 partial products from
+{-2, -1, 0, +1, +2} x the multiplicand. Write it, keep `CarrySaveMultiplyStep`'s ports, and compare
+the number of compressor levels, the delay (`tools/timing.sh`) and the area. The 864-case self-check
+(`make test`) covers MUL, MULH, MULHSU, MULHU and MULW with signed corner cases.

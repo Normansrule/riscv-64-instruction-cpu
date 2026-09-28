@@ -1,0 +1,643 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1080" width="1600" height="1080">
+<defs><marker id="m-data" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2B3A31"/></marker><marker id="m-pred" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#00796B"/></marker><marker id="m-flush" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C2185B"/></marker><marker id="m-F1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2E86C1"/></marker><marker id="m-F2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#17A2B8"/></marker><marker id="m-E" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#E08E0B"/></marker><marker id="m-M" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#27AE60"/></marker><marker id="m-tag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C9982E"/></marker><marker id="m-idx" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#17A2B8"/></marker><marker id="m-off" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6A5ACD"/></marker><marker id="m-hit" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1E8449"/></marker><marker id="m-miss" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C0392B"/></marker><marker id="m-sub" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4A5A50"/></marker></defs>
+<rect width="100%" height="100%" rx="12" fill="#FBFCF8" stroke="#D5DBD0"/>
+<text x="24" y="34" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="20" font-weight="700" fill="#17251D" text-anchor="start">The Sixfold front end: choosing the next PC every cycle, before any instruction is decoded</text>
+<text x="24" y="56" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="400" fill="#4A5A50" text-anchor="start">Performance build (src/Riscv64.sv). FETCH1 guesses with the Branch Target Buffer and a tournament of two direction predictors; FETCH2 corrects cheap cases; EXECUTE checks and trains.</text>
+<rect x="20" y="72" width="990" height="32" rx="6" fill="#2E86C1" stroke="#2E86C1" stroke-width="1.5"/>
+<text x="32" y="93" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#FFF" text-anchor="start">FETCH1</text>
+<text x="1000" y="93" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#FFF" text-anchor="end">look up 4 tables in parallel with the instruction cache</text>
+<rect x="20" y="108" width="990" height="690" rx="4" fill="#2E86C1" stroke="none" stroke-width="1.5" fill-opacity="0.05"/>
+<rect x="1030" y="72" width="270" height="32" rx="6" fill="#17A2B8" stroke="#17A2B8" stroke-width="1.5"/>
+<text x="1042" y="93" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#FFF" text-anchor="start">FETCH2</text>
+<text x="1290" y="93" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#FFF" text-anchor="end">predecode, RAS, redirect</text>
+<rect x="1030" y="108" width="270" height="690" rx="4" fill="#17A2B8" stroke="none" stroke-width="1.5" fill-opacity="0.05"/>
+<rect x="1320" y="72" width="260" height="32" rx="6" fill="#E08E0B" stroke="#E08E0B" stroke-width="1.5"/>
+<text x="1332" y="93" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#FFF" text-anchor="start">EXECUTE</text>
+<text x="1570" y="93" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#FFF" text-anchor="end">resolve, train, repair</text>
+<rect x="1320" y="108" width="260" height="690" rx="4" fill="#E08E0B" stroke="none" stroke-width="1.5" fill-opacity="0.05"/>
+<rect x="40" y="420" width="110" height="84" rx="6" fill="#FFFFFF" stroke="#2B3A31" stroke-width="1.5"/>
+<text x="95" y="439" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#17251D" text-anchor="middle">FETCH1_PC</text>
+<text x="95" y="454" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">64-bit register</text>
+<text x="95" y="467.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">loads next PC</text>
+<text x="95" y="481" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">every cycle</text>
+<path d="M150,462 L190,462" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round"/>
+<circle cx="190" cy="462" r="3.2" fill="#2B3A31"/>
+<path d="M190,121 L190,680" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round"/>
+<rect x="240" y="132" width="440" height="236" rx="8" fill="#EAF2FB" stroke="#2E86C1" stroke-width="1.8"/>
+<text x="252" y="154" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#2E86C1" text-anchor="start">Branch Target Buffer (BTB)</text>
+<text x="252" y="169" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9" font-weight="400" fill="#8A968E" text-anchor="start">src/Branch_Target_Buffer.sv</text>
+<text x="252" y="185" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="start">16 entries, direct mapped: "the instruction at this PC jumped to that PC"</text>
+<text x="271" y="206" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="600" fill="#4A5A50" text-anchor="middle">V</text>
+<text x="299" y="206" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="600" fill="#4A5A50" text-anchor="middle">JAL</text>
+<text x="382" y="206" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="600" fill="#4A5A50" text-anchor="middle">tag = PC[31:6]</text>
+<text x="523" y="206" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="600" fill="#4A5A50" text-anchor="middle">target (32 bits)</text>
+<rect x="260" y="212" width="21" height="16" fill="#FFF" stroke="#D5DBD0"/>
+<text x="271" y="224" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#17251D" text-anchor="middle">1</text>
+<rect x="282" y="212" width="33" height="16" fill="#FFF" stroke="#D5DBD0"/>
+<text x="299" y="224" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#17251D" text-anchor="middle">0</text>
+<rect x="316" y="212" width="131" height="16" fill="#FFF" stroke="#D5DBD0"/>
+<text x="382" y="224" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#17251D" text-anchor="middle">0x00000080</text>
+<rect x="448" y="212" width="149" height="16" fill="#FFF" stroke="#D5DBD0"/>
+<text x="523" y="224" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#17251D" text-anchor="middle">0x00002040</text>
+<rect x="260" y="229" width="21" height="16" fill="#FFF" stroke="#D5DBD0"/>
+<text x="271" y="241" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#17251D" text-anchor="middle">1</text>
+<rect x="282" y="229" width="33" height="16" fill="#FFF" stroke="#D5DBD0"/>
+<text x="299" y="241" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#17251D" text-anchor="middle">1</text>
+<rect x="316" y="229" width="131" height="16" fill="#FFF" stroke="#D5DBD0"/>
+<text x="382" y="241" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#17251D" text-anchor="middle">0x00000080</text>
+<rect x="448" y="229" width="149" height="16" fill="#FFF" stroke="#D5DBD0"/>
+<text x="523" y="241" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#17251D" text-anchor="middle">0x00002310</text>
+<rect x="260" y="246" width="21" height="16" fill="#FFF" stroke="#D5DBD0"/>
+<text x="271" y="258" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">0</text>
+<rect x="282" y="246" width="33" height="16" fill="#FFF" stroke="#D5DBD0"/>
+<text x="299" y="258" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">0</text>
+<rect x="316" y="246" width="131" height="16" fill="#FFF" stroke="#D5DBD0"/>
+<text x="382" y="258" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">-</text>
+<rect x="448" y="246" width="149" height="16" fill="#FFF" stroke="#D5DBD0"/>
+<text x="523" y="258" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">-</text>
+<rect x="260" y="263" width="21" height="16" fill="#FFF3C4" stroke="#D5DBD0"/>
+<text x="271" y="275" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#17251D" text-anchor="middle">1</text>
+<rect x="282" y="263" width="33" height="16" fill="#FFF3C4" stroke="#D5DBD0"/>
+<text x="299" y="275" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#17251D" text-anchor="middle">0</text>
+<rect x="316" y="263" width="131" height="16" fill="#FFF3C4" stroke="#D5DBD0"/>
+<text x="382" y="275" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#17251D" text-anchor="middle">0x00000081</text>
+<rect x="448" y="263" width="149" height="16" fill="#FFF3C4" stroke="#D5DBD0"/>
+<text x="523" y="275" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#17251D" text-anchor="middle">0x000020c8</text>
+<rect x="260" y="280" width="21" height="16" fill="#FFF" stroke="#D5DBD0"/>
+<text x="271" y="292" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#17251D" text-anchor="middle">1</text>
+<rect x="282" y="280" width="33" height="16" fill="#FFF" stroke="#D5DBD0"/>
+<text x="299" y="292" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#17251D" text-anchor="middle">0</text>
+<rect x="316" y="280" width="131" height="16" fill="#FFF" stroke="#D5DBD0"/>
+<text x="382" y="292" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#17251D" text-anchor="middle">0x00000080</text>
+<rect x="448" y="280" width="149" height="16" fill="#FFF" stroke="#D5DBD0"/>
+<text x="523" y="292" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#17251D" text-anchor="middle">0x00002108</text>
+<rect x="260" y="297" width="21" height="16" fill="#FFF" stroke="#D5DBD0"/>
+<text x="271" y="309" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">0</text>
+<rect x="282" y="297" width="33" height="16" fill="#FFF" stroke="#D5DBD0"/>
+<text x="299" y="309" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">0</text>
+<rect x="316" y="297" width="131" height="16" fill="#FFF" stroke="#D5DBD0"/>
+<text x="382" y="309" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">-</text>
+<rect x="448" y="297" width="149" height="16" fill="#FFF" stroke="#D5DBD0"/>
+<text x="523" y="309" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">-</text>
+<text x="523" y="328" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle" font-style="italic">... 16 rows ...</text>
+<path d="M190,271 L258,271" fill="none" stroke="#17A2B8" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-idx)"/>
+<text x="195" y="266" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9" font-weight="400" fill="#17A2B8" text-anchor="start">PC[5:2]</text>
+<circle cx="382" cy="344" r="15" fill="#FFF" stroke="#2E86C1" stroke-width="1.8"/>
+<text x="382" y="348.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#2E86C1" text-anchor="middle">=?</text>
+<path d="M382,314 L382,329" fill="none" stroke="#C9982E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#m-tag)"/>
+<text x="388" y="328" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9" font-weight="400" fill="#C9982E" text-anchor="start">stored tag</text>
+<path d="M190,344 L367,344" fill="none" stroke="#C9982E" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#m-tag)"/>
+<text x="195" y="339" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9" font-weight="400" fill="#C9982E" text-anchor="start">PC[31:6]</text>
+<path d="M397,344 L704,344 L704,494 L736,494" fill="none" stroke="#2E86C1" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-F1)"/>
+<text x="406" y="338" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="700" fill="#2E86C1" text-anchor="start">BTB_HIT (valid and tag match)</text>
+<path d="M598,271 L870,271 L870,196 L900,196" fill="none" stroke="#2E86C1" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-F1)"/>
+<text x="690" y="265" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="700" fill="#2E86C1" text-anchor="start">BTB_PREDICTED_TARGET</text>
+<path d="M299,314 L299,306 L720,306 L720,520 L736,520" fill="none" stroke="#2E86C1" stroke-width="1.4" stroke-dasharray="4 3" stroke-linejoin="round" marker-end="url(#m-F1)"/>
+<text x="690" y="301" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#2E86C1" text-anchor="start">HIT_IS_JAL</text>
+<rect x="240" y="380" width="450" height="400" rx="8" fill="#E6F4F1" stroke="#00796B" stroke-width="1.8"/>
+<text x="252" y="402" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#00796B" text-anchor="start">Tournament direction predictor</text>
+<text x="252" y="417" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9" font-weight="400" fill="#8A968E" text-anchor="start">src/Tournament_Chooser.sv, src/GShare_Branch_Predictor.sv</text>
+<text x="252" y="433" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="start">two predictors answer "taken?"; a third table picks which one to trust</text>
+<text x="260" y="460" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#17251D" text-anchor="start">Branch History Table (BHT)</text>
+<text x="260" y="475" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="start">128 x 2-bit counters, index PC[8:2]</text>
+<text x="260" y="488" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="start">learns each branch on its own</text>
+<rect x="460" y="446" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="460" y="449.4" width="11.5" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="460" y="452.8" width="11.5" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="460" y="456.2" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="460" y="459.6" width="11.5" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="460" y="463" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="460" y="466.4" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="460" y="469.8" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="460" y="473.2" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="460" y="476.6" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="460" y="480" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="460" y="483.4" width="11.5" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="460" y="486.8" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="460" y="490.2" width="11.5" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="460" y="493.6" width="11.5" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="460" y="497" width="11.5" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="472.5" y="446" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="472.5" y="449.4" width="11.5" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="472.5" y="452.8" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="472.5" y="456.2" width="11.5" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="472.5" y="459.6" width="11.5" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="472.5" y="463" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="472.5" y="466.4" width="11.5" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="472.5" y="469.8" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="472.5" y="473.2" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="472.5" y="476.6" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="472.5" y="480" width="11.5" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="472.5" y="483.4" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="472.5" y="486.8" width="11.5" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="472.5" y="490.2" width="11.5" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="472.5" y="493.6" width="11.5" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="472.5" y="497" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="485" y="446" width="11.5" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="485" y="449.4" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="485" y="452.8" width="11.5" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="485" y="456.2" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="485" y="459.6" width="11.5" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="485" y="463" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="485" y="466.4" width="11.5" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="485" y="469.8" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="485" y="473.2" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="485" y="476.6" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="485" y="480" width="11.5" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="485" y="483.4" width="11.5" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="485" y="486.8" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="485" y="490.2" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="485" y="493.6" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="485" y="497" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="497.5" y="446" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="497.5" y="449.4" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="497.5" y="452.8" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="497.5" y="456.2" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="497.5" y="459.6" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="497.5" y="463" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="497.5" y="466.4" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="497.5" y="469.8" width="11.5" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="497.5" y="473.2" width="11.5" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="497.5" y="476.6" width="11.5" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="497.5" y="480" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="497.5" y="483.4" width="11.5" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="497.5" y="486.8" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="497.5" y="490.2" width="11.5" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="497.5" y="493.6" width="11.5" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="497.5" y="497" width="11.5" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="510" y="446" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="510" y="449.4" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="510" y="452.8" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="510" y="456.2" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="510" y="459.6" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="510" y="463" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="510" y="466.4" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="510" y="469.8" width="11.5" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="510" y="473.2" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="510" y="476.6" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="510" y="480" width="11.5" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="510" y="483.4" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="510" y="486.8" width="11.5" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="510" y="490.2" width="11.5" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="510" y="493.6" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="510" y="497" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="522.5" y="446" width="11.5" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="522.5" y="449.4" width="11.5" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="522.5" y="452.8" width="11.5" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="522.5" y="456.2" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="522.5" y="459.6" width="11.5" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="522.5" y="463" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="522.5" y="466.4" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="522.5" y="469.8" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="522.5" y="473.2" width="11.5" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="522.5" y="476.6" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="522.5" y="480" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="522.5" y="483.4" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="522.5" y="486.8" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="522.5" y="490.2" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="522.5" y="493.6" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="522.5" y="497" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="535" y="446" width="11.5" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="535" y="449.4" width="11.5" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="535" y="452.8" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="535" y="456.2" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="535" y="459.6" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="535" y="463" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="535" y="466.4" width="11.5" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="535" y="469.8" width="11.5" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="535" y="473.2" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="535" y="476.6" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="535" y="480" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="535" y="483.4" width="11.5" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="535" y="486.8" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="535" y="490.2" width="11.5" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="535" y="493.6" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="535" y="497" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="547.5" y="446" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="547.5" y="449.4" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="547.5" y="452.8" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="547.5" y="456.2" width="11.5" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="547.5" y="459.6" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="547.5" y="463" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="547.5" y="466.4" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="547.5" y="469.8" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="547.5" y="473.2" width="11.5" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="547.5" y="476.6" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="547.5" y="480" width="11.5" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="547.5" y="483.4" width="11.5" height="2.5999999999999996" fill="#E59866"/>
+<rect x="547.5" y="486.8" width="11.5" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="547.5" y="490.2" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="547.5" y="493.6" width="11.5" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="547.5" y="497" width="11.5" height="2.5999999999999996" fill="#1E8449"/>
+<text x="510" y="512" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9" font-weight="400" fill="#8A968E" text-anchor="middle">128 counters</text>
+<path d="M190,456 L456,456" fill="none" stroke="#17A2B8" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#m-idx)"/>
+<text x="195" y="451" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9" font-weight="400" fill="#17A2B8" text-anchor="start">PC[8:2]</text>
+<path d="M562,473 L624,473 L624,526 L640,526" fill="none" stroke="#00796B" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#m-pred)"/>
+<text x="568" y="468" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#00796B" text-anchor="start">BHT says</text>
+<path d="M190,540 L430,540 L430,583" fill="none" stroke="#17A2B8" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#m-idx)"/>
+<text x="195" y="535" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9" font-weight="400" fill="#17A2B8" text-anchor="start">PC[7:2]</text>
+<text x="260" y="560" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#17251D" text-anchor="start">gshare</text>
+<text x="260" y="575" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="start">64 x 2-bit, index PC[7:2] XOR history</text>
+<rect x="260" y="584" width="132" height="26" rx="6" fill="#FFF" stroke="#00796B" stroke-width="1.5"/>
+<text x="326" y="602" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="700" fill="#00796B" text-anchor="middle">GLOBAL_HISTORY</text>
+<rect x="260" y="614" width="21" height="20" rx="2" fill="#1E8449" stroke="#FFF" stroke-width="1"/>
+<text x="270.5" y="628" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="700" fill="#FFF" text-anchor="middle">T</text>
+<rect x="282" y="614" width="21" height="20" rx="2" fill="#C0392B" stroke="#FFF" stroke-width="1"/>
+<text x="292.5" y="628" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="700" fill="#FFF" text-anchor="middle">N</text>
+<rect x="304" y="614" width="21" height="20" rx="2" fill="#1E8449" stroke="#FFF" stroke-width="1"/>
+<text x="314.5" y="628" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="700" fill="#FFF" text-anchor="middle">T</text>
+<rect x="326" y="614" width="21" height="20" rx="2" fill="#1E8449" stroke="#FFF" stroke-width="1"/>
+<text x="336.5" y="628" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="700" fill="#FFF" text-anchor="middle">T</text>
+<rect x="348" y="614" width="21" height="20" rx="2" fill="#C0392B" stroke="#FFF" stroke-width="1"/>
+<text x="358.5" y="628" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="700" fill="#FFF" text-anchor="middle">N</text>
+<rect x="370" y="614" width="21" height="20" rx="2" fill="#1E8449" stroke="#FFF" stroke-width="1"/>
+<text x="380.5" y="628" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="700" fill="#FFF" text-anchor="middle">T</text>
+<text x="260" y="650" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#4A5A50" text-anchor="start">the last 6 branch directions: FETCH2 shifts in</text>
+<text x="260" y="662" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#4A5A50" text-anchor="start">each guess, EXECUTE repairs it after a flush</text>
+<circle cx="430" cy="597" r="14" fill="#FFF" stroke="#00796B" stroke-width="2"/><path d="M420,587 L440,607 M440,587 L420,607" stroke="#00796B" stroke-width="2"/>
+<path d="M392,597 L414,597" fill="none" stroke="#00796B" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#m-pred)"/>
+<rect x="460" y="570" width="24" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="460" y="573.4" width="24" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="460" y="576.8" width="24" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="460" y="580.2" width="24" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="460" y="583.6" width="24" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="460" y="587" width="24" height="2.5999999999999996" fill="#E59866"/>
+<rect x="460" y="590.4" width="24" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="460" y="593.8" width="24" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="460" y="597.2" width="24" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="460" y="600.6" width="24" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="460" y="604" width="24" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="460" y="607.4" width="24" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="460" y="610.8" width="24" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="460" y="614.2" width="24" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="460" y="617.6" width="24" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="460" y="621" width="24" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="485" y="570" width="24" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="485" y="573.4" width="24" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="485" y="576.8" width="24" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="485" y="580.2" width="24" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="485" y="583.6" width="24" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="485" y="587" width="24" height="2.5999999999999996" fill="#E59866"/>
+<rect x="485" y="590.4" width="24" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="485" y="593.8" width="24" height="2.5999999999999996" fill="#E59866"/>
+<rect x="485" y="597.2" width="24" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="485" y="600.6" width="24" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="485" y="604" width="24" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="485" y="607.4" width="24" height="2.5999999999999996" fill="#E59866"/>
+<rect x="485" y="610.8" width="24" height="2.5999999999999996" fill="#E59866"/>
+<rect x="485" y="614.2" width="24" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="485" y="617.6" width="24" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="485" y="621" width="24" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="510" y="570" width="24" height="2.5999999999999996" fill="#E59866"/>
+<rect x="510" y="573.4" width="24" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="510" y="576.8" width="24" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="510" y="580.2" width="24" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="510" y="583.6" width="24" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="510" y="587" width="24" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="510" y="590.4" width="24" height="2.5999999999999996" fill="#E59866"/>
+<rect x="510" y="593.8" width="24" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="510" y="597.2" width="24" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="510" y="600.6" width="24" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="510" y="604" width="24" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="510" y="607.4" width="24" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="510" y="610.8" width="24" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="510" y="614.2" width="24" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="510" y="617.6" width="24" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="510" y="621" width="24" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="535" y="570" width="24" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="535" y="573.4" width="24" height="2.5999999999999996" fill="#E59866"/>
+<rect x="535" y="576.8" width="24" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="535" y="580.2" width="24" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="535" y="583.6" width="24" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="535" y="587" width="24" height="2.5999999999999996" fill="#E59866"/>
+<rect x="535" y="590.4" width="24" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="535" y="593.8" width="24" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="535" y="597.2" width="24" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="535" y="600.6" width="24" height="2.5999999999999996" fill="#E59866"/>
+<rect x="535" y="604" width="24" height="2.5999999999999996" fill="#1E8449"/>
+<rect x="535" y="607.4" width="24" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="535" y="610.8" width="24" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="535" y="614.2" width="24" height="2.5999999999999996" fill="#82C99A"/>
+<rect x="535" y="617.6" width="24" height="2.5999999999999996" fill="#C0392B"/>
+<rect x="535" y="621" width="24" height="2.5999999999999996" fill="#1E8449"/>
+<text x="510" y="636" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9" font-weight="400" fill="#8A968E" text-anchor="middle">64 counters</text>
+<path d="M444,597 L456,597" fill="none" stroke="#00796B" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#m-pred)"/>
+<path d="M562,597 L624,597 L624,562 L640,562" fill="none" stroke="#00796B" stroke-width="1.8" stroke-linejoin="round" marker-end="url(#m-pred)"/>
+<text x="568" y="592" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#00796B" text-anchor="start">gshare says</text>
+<path d="M190,680 L575,680 L575,686" fill="none" stroke="#17A2B8" stroke-width="1.4" stroke-linejoin="round" marker-end="url(#m-idx)"/>
+<text x="195" y="675" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9" font-weight="400" fill="#17A2B8" text-anchor="start">PC[8:2]</text>
+<text x="260" y="702" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#17251D" text-anchor="start">Chooser: 128 x 2-bit</text>
+<text x="260" y="717" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="start">counter &gt;= 2: trust gshare, else the BHT;</text>
+<text x="260" y="731" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="start">moves toward whichever one was right</text>
+<text x="260" y="745" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="start">when the two disagree</text>
+<rect x="540" y="690" width="7.75" height="1.4000000000000001" fill="#E59866"/>
+<rect x="540" y="692.2" width="7.75" height="1.4000000000000001" fill="#E59866"/>
+<rect x="540" y="694.4" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="540" y="696.6" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="540" y="698.8" width="7.75" height="1.4000000000000001" fill="#C0392B"/>
+<rect x="540" y="701" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="540" y="703.2" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="540" y="705.4" width="7.75" height="1.4000000000000001" fill="#82C99A"/>
+<rect x="540" y="707.6" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="540" y="709.8" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="540" y="712" width="7.75" height="1.4000000000000001" fill="#82C99A"/>
+<rect x="540" y="714.2" width="7.75" height="1.4000000000000001" fill="#C0392B"/>
+<rect x="540" y="716.4" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="540" y="718.6" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="540" y="720.8" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="540" y="723" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="548.75" y="690" width="7.75" height="1.4000000000000001" fill="#82C99A"/>
+<rect x="548.75" y="692.2" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="548.75" y="694.4" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="548.75" y="696.6" width="7.75" height="1.4000000000000001" fill="#C0392B"/>
+<rect x="548.75" y="698.8" width="7.75" height="1.4000000000000001" fill="#C0392B"/>
+<rect x="548.75" y="701" width="7.75" height="1.4000000000000001" fill="#E59866"/>
+<rect x="548.75" y="703.2" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="548.75" y="705.4" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="548.75" y="707.6" width="7.75" height="1.4000000000000001" fill="#C0392B"/>
+<rect x="548.75" y="709.8" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="548.75" y="712" width="7.75" height="1.4000000000000001" fill="#82C99A"/>
+<rect x="548.75" y="714.2" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="548.75" y="716.4" width="7.75" height="1.4000000000000001" fill="#E59866"/>
+<rect x="548.75" y="718.6" width="7.75" height="1.4000000000000001" fill="#C0392B"/>
+<rect x="548.75" y="720.8" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="548.75" y="723" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="557.5" y="690" width="7.75" height="1.4000000000000001" fill="#82C99A"/>
+<rect x="557.5" y="692.2" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="557.5" y="694.4" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="557.5" y="696.6" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="557.5" y="698.8" width="7.75" height="1.4000000000000001" fill="#82C99A"/>
+<rect x="557.5" y="701" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="557.5" y="703.2" width="7.75" height="1.4000000000000001" fill="#C0392B"/>
+<rect x="557.5" y="705.4" width="7.75" height="1.4000000000000001" fill="#E59866"/>
+<rect x="557.5" y="707.6" width="7.75" height="1.4000000000000001" fill="#82C99A"/>
+<rect x="557.5" y="709.8" width="7.75" height="1.4000000000000001" fill="#82C99A"/>
+<rect x="557.5" y="712" width="7.75" height="1.4000000000000001" fill="#E59866"/>
+<rect x="557.5" y="714.2" width="7.75" height="1.4000000000000001" fill="#C0392B"/>
+<rect x="557.5" y="716.4" width="7.75" height="1.4000000000000001" fill="#E59866"/>
+<rect x="557.5" y="718.6" width="7.75" height="1.4000000000000001" fill="#C0392B"/>
+<rect x="557.5" y="720.8" width="7.75" height="1.4000000000000001" fill="#82C99A"/>
+<rect x="557.5" y="723" width="7.75" height="1.4000000000000001" fill="#82C99A"/>
+<rect x="566.25" y="690" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="566.25" y="692.2" width="7.75" height="1.4000000000000001" fill="#82C99A"/>
+<rect x="566.25" y="694.4" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="566.25" y="696.6" width="7.75" height="1.4000000000000001" fill="#E59866"/>
+<rect x="566.25" y="698.8" width="7.75" height="1.4000000000000001" fill="#C0392B"/>
+<rect x="566.25" y="701" width="7.75" height="1.4000000000000001" fill="#C0392B"/>
+<rect x="566.25" y="703.2" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="566.25" y="705.4" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="566.25" y="707.6" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="566.25" y="709.8" width="7.75" height="1.4000000000000001" fill="#C0392B"/>
+<rect x="566.25" y="712" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="566.25" y="714.2" width="7.75" height="1.4000000000000001" fill="#82C99A"/>
+<rect x="566.25" y="716.4" width="7.75" height="1.4000000000000001" fill="#82C99A"/>
+<rect x="566.25" y="718.6" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="566.25" y="720.8" width="7.75" height="1.4000000000000001" fill="#C0392B"/>
+<rect x="566.25" y="723" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="575" y="690" width="7.75" height="1.4000000000000001" fill="#E59866"/>
+<rect x="575" y="692.2" width="7.75" height="1.4000000000000001" fill="#82C99A"/>
+<rect x="575" y="694.4" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="575" y="696.6" width="7.75" height="1.4000000000000001" fill="#E59866"/>
+<rect x="575" y="698.8" width="7.75" height="1.4000000000000001" fill="#E59866"/>
+<rect x="575" y="701" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="575" y="703.2" width="7.75" height="1.4000000000000001" fill="#E59866"/>
+<rect x="575" y="705.4" width="7.75" height="1.4000000000000001" fill="#C0392B"/>
+<rect x="575" y="707.6" width="7.75" height="1.4000000000000001" fill="#C0392B"/>
+<rect x="575" y="709.8" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="575" y="712" width="7.75" height="1.4000000000000001" fill="#82C99A"/>
+<rect x="575" y="714.2" width="7.75" height="1.4000000000000001" fill="#C0392B"/>
+<rect x="575" y="716.4" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="575" y="718.6" width="7.75" height="1.4000000000000001" fill="#82C99A"/>
+<rect x="575" y="720.8" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="575" y="723" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="583.75" y="690" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="583.75" y="692.2" width="7.75" height="1.4000000000000001" fill="#82C99A"/>
+<rect x="583.75" y="694.4" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="583.75" y="696.6" width="7.75" height="1.4000000000000001" fill="#82C99A"/>
+<rect x="583.75" y="698.8" width="7.75" height="1.4000000000000001" fill="#82C99A"/>
+<rect x="583.75" y="701" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="583.75" y="703.2" width="7.75" height="1.4000000000000001" fill="#82C99A"/>
+<rect x="583.75" y="705.4" width="7.75" height="1.4000000000000001" fill="#C0392B"/>
+<rect x="583.75" y="707.6" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="583.75" y="709.8" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="583.75" y="712" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="583.75" y="714.2" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="583.75" y="716.4" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="583.75" y="718.6" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="583.75" y="720.8" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="583.75" y="723" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="592.5" y="690" width="7.75" height="1.4000000000000001" fill="#82C99A"/>
+<rect x="592.5" y="692.2" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="592.5" y="694.4" width="7.75" height="1.4000000000000001" fill="#82C99A"/>
+<rect x="592.5" y="696.6" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="592.5" y="698.8" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="592.5" y="701" width="7.75" height="1.4000000000000001" fill="#E59866"/>
+<rect x="592.5" y="703.2" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="592.5" y="705.4" width="7.75" height="1.4000000000000001" fill="#82C99A"/>
+<rect x="592.5" y="707.6" width="7.75" height="1.4000000000000001" fill="#E59866"/>
+<rect x="592.5" y="709.8" width="7.75" height="1.4000000000000001" fill="#C0392B"/>
+<rect x="592.5" y="712" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="592.5" y="714.2" width="7.75" height="1.4000000000000001" fill="#C0392B"/>
+<rect x="592.5" y="716.4" width="7.75" height="1.4000000000000001" fill="#82C99A"/>
+<rect x="592.5" y="718.6" width="7.75" height="1.4000000000000001" fill="#C0392B"/>
+<rect x="592.5" y="720.8" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="592.5" y="723" width="7.75" height="1.4000000000000001" fill="#E59866"/>
+<rect x="601.25" y="690" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="601.25" y="692.2" width="7.75" height="1.4000000000000001" fill="#82C99A"/>
+<rect x="601.25" y="694.4" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="601.25" y="696.6" width="7.75" height="1.4000000000000001" fill="#C0392B"/>
+<rect x="601.25" y="698.8" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="601.25" y="701" width="7.75" height="1.4000000000000001" fill="#82C99A"/>
+<rect x="601.25" y="703.2" width="7.75" height="1.4000000000000001" fill="#E59866"/>
+<rect x="601.25" y="705.4" width="7.75" height="1.4000000000000001" fill="#E59866"/>
+<rect x="601.25" y="707.6" width="7.75" height="1.4000000000000001" fill="#E59866"/>
+<rect x="601.25" y="709.8" width="7.75" height="1.4000000000000001" fill="#C0392B"/>
+<rect x="601.25" y="712" width="7.75" height="1.4000000000000001" fill="#C0392B"/>
+<rect x="601.25" y="714.2" width="7.75" height="1.4000000000000001" fill="#C0392B"/>
+<rect x="601.25" y="716.4" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<rect x="601.25" y="718.6" width="7.75" height="1.4000000000000001" fill="#82C99A"/>
+<rect x="601.25" y="720.8" width="7.75" height="1.4000000000000001" fill="#82C99A"/>
+<rect x="601.25" y="723" width="7.75" height="1.4000000000000001" fill="#1E8449"/>
+<text x="575" y="740" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9" font-weight="400" fill="#8A968E" text-anchor="middle">128 counters</text>
+<path d="M610,707 L655,707 L655,582" fill="none" stroke="#00796B" stroke-width="1.6" stroke-dasharray="4 3" stroke-linejoin="round" marker-end="url(#m-pred)"/>
+<text x="660" y="670" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#00796B" text-anchor="start">select</text>
+<polygon points="640,506 670,520.4 670,571.6 640,586" fill="#F3F5F0" stroke="#00796B" stroke-width="1.6"/>
+<text x="644" y="529.5" font-family="'IBM Plex Mono',Consolas,monospace" font-size="8.5" font-weight="400" fill="#4A5A50" text-anchor="start">B</text>
+<text x="644" y="565.5" font-family="'IBM Plex Mono',Consolas,monospace" font-size="8.5" font-weight="400" fill="#4A5A50" text-anchor="start">G</text>
+<path d="M670,546 L736,546" fill="none" stroke="#00796B" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-pred)"/>
+<text x="696" y="540" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9" font-weight="700" fill="#00796B" text-anchor="start">TAKEN</text>
+<path d="M736,480 L760,480 A26,40 0 0 1 760,560 L736,560 Z" fill="#FFF" stroke="#2E86C1" stroke-width="1.8"/>
+<text x="758" y="525" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#2E86C1" text-anchor="middle">&amp;</text>
+<text x="792" y="474" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9" font-weight="400" fill="#2E86C1" text-anchor="start">HIT &amp;&amp; (JAL || TAKEN)</text>
+<path d="M786,520 L912,520 L912,412" fill="none" stroke="#2E86C1" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-F1)"/>
+<text x="792" y="514" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9" font-weight="700" fill="#2E86C1" text-anchor="start">FETCH1_BTB_REDIRECT</text>
+<circle cx="830" cy="121" r="14" fill="#FFF" stroke="#2B3A31" stroke-width="1.8"/>
+<text x="830" y="125.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#2B3A31" text-anchor="middle">+4</text>
+<path d="M190,121 L816,121" fill="none" stroke="#2B3A31" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<path d="M844,121 L880,121 L880,150 L900,150" fill="none" stroke="#2B3A31" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<path d="M860,300 L900,300" fill="none" stroke="#2B3A31" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<text x="856" y="304" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9" font-weight="400" fill="#4A5A50" text-anchor="end">FETCH1_PC</text>
+<polygon points="900,124 940,178 940,370 900,424" fill="#F3F5F0" stroke="#2B3A31" stroke-width="1.6"/>
+<text x="904" y="153.5" font-family="'IBM Plex Mono',Consolas,monospace" font-size="8.5" font-weight="400" fill="#4A5A50" text-anchor="start">PC+4</text>
+<text x="904" y="199.5" font-family="'IBM Plex Mono',Consolas,monospace" font-size="8.5" font-weight="400" fill="#4A5A50" text-anchor="start">BTB</text>
+<text x="904" y="303.5" font-family="'IBM Plex Mono',Consolas,monospace" font-size="8.5" font-weight="400" fill="#4A5A50" text-anchor="start">hold</text>
+<text x="904" y="333.5" font-family="'IBM Plex Mono',Consolas,monospace" font-size="8.5" font-weight="400" fill="#4A5A50" text-anchor="start">F2</text>
+<text x="904" y="401.5" font-family="'IBM Plex Mono',Consolas,monospace" font-size="8.5" font-weight="400" fill="#4A5A50" text-anchor="start">EX</text>
+<text x="920" y="440" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="700" fill="#4A5A50" text-anchor="middle">next PC</text>
+<text x="790" y="330" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#4A5A50" text-anchor="start">priority</text>
+<text x="790" y="344" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#4A5A50" text-anchor="start">1 EXECUTE flush</text>
+<text x="790" y="356.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#4A5A50" text-anchor="start">2 FETCH2 redirect</text>
+<text x="790" y="369" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#4A5A50" text-anchor="start">3 I-cache miss: hold</text>
+<text x="790" y="381.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#4A5A50" text-anchor="start">4 BTB redirect</text>
+<text x="790" y="394" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#4A5A50" text-anchor="start">5 PC + 4</text>
+<rect x="790" y="412" width="82.39999999999999" height="17.5" rx="8.75" fill="#C0392B" fill-opacity="0.13" stroke="#C0392B"/>
+<text x="831.2" y="423.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#C0392B" text-anchor="middle">I-cache miss</text>
+<path d="M876,421 L928,421 L928,392" fill="none" stroke="#C0392B" stroke-width="1.4" stroke-dasharray="4 3" stroke-linejoin="round" marker-end="url(#m-miss)"/>
+<path d="M940,274 L990,274 L990,113 L30,113 L30,462 L40,462" fill="none" stroke="#2B3A31" stroke-width="2.2" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<rect x="1046" y="128" width="238" height="92" rx="6" fill="#FFFFFF" stroke="#2B3A31" stroke-width="1.5"/>
+<text x="1165" y="147" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#17251D" text-anchor="middle">Predecode</text>
+<text x="1165" y="162" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">opcode: branch? JAL? JALR?</text>
+<text x="1165" y="175.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">call: rd = ra or t0</text>
+<text x="1165" y="189" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">return: jalr x0, 0(ra or t0)</text>
+<rect x="1046" y="236" width="238" height="60" rx="6" fill="#FFFFFF" stroke="#2B3A31" stroke-width="1.5"/>
+<text x="1165" y="255" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#17251D" text-anchor="middle">Target adder</text>
+<text x="1165" y="270" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">FETCH2_PC + B or J immediate</text>
+<rect x="1046" y="312" width="238" height="214" rx="8" fill="#EAF6F8" stroke="#17A2B8" stroke-width="1.8"/>
+<text x="1058" y="332" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#17A2B8" text-anchor="start">Return Address Stack (RAS)</text>
+<text x="1058" y="347" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9" font-weight="400" fill="#8A968E" text-anchor="start">8 x 64-bit, src/Return_Address_Stack.sv</text>
+<rect x="1070" y="480" width="110" height="15" rx="1" fill="#FFF" stroke="#D5DBD0" stroke-width="1"/>
+<text x="1125" y="491.5" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#17251D" text-anchor="middle">0x2014</text>
+<rect x="1070" y="464" width="110" height="15" rx="1" fill="#FFF" stroke="#D5DBD0" stroke-width="1"/>
+<text x="1125" y="475.5" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#17251D" text-anchor="middle">0x2330</text>
+<rect x="1070" y="448" width="110" height="15" rx="1" fill="#FFF" stroke="#D5DBD0" stroke-width="1"/>
+<text x="1125" y="459.5" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#17251D" text-anchor="middle">0x2468</text>
+<rect x="1070" y="432" width="110" height="15" rx="1" fill="#F4F6F2" stroke="#D5DBD0" stroke-width="1"/>
+<text x="1125" y="443.5" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">-</text>
+<rect x="1070" y="416" width="110" height="15" rx="1" fill="#F4F6F2" stroke="#D5DBD0" stroke-width="1"/>
+<text x="1125" y="427.5" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">-</text>
+<rect x="1070" y="400" width="110" height="15" rx="1" fill="#F4F6F2" stroke="#D5DBD0" stroke-width="1"/>
+<text x="1125" y="411.5" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">-</text>
+<rect x="1070" y="384" width="110" height="15" rx="1" fill="#F4F6F2" stroke="#D5DBD0" stroke-width="1"/>
+<text x="1125" y="395.5" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">-</text>
+<rect x="1070" y="368" width="110" height="15" rx="1" fill="#F4F6F2" stroke="#D5DBD0" stroke-width="1"/>
+<text x="1125" y="379.5" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">-</text>
+<path d="M1210,456 L1184,456" fill="none" stroke="#17A2B8" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#m-F2)"/>
+<text x="1214" y="460" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#17A2B8" text-anchor="start">top</text>
+<text x="1190" y="386" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#4A5A50" text-anchor="start">call: push PC+4</text>
+<text x="1190" y="400" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#4A5A50" text-anchor="start">ret: pop</text>
+<text x="1058" y="514" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#4A5A50" text-anchor="start">pointer checkpointed per call/ret</text>
+<rect x="1046" y="542" width="238" height="104" rx="6" fill="#FFFFFF" stroke="#17A2B8" stroke-width="1.5"/>
+<text x="1165" y="561" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#17251D" text-anchor="middle">Redirect decision</text>
+<text x="1165" y="576" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">JAL, or branch predicted taken,</text>
+<text x="1165" y="589.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">or return (target = RAS top),</text>
+<text x="1165" y="603" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">and FETCH1 did not already jump:</text>
+<text x="1165" y="616.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">squash FETCH1, 1 bubble</text>
+<path d="M1165,220 L1165,236" fill="none" stroke="#2B3A31" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<path d="M1165,296 L1165,312" fill="none" stroke="#2B3A31" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<path d="M1165,526 L1165,542" fill="none" stroke="#2B3A31" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<path d="M1165,646 L1165,668 L1010,668 L1010,330 L940,330" fill="none" stroke="#17A2B8" stroke-width="2.2" stroke-linejoin="round" marker-end="url(#m-F2)"/>
+<text x="1020" y="684" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="700" fill="#17A2B8" text-anchor="start">FETCH2_PREDICTED_NEXT_PC</text>
+<rect x="1336" y="128" width="228" height="80" rx="6" fill="#FFFFFF" stroke="#2B3A31" stroke-width="1.5"/>
+<text x="1450" y="147" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#17251D" text-anchor="middle">BranchComparator</text>
+<text x="1450" y="162" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">== != &lt; &gt;= (signed, unsigned)</text>
+<text x="1450" y="175.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">on forwarded rs1, rs2</text>
+<rect x="1336" y="224" width="228" height="116" rx="6" fill="#FCE4EC" stroke="#C2185B" stroke-width="1.5"/>
+<text x="1450" y="243" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#17251D" text-anchor="middle">BranchControl</text>
+<text x="1450" y="258" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">actual direction and target</text>
+<text x="1450" y="271.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">vs the prediction that</text>
+<text x="1450" y="285" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">travelled down the pipe</text>
+<text x="1450" y="298.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">wrong: FLUSH (3 bubbles)</text>
+<path d="M1450,208 L1450,224" fill="none" stroke="#2B3A31" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<rect x="1336" y="356" width="228" height="176" rx="6" fill="#E6F4F1" stroke="#00796B" stroke-width="1.5"/>
+<text x="1450" y="375" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#17251D" text-anchor="middle">Train (every branch)</text>
+<text x="1450" y="390" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">BHT counter at the PC</text>
+<text x="1450" y="403.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">gshare counter at the index</text>
+<text x="1450" y="417" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">saved when it was predicted</text>
+<text x="1450" y="430.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">chooser: toward the one</text>
+<text x="1450" y="444" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">that was right</text>
+<text x="1450" y="457.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">BTB: insert taken branch / JAL</text>
+<rect x="1336" y="548" width="228" height="120" rx="6" fill="#FFFFFF" stroke="#C2185B" stroke-width="1.5"/>
+<text x="1450" y="567" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#17251D" text-anchor="middle">Repair (only after a flush)</text>
+<text x="1450" y="582" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">GLOBAL_HISTORY &lt;= checkpoint</text>
+<text x="1450" y="595.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">+ the real direction</text>
+<text x="1450" y="609" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">RAS pointer &lt;= checkpoint</text>
+<text x="1450" y="622.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">refetch from the right PC</text>
+<path d="M1450,340 L1450,356" fill="none" stroke="#00796B" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#m-pred)"/>
+<path d="M1450,532 L1450,548" fill="none" stroke="#C2185B" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#m-flush)"/>
+<path d="M1450,668 L1450,740 L960,740 L960,398 L940,398" fill="none" stroke="#C2185B" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#m-flush)"/>
+<text x="1200" y="756" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="700" fill="#C2185B" text-anchor="middle">EXECUTE_REDIRECT_PC + FLUSH_FETCH1_FETCH2_DECODE</text>
+<path d="M1336,470 L1316,470 L1316,790 L475,790 L475,782" fill="none" stroke="#00796B" stroke-width="1.4" stroke-dasharray="5 4" stroke-linejoin="round" marker-end="url(#m-pred)"/>
+<text x="740" y="812" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#00796B" text-anchor="start">training writes: one per resolved branch, at the table indexes saved when it was predicted</text>
+<rect x="20" y="836" width="560" height="226" rx="8" fill="#FFF" stroke="#D5DBD0" stroke-width="1.5"/>
+<text x="36" y="860" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#17251D" text-anchor="start">Every table entry is a 2-bit saturating counter</text>
+<circle cx="100" cy="928" r="36" fill="#C0392B" fill-opacity="0.18" stroke="#C0392B" stroke-width="2"/>
+<text x="100" y="924" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#17251D" text-anchor="middle">00 strong</text>
+<text x="100" y="938" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#17251D" text-anchor="middle">not taken</text>
+<path d="M132,912 Q160,894 188,912" fill="none" stroke="#1E8449" stroke-width="1.8" marker-end="url(#m-hit)"/>
+<text x="160" y="896" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#1E8449" text-anchor="middle">taken</text>
+<path d="M188,944 Q160,962 132,944" fill="none" stroke="#C0392B" stroke-width="1.8" marker-end="url(#m-miss)"/>
+<text x="160" y="972" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#C0392B" text-anchor="middle">not taken</text>
+<circle cx="220" cy="928" r="36" fill="#E59866" fill-opacity="0.18" stroke="#E59866" stroke-width="2"/>
+<text x="220" y="924" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#17251D" text-anchor="middle">01 weak</text>
+<text x="220" y="938" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#17251D" text-anchor="middle">not taken</text>
+<path d="M252,912 Q280,894 308,912" fill="none" stroke="#1E8449" stroke-width="1.8" marker-end="url(#m-hit)"/>
+<text x="280" y="896" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#1E8449" text-anchor="middle">taken</text>
+<path d="M308,944 Q280,962 252,944" fill="none" stroke="#C0392B" stroke-width="1.8" marker-end="url(#m-miss)"/>
+<text x="280" y="972" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#C0392B" text-anchor="middle">not taken</text>
+<circle cx="340" cy="928" r="36" fill="#82C99A" fill-opacity="0.18" stroke="#82C99A" stroke-width="2"/>
+<text x="340" y="924" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#17251D" text-anchor="middle">10 weak</text>
+<text x="340" y="938" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#17251D" text-anchor="middle">taken</text>
+<path d="M372,912 Q400,894 428,912" fill="none" stroke="#1E8449" stroke-width="1.8" marker-end="url(#m-hit)"/>
+<text x="400" y="896" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#1E8449" text-anchor="middle">taken</text>
+<path d="M428,944 Q400,962 372,944" fill="none" stroke="#C0392B" stroke-width="1.8" marker-end="url(#m-miss)"/>
+<text x="400" y="972" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#C0392B" text-anchor="middle">not taken</text>
+<circle cx="460" cy="928" r="36" fill="#1E8449" fill-opacity="0.18" stroke="#1E8449" stroke-width="2"/>
+<text x="460" y="924" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#17251D" text-anchor="middle">11 strong</text>
+<text x="460" y="938" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#17251D" text-anchor="middle">taken</text>
+<text x="36" y="1002" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="start">Predict taken when the counter is 2 or 3. One odd outcome only moves it one step, so a loop</text>
+<text x="36" y="1017" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="start">branch that falls through once at the end is not unlearned. Reset value: 10 (weakly taken).</text>
+<text x="36" y="1042" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="600" fill="#4A5A50" text-anchor="start">Cost: 128 + 64 + 128 counters = 640 bits of direction state, plus a 16-entry BTB.</text>
+<rect x="600" y="836" width="470" height="226" rx="8" fill="#FFF" stroke="#D5DBD0" stroke-width="1.5"/>
+<text x="616" y="860" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#17251D" text-anchor="start">What each case costs (bubbles = lost cycles)</text>
+<text x="616" y="892" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#17251D" text-anchor="start">not a branch, or not taken and predicted so</text>
+<rect x="1010" y="878" width="44" height="19" rx="9.5" fill="#1E8449" fill-opacity="0.13" stroke="#1E8449"/>
+<text x="1032" y="891" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#1E8449" text-anchor="middle">0</text>
+<text x="616" y="919" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#17251D" text-anchor="start">taken branch / JAL already in the BTB</text>
+<rect x="1010" y="905" width="44" height="19" rx="9.5" fill="#1E8449" fill-opacity="0.13" stroke="#1E8449"/>
+<text x="1032" y="918" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#1E8449" text-anchor="middle">0</text>
+<text x="616" y="946" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#17251D" text-anchor="start">taken branch / JAL not in the BTB yet (FETCH2)</text>
+<rect x="1010" y="932" width="44" height="19" rx="9.5" fill="#17A2B8" fill-opacity="0.13" stroke="#17A2B8"/>
+<text x="1032" y="945" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#17A2B8" text-anchor="middle">1</text>
+<text x="616" y="973" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#17251D" text-anchor="start">return predicted by the RAS (FETCH2)</text>
+<rect x="1010" y="959" width="44" height="19" rx="9.5" fill="#17A2B8" fill-opacity="0.13" stroke="#17A2B8"/>
+<text x="1032" y="972" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#17A2B8" text-anchor="middle">1</text>
+<text x="616" y="1000" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#17251D" text-anchor="start">direction or target wrong (EXECUTE flush)</text>
+<rect x="1010" y="986" width="44" height="19" rx="9.5" fill="#C2185B" fill-opacity="0.13" stroke="#C2185B"/>
+<text x="1032" y="999" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#C2185B" text-anchor="middle">3</text>
+<text x="616" y="1027" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#17251D" text-anchor="start">instruction cache miss (refill)</text>
+<rect x="1010" y="1013" width="44" height="19" rx="9.5" fill="#C0392B" fill-opacity="0.13" stroke="#C0392B"/>
+<text x="1032" y="1026" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#C0392B" text-anchor="middle">+11</text>
+<rect x="1090" y="836" width="490" height="226" rx="8" fill="#FFF" stroke="#D5DBD0" stroke-width="1.5"/>
+<text x="1106" y="860" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#17251D" text-anchor="start">Accuracy on 17_predictor_challenge (make arena)</text>
+<text x="1106" y="894" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#17251D" text-anchor="start">BHT alone</text>
+<rect x="1250" y="880" width="260" height="20" rx="3" fill="#F1F3EE" stroke="none" stroke-width="1.5"/>
+<rect x="1250" y="880" width="94.64000000000001" height="20" rx="3" fill="#E59866" stroke="none" stroke-width="1.5"/>
+<text x="1518" y="895" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#E59866" text-anchor="start">68.2%</text>
+<text x="1106" y="926" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#17251D" text-anchor="start">gshare alone</text>
+<rect x="1250" y="912" width="260" height="20" rx="3" fill="#F1F3EE" stroke="none" stroke-width="1.5"/>
+<rect x="1250" y="912" width="165.88000000000002" height="20" rx="3" fill="#17A2B8" stroke="none" stroke-width="1.5"/>
+<text x="1518" y="927" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#17A2B8" text-anchor="start">81.9%</text>
+<text x="1106" y="958" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#17251D" text-anchor="start">tournament (in RTL)</text>
+<rect x="1250" y="944" width="260" height="20" rx="3" fill="#F1F3EE" stroke="none" stroke-width="1.5"/>
+<rect x="1250" y="944" width="173.68000000000004" height="20" rx="3" fill="#00796B" stroke="none" stroke-width="1.5"/>
+<text x="1518" y="959" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#00796B" text-anchor="start">83.4%</text>
+<text x="1106" y="990" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#17251D" text-anchor="start">perceptron (model)</text>
+<rect x="1250" y="976" width="260" height="20" rx="3" fill="#F1F3EE" stroke="none" stroke-width="1.5"/>
+<rect x="1250" y="976" width="209.56" height="20" rx="3" fill="#6A5ACD" stroke="none" stroke-width="1.5"/>
+<text x="1518" y="991" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#6A5ACD" text-anchor="start">90.3%</text>
+<text x="1106" y="1022" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#17251D" text-anchor="start">TAGE (model)</text>
+<rect x="1250" y="1008" width="260" height="20" rx="3" fill="#F1F3EE" stroke="none" stroke-width="1.5"/>
+<rect x="1250" y="1008" width="240.24" height="20" rx="3" fill="#27AE60" stroke="none" stroke-width="1.5"/>
+<text x="1518" y="1023" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#27AE60" text-anchor="start">96.2%</text>
+<text x="1106" y="1048" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="start">axis starts at 50% (a coin flip). TAGE is the basis of current Intel, AMD and Arm predictors.</text>
+</svg>

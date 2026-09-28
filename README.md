@@ -3,11 +3,11 @@
 **Six stages. One instruction per clock. Watch a 64-bit RISC-V processor think.**
 
 Sixfold is a 64-bit RISC-V processor you can read, run, watch, and see as real silicon: a 6-stage pipelined
-RV64IM core with instruction and data caches, a tournament branch predictor, a branch target buffer
-and a return address stack, written in SystemVerilog and built to **teach how a modern RISC-V CPU works
+RV64IM core with instruction and data caches, a tournament branch predictor, a branch target buffer,
+a return address stack and a Wallace-tree multiplier, written in SystemVerilog and built to **teach how a modern RISC-V CPU works
 and how to read its diagrams**.
 
-![The Riscv64 datapath](docs/img/cpu_block_diagram.svg)
+![The Sixfold datapath](docs/img/cpu_block_diagram.svg)
 
 | | |
 |---|---|
@@ -18,11 +18,51 @@ and how to read its diagrams**.
 | **Memory** | 4 KiB instruction cache with next-line prefetch and 4 KiB write-through data cache, both 2-way set-associative with LRU replacement and next-line prefetch (32-byte lines), in front of a 10-cycle main memory |
 | **Predictor arena** | the real branch stream of each program replayed through a per-branch table, gshare, the tournament, a perceptron and TAGE (the families in AMD Zen and other modern cores): [MODERN_CPUS.md](docs/MODERN_CPUS.md) |
 | **Traps** | `ecall`, `ebreak`, `mret` with `mtvec`, `mepc`, `mcause`, `mstatus`, `mscratch`: enough to run a tiny kernel ([`15_system_calls.s`](programs/15_system_calls.s)) |
-| **Clock (logic only)** | about **180 MHz** on SkyWater 130 nm and **1.37 GHz** on the ASAP7 7 nm research kit, with the full M extension: [PERFORMANCE.md](docs/PERFORMANCE.md) |
+| **Multiply / divide** | iterative: a 64 x 16-bit Wallace-tree step with a carry-save accumulator (multiply in 8 cycles), 1 quotient bit per cycle after a leading-zero-counter skip (divide in 5 + significant bits) |
+| **Clock (logic only)** | about **265 MHz** on SkyWater 130 nm and **1.92 GHz** on the ASAP7 7 nm research kit, with the full M extension (up from 1.37 GHz): [PERFORMANCE.md](docs/PERFORMANCE.md) |
 | **Two builds** | the performance edition (default) and a simple baseline pipeline (`-DBASELINE`), both in the same RTL behind parameters |
-| **Verified** | 15 programs + an 859-case self-checking test, predictor on and off, **both builds**: the RTL matches a software twin on **every clock cycle** (64 runs) |
+| **Verified** | 18 programs + an 864-case self-checking test, predictor on and off, **both builds**: the RTL matches a software twin on **every clock cycle** (76 runs) |
 | **Silicon** | the original design's real sky130 layout, timing and area, plus sky130 synthesis of this RTL |
 | **Runs on** | Icarus Verilog, Verilator, Yosys, any web browser |
+
+## How it works, in four pictures
+
+### 1. The front end: Branch Target Buffer, Branch History Table, gshare, chooser, Return Address Stack
+
+![Branch prediction front end](docs/img/diagrams/branch_prediction.svg)
+
+Every cycle FETCH1 must pick the next PC **before** the instruction it just asked for has even
+arrived. Four tables are read in parallel with the instruction cache: the **Branch Target Buffer**
+(has this PC jumped before, and where to?), the **Branch History Table** (what does this branch usually
+do?), **gshare** (what did it do the last time the recent branches went this way?) and the
+**chooser** (which of the two to trust for this branch). FETCH2 corrects the cheap cases (a JAL, a
+taken branch the BTB did not know, a `ret` predicted by the **Return Address Stack**) for one lost
+cycle; EXECUTE checks every guess, trains every table, and repairs the speculative history after a
+wrong one (3 lost cycles). [Chapter 5](docs/learn/05_branch_prediction.md) and [MODERN_CPUS.md](docs/MODERN_CPUS.md) go further
+(perceptron, TAGE).
+
+### 2. One cache lookup: set, tags, ways, LRU, refill and prefetch
+
+![Cache lookup](docs/img/diagrams/cache.svg)
+
+Both caches split the address into **tag, set and offset**. The set picks one row in each of the two
+ways; two comparators check the stored tags against the address tag; a hit returns the data in the
+same cycle. A miss stalls for 11 cycles while the refill engine fetches the 32-byte line, evicts the
+least-recently-used way, and then fetches the **next** line in the background.
+
+### 3. The memory hierarchy, next to a desktop core
+
+![Memory hierarchy](docs/img/diagrams/memory_hierarchy.svg)
+
+### 4. The clock: from 7.5 MHz to 1.92 GHz, and what 2.5 GHz and 5 GHz take
+
+![Clock roadmap](docs/img/diagrams/clock_roadmap.svg)
+
+The clock period is the slowest path between two registers. Every "done" step above was measured
+with `tools/timing.sh` and verified cycle by cycle against the model; the "next" steps are how
+commercial 2.5 to 5 GHz cores get there (deeper pipelines, pipelined caches, out-of-order execution,
+custom circuits), each with its price in cycles or area: [PERFORMANCE.md](docs/PERFORMANCE.md).
+All four figures are drawn by `make diagrams` from the same parameters as the RTL.
 
 ## Open the live site
 
@@ -98,10 +138,13 @@ stages. Try `node tools/rv.mjs encode "ld a0, 16(sp)"`.
 The baseline divides 64 bits in a single 133 ns cycle; the performance edition divides one bit per
 cycle, uses Kogge-Stone prefix adders, and wins cycles back with a tournament predictor, a Branch
 Target Buffer, a Return Address Stack and precise load stalls, while its caches make the memory
-realistic. Result: about 180 MHz (logic-only, sky130 typical corner) instead of about 7.5 MHz, and
-1.37 GHz for the same RTL on a 7 nm-class library.
-[PERFORMANCE.md](docs/PERFORMANCE.md) has every step, every trade-off (divide-heavy code needs more
-cycles), and why 2.5 GHz is not possible in a 130 nm process.
+realistic. A second round of critical-path work (a Wallace-tree multiplier with a carry-save
+accumulator, a leading-zero counter tree, decisions taken one stage earlier, and slow control
+signals kept off large register enables) took the 7 nm result from 729 ps to 522 ps.
+Result: about 265 MHz (logic-only, sky130 typical corner) instead of about 7.5 MHz, and 1.92 GHz for
+the same RTL on a 7 nm-class library.
+[PERFORMANCE.md](docs/PERFORMANCE.md) has every step, every trade-off (multiply and divide take more
+cycles), and what 2.5 GHz and 5 GHz would take.
 
 ```bash
 make test                                   # both builds, every cycle compared with the RTL
@@ -122,7 +165,7 @@ shows the price: the predictor's area grows about 4x for every 2 extra bits.
 
 ![CPI stack](docs/img/charts/cpi_stack.svg)
 
-The model tags every bubble with its cause, so `cycles = N + 5 + L + 3F + R + K` holds **exactly** for
+The model tags every bubble with its cause, so `cycles = N + 5 + L + 3F + R + K + I + D` holds **exactly** for
 every program and both builds ([MATH.md](docs/MATH.md), checked by `make math`). Numbers below are the
 performance edition.
 
@@ -134,14 +177,14 @@ performance edition.
 | [`03_load_use`](programs/03_load_use.s) | the one data hazard forwarding cannot fix | 40 | 3.64 | 40 | 3.64 |
 | [`04_branch_penalty`](programs/04_branch_penalty.s) | what a branch costs in this 6-stage pipe | 53 | 1.61 | 76 | 2.30 |
 | [`05_fibonacci`](programs/05_fibonacci.s) | iterative Fibonacci, fib(50) in a 64-bit register | 328 | 1.08 | 328 | 1.08 |
-| [`06_bubble_sort`](programs/06_bubble_sort.s) | sort 10 signed 64-bit numbers in memory | 992 | 1.38 | 1105 | 1.53 |
-| [`07_factorial_recursive`](programs/07_factorial_recursive.s) | recursion, the stack, CALL and RET | 463 | 1.96 | 463 | 1.96 |
-| [`08_gcd_euclid`](programs/08_gcd_euclid.s) | greatest common divisor with REM (M extension) | 76 | 4.00 | 73 | 3.84 |
-| [`09_primes_sieve`](programs/09_primes_sieve.s) | Sieve of Eratosthenes | 16868 | 1.14 | 18847 | 1.27 |
-| [`10_print_numbers`](programs/10_print_numbers.s) | print Fibonacci numbers in decimal using DIVU/REMU | 1024 | 1.90 | 1148 | 2.13 |
+| [`06_bubble_sort`](programs/06_bubble_sort.s) | sort 10 signed 64-bit numbers in memory | 1002 | 1.39 | 1115 | 1.55 |
+| [`07_factorial_recursive`](programs/07_factorial_recursive.s) | recursion, the stack, CALL and RET | 482 | 2.04 | 482 | 2.04 |
+| [`08_gcd_euclid`](programs/08_gcd_euclid.s) | greatest common divisor with REM (M extension) | 82 | 4.32 | 79 | 4.16 |
+| [`09_primes_sieve`](programs/09_primes_sieve.s) | Sieve of Eratosthenes | 16899 | 1.14 | 18878 | 1.27 |
+| [`10_print_numbers`](programs/10_print_numbers.s) | print Fibonacci numbers in decimal using DIVU/REMU | 1138 | 2.12 | 1262 | 2.35 |
 | [`11_gshare_patterns`](programs/11_gshare_patterns.s) | a branch that ALTERNATES taken / not-taken | 1139 | 1.03 | 2020 | 1.83 |
-| [`12_measure_cpi`](programs/12_measure_cpi.s) | a program that measures its OWN performance | 151 | 1.59 | 204 | 2.15 |
-| [`13_function_call_cost`](programs/13_function_call_cost.s) | why function calls are not free on this pipeline | 277 | 2.45 | 300 | 2.65 |
+| [`12_measure_cpi`](programs/12_measure_cpi.s) | a program that measures its OWN performance | 154 | 1.62 | 207 | 2.18 |
+| [`13_function_call_cost`](programs/13_function_call_cost.s) | why function calls are not free on this pipeline | 294 | 2.60 | 317 | 2.81 |
 | [`14_false_load_stall`](programs/14_false_load_stall.s) | a stall caused by bits that only LOOK like a register | 82 | 2.16 | 81 | 2.13 |
 | [`15_system_calls`](programs/15_system_calls.s) | traps, the way an operating system gets control | 116 | 2.19 | 119 | 2.25 |
 | [`16_cache_conflicts`](programs/16_cache_conflicts.s) | why caches have "ways" | 440 | 2.57 | 472 | 2.76 |
@@ -168,7 +211,7 @@ the pipeline registers): [SILICON.md](docs/SILICON.md).
   [`model/core.js`](model/core.js). Their per-cycle traces (what is in each of the six stages), the
   cycle count, the output, `tohost` and all 32 registers must match exactly, with the predictor on
   and off. `# EXPECT:` lines in each program are checked too.
-* [`tests/isa_selfcheck.s`](tests/isa_selfcheck.s): 859 generated test cases whose expected values
+* [`tests/isa_selfcheck.s`](tests/isa_selfcheck.s): 864 generated test cases whose expected values
   come from an independent Python reference ([`tools/gen_selfcheck.py`](tools/gen_selfcheck.py)).
   It reports through the `tohost` CSR the way riscv-tests do.
 * `make lint`: Verilator with all warnings (except the naming style this code uses on purpose).
@@ -176,9 +219,10 @@ the pipeline registers): [SILICON.md](docs/SILICON.md).
 
 ## Experiments
 
-Ten labs in [EXPERIMENTS.md](docs/EXPERIMENTS.md): history length, counter reset values, a
+Fourteen labs in [EXPERIMENTS.md](docs/EXPERIMENTS.md): history length, counter reset values, a
 multi-cycle divider, removing false load stalls, a return address stack, a branch target buffer, a
-faster adder for the critical path, forwarding into EXECUTE, and putting the caches back.
+faster adder for the critical path, forwarding into EXECUTE, cache experiments, bigger and smarter
+predictors, chasing the 7 nm critical path, and Booth recoding for the multiplier.
 
 ## Repository map
 
@@ -199,10 +243,10 @@ faster adder for the critical path, forwarding into EXECUTE, and putting the cac
 
 ```text
 make test / test-model / math        verification (both builds)
-make timing                          sky130 logic-only clock estimate
+make timing                          sky130 logic-only clock estimate (tools/timing.sh performance asap7: 7 nm)
 make run / pipe / cycle / bp         explore a program     (PROG=..., BP=0, HIST=6, CONFIG=baseline)
 make rtl / vsim / wave               run on Icarus, Verilator, or open GTKWave
-make docs / charts / diagram         regenerate generated pages and pictures
+make docs / charts / diagram / diagrams / arena   regenerate generated pages and pictures
 make synth / schematics              sky130 synthesis per module, Yosys schematics
 make lint / serve / clean
 ```

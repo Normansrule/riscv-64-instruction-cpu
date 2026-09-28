@@ -63,6 +63,7 @@ module Riscv64 #(
   logic LOAD_STALL; // Load Hazard: Instead of a full stall only hold the Fetch and Decode, send a NOP to Execute, and advance the load logic for the Memory and Writeback
   logic FLUSH_FETCH1_FETCH2_DECODE; // Control Hazard: Fetch1 & Fetch2 & Decode FLUSH for mispredicted branching
   logic ADVANCE_FRONT_END; // Fetch1, Fetch2 and Decode move forward this cycle (no flush and no stall)
+  logic FRONT_END_NOT_STALLED; // No stall (a flush may still be happening): enough for anything a flush overrides anyway
   logic MULTIPLY_DIVIDE_STALL; // An M instruction in Execute is still iterating: hold Fetch1 to Execute, bubble into Memory
   logic DATA_CACHE_STALL; // The load in Execute missed in the data cache: hold Fetch1 to Execute, bubble into Memory
   logic HALT_NOW; // The TOHOST writing instruction is in Writeback this cycle: it finishes, everything else freezes
@@ -130,11 +131,7 @@ module Riscv64 #(
   logic FETCH2_PREDICTED_BRANCH_TAKEN; // Store the Magical Almighty Branch Predictor's prediction
   logic [GSHARE_HISTORY_BITS-1:0] FETCH2_GSHARE_INDEX; // Index for the Branch History Table
   logic FETCH2_BTB_REDIRECTED; // FETCH1 already jumped to this instruction's target (via the BTB)
-  logic [63:0] FETCH2_PC_ADD_4; // Computed once here and carried down the pipeline (keeps adders off the flush path)
-  logic FETCH2_INCREMENT_CARRY_UNUSED;
-  ParallelPrefixAdder #(.WIDTH(64)) fetch2_incrementer (
-    .A (FETCH2_PC), .B (64'd4), .CARRY_IN (1'b0), .SUM (FETCH2_PC_ADD_4), .CARRY_OUT (FETCH2_INCREMENT_CARRY_UNUSED)
-  );
+  logic [63:0] FETCH2_PC_ADD_4; // FETCH1's PC + 4, registered beside FETCH2_PC and carried down the pipeline: no adder after FETCH1
 
   assign FETCH2_OPCODE = FETCH2_INSTRUCTION[6:0]; // Assign FETCH Instruction's opcode
   assign FETCH2_IS_A_BRANCH_INSTRUCTION = (FETCH2_OPCODE == OPC_BRANCH); // If opcode is the same as B-type then its a branch
@@ -177,8 +174,9 @@ module Riscv64 #(
     .reset (reset),
     .TOP_ADDRESS (RETURN_ADDRESS_STACK_TOP),
     .POINTER (RETURN_ADDRESS_STACK_POINTER),
-    .PUSH (RAS_ENABLE && !FREEZE && ADVANCE_FRONT_END && FETCH2_VALID && FETCH2_IS_A_CALL),
-    .POP (RAS_ENABLE && !FREEZE && ADVANCE_FRONT_END && FETCH2_VALID && FETCH2_IS_A_RETURN),
+    // (a flush in the same cycle wins inside the stack: RESTORE has priority over PUSH and POP)
+    .PUSH (RAS_ENABLE && !FREEZE && FRONT_END_NOT_STALLED && FETCH2_VALID && FETCH2_IS_A_CALL),
+    .POP (RAS_ENABLE && !FREEZE && FRONT_END_NOT_STALLED && FETCH2_VALID && FETCH2_IS_A_RETURN),
     .PUSH_ADDRESS (FETCH2_PC_ADD_4),
     .RESTORE (RAS_ENABLE && !FREEZE && FLUSH_FETCH1_FETCH2_DECODE),
     .RESTORE_POINTER (EXECUTE_RAS_CHECKPOINT + {{(RAS_POINTER_BITS-1){1'b0}}, EXECUTE_IS_A_CALL} - {{(RAS_POINTER_BITS-1){1'b0}}, EXECUTE_IS_A_RETURN})
@@ -226,7 +224,7 @@ module Riscv64 #(
     .FETCH_PREDICTED_TAKEN (FETCH1_GSHARE_PREDICTED_TAKEN),
     .FETCH_PREDICTION_INDEX (FETCH1_GSHARE_INDEX),
     .GLOBAL_HISTORY (GLOBAL_HISTORY),
-    .SPECULATIVE_UPDATE (!FREEZE && ADVANCE_FRONT_END && FETCH2_VALID && FETCH2_IS_A_BRANCH_INSTRUCTION), // Fetch 2 branch moving to Decode
+    .SPECULATIVE_UPDATE (!FREEZE && FRONT_END_NOT_STALLED && FETCH2_VALID && FETCH2_IS_A_BRANCH_INSTRUCTION), // Fetch 2 branch moving to Decode
     .SPECULATIVE_TAKEN (FETCH2_PREDICTED_BRANCH_TAKEN),
     .UPDATE_PREDICTION (!FREEZE && EXECUTE_VALID && EXECUTE_UPDATE_BRANCH_PREDICTOR),
     .UPDATE_PREDICTION_INDEX (EXECUTE_GSHARE_INDEX),
@@ -407,10 +405,12 @@ module Riscv64 #(
   logic [63:0] EXECUTE_REDIRECT_PC; // Where Fetch 1 restarts after a flush
   writeback_select_t EXECUTE_WRITEBACK_SELECT; // Writeback logic in Execute Stage
   alu_op_t EXECUTE_ALU_OPERATION; // ALU operation in the Execute Stage
+  logic EXECUTE_ALU_SUBTRACT; // Decoded one stage early: the adder's subtract control is a flip-flop, not logic after one
+  logic [2:0] EXECUTE_MULTIPLY_DIVIDE_PREDECODED; // {A signed, B signed, word divide}, decoded one stage early too
 
   logic [63:0] EXECUTE_PC_ADD_4; // Hold Next Program Counter at the Execute Stage
-  logic [63:0] EXECUTE_ALU_INPUT_A; // ALU input A is either Register 1 Data or the Program Counter at Execute Stage
-  logic [63:0] EXECUTE_ALU_INPUT_B; // ALU input B is either Register 2 or the Immediate value at the Execute Stage
+  logic [63:0] EXECUTE_ALU_INPUT_A; // ALU input A (register): rs1 or the PC, chosen in DECODE
+  logic [63:0] EXECUTE_ALU_INPUT_B; // ALU input B (register): rs2 or the immediate, chosen in DECODE
   logic [63:0] EXECUTE_ALU_OUTPUT; // Raw ALU Output
   logic [63:0] EXECUTE_MULTIPLY_DIVIDE_OUTPUT; // Raw Multiply Divide Unit Output
   logic [63:0] EXECUTE_ALU_RESULT; // Result at the Execute Stage (ALU or Multiply Divide Unit)
@@ -424,13 +424,14 @@ module Riscv64 #(
   logic EXECUTE_WRITES_TOHOST; // This instruction writes the TOHOST CSR (the program is finishing)
 
   // EXECUTE_PC_ADD_4 is a pipeline register (computed in Fetch 2): no incrementer on the flush path
-  assign EXECUTE_ALU_INPUT_A = EXECUTE_ALU_INPUT_A_IS_PC ? EXECUTE_PC : EXECUTE_REGISTER1_DATA; // Determine input A to ALU
-  assign EXECUTE_ALU_INPUT_B = EXECUTE_ALU_INPUT_B_IS_IMMEDIATE ? EXECUTE_IMMEDIATE : EXECUTE_REGISTER2_DATA; // Determine input B to ALU
+  // The ALU inputs are chosen in DECODE (DECODE_ALU_INPUT_A/B) and arrive from flip-flops: no multiplexer, and no
+  // select signal fanning out to 128 bits, in front of the adder.
 
   ALU alu (
     .A (EXECUTE_ALU_INPUT_A),
     .B (EXECUTE_ALU_INPUT_B),
     .ALUop (EXECUTE_ALU_OPERATION),
+    .SUBTRACT_MODE (EXECUTE_ALU_SUBTRACT),
     .ALU_IS_WORD_OPERATION (EXECUTE_ALU_IS_WORD_OPERATION),
     .ALUOut (EXECUTE_ALU_OUTPUT)
   );
@@ -447,6 +448,7 @@ module Riscv64 #(
         .B (EXECUTE_REGISTER2_DATA),
         .MULTIPLY_DIVIDE_OPERATION (EXECUTE_ALU_OPERATION),
         .IS_WORD_OPERATION (EXECUTE_ALU_IS_WORD_OPERATION),
+        .PREDECODED (EXECUTE_MULTIPLY_DIVIDE_PREDECODED),
         .READY (MULTIPLY_DIVIDE_READY),
         .MULTIPLY_DIVIDE_RESULT (EXECUTE_MULTIPLY_DIVIDE_OUTPUT)
       );
@@ -502,16 +504,22 @@ module Riscv64 #(
   assign FLUSH_FETCH1_FETCH2_DECODE = EXECUTE_VALID && (EXECUTE_FLUSH || EXECUTE_IS_AN_ECALL || EXECUTE_IS_AN_EBREAK || EXECUTE_IS_AN_MRET); // Control Hazard: misprediction, JALR, or a trap
   assign dcache_re = EXECUTE_VALID && EXECUTE_MEMORY_READ_ENABLE;
   assign DATA_CACHE_STALL = dcache_re && !dcache_hit;
-  assign ADVANCE_FRONT_END = !FLUSH_FETCH1_FETCH2_DECODE && !DATA_CACHE_STALL && !LOAD_STALL && !MULTIPLY_DIVIDE_STALL; // The front of the pipeline moves only when nothing is being flushed or stalled
+  assign FRONT_END_NOT_STALLED = !DATA_CACHE_STALL && !LOAD_STALL && !MULTIPLY_DIVIDE_STALL;
+  assign ADVANCE_FRONT_END = !FLUSH_FETCH1_FETCH2_DECODE && FRONT_END_NOT_STALLED; // The front of the pipeline moves only when nothing is being flushed or stalled
   assign EXECUTE_BTB_UPDATE = BTB_ENABLE && !FREEZE && EXECUTE_VALID && ((EXECUTE_IS_A_BRANCH_INSTRUCTION && EXECUTE_BRANCH_TAKEN) || EXECUTE_IS_A_JAL_INSTRUCTION);
 
   // Rewind the Global History on a flush: the checkpoint, plus the real direction if the flushing instruction is itself a branch
   assign EXECUTE_RESTORED_GLOBAL_HISTORY = EXECUTE_IS_A_BRANCH_INSTRUCTION ?
       {EXECUTE_GLOBAL_HISTORY_CHECKPOINT[GSHARE_HISTORY_BITS-2:0], EXECUTE_BRANCH_WAS_ACTUALLY_TAKEN} : EXECUTE_GLOBAL_HISTORY_CHECKPOINT;
 
+  // A store only needs the low 3 address bits to place its bytes, and a store address is always rs1 + imm:
+  // a private 3-bit adder gives them without waiting for the 64-bit ALU and its result multiplexer.
+  logic [2:0] EXECUTE_STORE_BYTE_OFFSET;
+  assign EXECUTE_STORE_BYTE_OFFSET = EXECUTE_REGISTER1_DATA[2:0] + EXECUTE_IMMEDIATE[2:0];
+
   StoreControl store_control (
     .STORE_FUNCT3 (EXECUTE_FUNCT3),
-    .MEMORY_ADDRESS (EXECUTE_ALU_RESULT),
+    .MEMORY_ADDRESS ({EXECUTE_ALU_RESULT[63:3], EXECUTE_STORE_BYTE_OFFSET}),
     .MEMORY_INFO (EXECUTE_REGISTER2_DATA),
     .WRITE_MASK_FOR_STORE (EXECUTE_STORE_MASK),
     .DATA_TO_STORE (EXECUTE_STORE_DATA)
@@ -600,6 +608,7 @@ module Riscv64 #(
       // ========== Fetch 2 ==========
       FETCH2_VALID <= 1'b0;
       FETCH2_PC <= 64'd0;
+      FETCH2_PC_ADD_4 <= 64'd4;
       FETCH2_INSTRUCTION <= INSTR_NOP;
       FETCH2_PREDICTED_BRANCH_TAKEN <= 1'b0;
       FETCH2_GSHARE_INDEX <= '0;
@@ -628,6 +637,8 @@ module Riscv64 #(
       EXECUTE_PC <= 64'd0;
       EXECUTE_INSTRUCTION <= INSTR_NOP;
       EXECUTE_REGISTER1_DATA <= 64'd0;
+      EXECUTE_ALU_INPUT_A <= 64'd0;
+      EXECUTE_ALU_INPUT_B <= 64'd0;
       EXECUTE_REGISTER2_DATA <= 64'd0;
       EXECUTE_IMMEDIATE <= 64'd0;
       EXECUTE_DESTINATION_REGISTER_ADDRESS <= 5'd0;
@@ -650,6 +661,8 @@ module Riscv64 #(
       EXECUTE_GLOBAL_HISTORY_CHECKPOINT <= '0;
       EXECUTE_WRITEBACK_SELECT <= WRITEBACK_ALU;
       EXECUTE_ALU_OPERATION <= ALU_XXX;
+      EXECUTE_ALU_SUBTRACT <= 1'b0;
+      EXECUTE_MULTIPLY_DIVIDE_PREDECODED <= 3'b000;
       EXECUTE_PC_TARGET <= 64'd0;
       EXECUTE_PC_ADD_4 <= 64'd0;
       EXECUTE_RETURN_PREDICTED <= 1'b0;
@@ -707,6 +720,68 @@ module Riscv64 #(
       WRITEBACK_DATA <= MEMORY_FORWARD_DATA; // Determined by Memory Stage Writeback MUX
       WRITEBACK_WRITES_TOHOST <= MEMORY_WRITES_TOHOST;
 
+      // Operand registers of Execute: they cause nothing by themselves (every side effect is gated by
+      // EXECUTE_VALID and the enables below), so they only need to HOLD while an instruction is kept in
+      // Execute (cache miss, multiply/divide). On a flush or a load stall they may load freely: Execute
+      // holds a bubble then. Their enable therefore never waits for the branch outcome, which removes the
+      // branch compare -> FLUSH -> enable of ~1,000 flip-flops path.
+      if (!DATA_CACHE_STALL && !MULTIPLY_DIVIDE_STALL) begin
+          EXECUTE_PC <= DECODE_PC;
+          EXECUTE_REGISTER1_DATA <= DECODE_FORWARDED_REGISTER1_DATA;
+          EXECUTE_ALU_INPUT_A <= DECODE_ALU_INPUT_A_IS_PC ? DECODE_PC : DECODE_FORWARDED_REGISTER1_DATA;
+          EXECUTE_ALU_INPUT_B <= DECODE_ALU_INPUT_B_IS_IMMEDIATE ? DECODE_IMMEDIATE : DECODE_FORWARDED_REGISTER2_DATA;
+          EXECUTE_REGISTER2_DATA <= DECODE_FORWARDED_REGISTER2_DATA;
+          EXECUTE_IMMEDIATE <= DECODE_IMMEDIATE;
+          EXECUTE_DESTINATION_REGISTER_ADDRESS <= DECODE_DESTINATION_REGISTER_ADDRESS;
+          EXECUTE_FUNCT3 <= DECODE_FUNCT3;
+          EXECUTE_CSR_ADDRESS <= DECODE_CSR_ADDRESS;
+          EXECUTE_CSR_WRITE_USING_IMMEDIATE <= DECODE_CSR_WRITE_USING_IMMEDIATE;
+          EXECUTE_ALU_INPUT_A_IS_PC <= DECODE_ALU_INPUT_A_IS_PC;
+          EXECUTE_ALU_INPUT_B_IS_IMMEDIATE <= DECODE_ALU_INPUT_B_IS_IMMEDIATE;
+          EXECUTE_ALU_IS_WORD_OPERATION <= DECODE_ALU_IS_WORD_OPERATION;
+          EXECUTE_PREDICTED_BRANCH_TAKEN <= DECODE_PREDICTED_BRANCH_TAKEN;
+          EXECUTE_GSHARE_INDEX <= DECODE_GSHARE_INDEX;
+          EXECUTE_GLOBAL_HISTORY_CHECKPOINT <= DECODE_GLOBAL_HISTORY_CHECKPOINT;
+          EXECUTE_WRITEBACK_SELECT <= DECODE_WRITEBACK_SELECT;
+          EXECUTE_ALU_OPERATION <= DECODE_ALU_OPERATION;
+          EXECUTE_ALU_SUBTRACT <= (DECODE_ALU_OPERATION == ALU_SUB) || (DECODE_ALU_OPERATION == ALU_SLT) || (DECODE_ALU_OPERATION == ALU_SLTU);
+          EXECUTE_MULTIPLY_DIVIDE_PREDECODED <= {
+            (DECODE_ALU_OPERATION == ALU_MULH) || (DECODE_ALU_OPERATION == ALU_MULHSU) || (DECODE_ALU_OPERATION == ALU_DIV) || (DECODE_ALU_OPERATION == ALU_REM),
+            (DECODE_ALU_OPERATION == ALU_MULH) || (DECODE_ALU_OPERATION == ALU_DIV) || (DECODE_ALU_OPERATION == ALU_REM),
+            DECODE_ALU_IS_WORD_OPERATION && ((DECODE_ALU_OPERATION == ALU_DIV) || (DECODE_ALU_OPERATION == ALU_DIVU) || (DECODE_ALU_OPERATION == ALU_REM) || (DECODE_ALU_OPERATION == ALU_REMU))};
+          EXECUTE_PC_TARGET <= DECODE_PC_TARGET;
+          EXECUTE_PC_ADD_4 <= DECODE_PC_ADD_4;
+          EXECUTE_RAS_CHECKPOINT <= DECODE_RAS_CHECKPOINT;
+          EXECUTE_GSHARE_PREDICTED_TAKEN <= DECODE_GSHARE_PREDICTED_TAKEN;
+          EXECUTE_BHT_PREDICTED_TAKEN <= DECODE_BHT_PREDICTED_TAKEN;
+      end
+
+      // Front-end data registers (FETCH2_*, DECODE_*): the same idea. A flush only has to clear FETCH2_VALID and
+      // DECODE_VALID; the data behind them may load whatever arrives. Only a stall must hold them.
+      if (FRONT_END_NOT_STALLED) begin
+          DECODE_PC <= FETCH2_PC;
+          DECODE_INSTRUCTION <= FETCH2_INSTRUCTION;
+          DECODE_PREDICTED_BRANCH_TAKEN <= FETCH2_PREDICTED_BRANCH_TAKEN;
+          DECODE_GSHARE_INDEX <= FETCH2_GSHARE_INDEX;
+          DECODE_GLOBAL_HISTORY_CHECKPOINT <= GLOBAL_HISTORY; // History BEFORE this instruction's own speculative update
+          DECODE_PC_TARGET <= FETCH2_REDIRECT_TARGET;
+          DECODE_PC_ADD_4 <= FETCH2_PC_ADD_4;
+          DECODE_RETURN_PREDICTED <= FETCH2_RETURN_PREDICTED;
+          DECODE_IS_A_CALL <= RAS_ENABLE && FETCH2_IS_A_CALL;
+          DECODE_IS_A_RETURN <= RAS_ENABLE && FETCH2_IS_A_RETURN;
+          DECODE_RAS_CHECKPOINT <= RETURN_ADDRESS_STACK_POINTER; // Stack pointer BEFORE this instruction's own push or pop
+          DECODE_GSHARE_PREDICTED_TAKEN <= FETCH2_GSHARE_PREDICTED_TAKEN;
+          DECODE_BHT_PREDICTED_TAKEN <= FETCH2_BHT_PREDICTED_TAKEN;
+          FETCH2_GSHARE_PREDICTED_TAKEN <= FETCH1_GSHARE_PREDICTED_TAKEN;
+          FETCH2_BHT_PREDICTED_TAKEN <= FETCH1_BHT_PREDICTED_TAKEN;
+          FETCH2_PC <= FETCH1_PC;
+          FETCH2_PC_ADD_4 <= FETCH1_PC_ADD_4;
+          FETCH2_INSTRUCTION <= icache_dout;
+          FETCH2_PREDICTED_BRANCH_TAKEN <= FETCH1_PREDICTED_BRANCH_TAKEN;
+          FETCH2_GSHARE_INDEX <= FETCH1_GSHARE_INDEX;
+          FETCH2_BTB_REDIRECTED <= FETCH1_BTB_REDIRECT;
+      end
+
       if (FLUSH_FETCH1_FETCH2_DECODE) begin // Control Hazard: Flush Taken (Misprediction occurred, inject NOP into Execute)
         EXECUTE_VALID <= 1'b0;
         EXECUTE_INSTRUCTION <= INSTR_NOP;
@@ -722,11 +797,9 @@ module Riscv64 #(
         EXECUTE_IS_AN_MRET <= 1'b0;
         // Fetch 2 transition to Decode: the Decode instruction was on the wrong path
         DECODE_VALID <= 1'b0;
-        DECODE_INSTRUCTION <= INSTR_NOP;
         // Fetch 1 Transition to Fetch 2 with Program Counter Update for Fetch 1 and Fetch 2 and Decode Flush
         FETCH1_PC <= EXECUTE_REDIRECT_PC;
         FETCH2_VALID <= 1'b0;
-        FETCH2_INSTRUCTION <= INSTR_NOP;
       end
       else if (DATA_CACHE_STALL) begin // The load in Execute is waiting for its cache line (checked before LOAD_STALL:
         // the load must not move on without its data). Everything up to Execute holds; a bubble goes into Memory.
@@ -759,68 +832,27 @@ module Riscv64 #(
       else begin // No Stall Occurring continue normally
         // Continue updated Execute like Normal
         EXECUTE_VALID <= DECODE_VALID;
-        EXECUTE_PC <= DECODE_PC;
         EXECUTE_INSTRUCTION <= DECODE_INSTRUCTION;
-        EXECUTE_REGISTER1_DATA <= DECODE_FORWARDED_REGISTER1_DATA;
-        EXECUTE_REGISTER2_DATA <= DECODE_FORWARDED_REGISTER2_DATA;
-        EXECUTE_IMMEDIATE <= DECODE_IMMEDIATE;
-        EXECUTE_DESTINATION_REGISTER_ADDRESS <= DECODE_DESTINATION_REGISTER_ADDRESS;
-        EXECUTE_FUNCT3 <= DECODE_FUNCT3;
-        EXECUTE_CSR_ADDRESS <= DECODE_CSR_ADDRESS;
         EXECUTE_REGISTER_WRITE_ENABLE <= DECODE_REGISTER_WRITE_ENABLE;
         EXECUTE_MEMORY_READ_ENABLE <= DECODE_MEMORY_READ_ENABLE;
         EXECUTE_MEMORY_WRITE_ENABLE <= DECODE_MEMORY_WRITE_ENABLE;
         EXECUTE_CSR_WRITE_ENABLE <= DECODE_CSR_WRITE_ENABLE;
-        EXECUTE_CSR_WRITE_USING_IMMEDIATE <= DECODE_CSR_WRITE_USING_IMMEDIATE;
-        EXECUTE_ALU_INPUT_A_IS_PC <= DECODE_ALU_INPUT_A_IS_PC;
-        EXECUTE_ALU_INPUT_B_IS_IMMEDIATE <= DECODE_ALU_INPUT_B_IS_IMMEDIATE;
-        EXECUTE_ALU_IS_WORD_OPERATION <= DECODE_ALU_IS_WORD_OPERATION;
         EXECUTE_IS_A_MULTIPLY_DIVIDE_INSTRUCTION <= DECODE_IS_A_MULTIPLY_DIVIDE_INSTRUCTION;
         EXECUTE_IS_A_BRANCH_INSTRUCTION <= DECODE_IS_A_BRANCH_INSTRUCTION;
         EXECUTE_IS_A_JAL_INSTRUCTION <= DECODE_IS_A_JAL_INSTRUCTION;
         EXECUTE_IS_A_JALR_INSTRUCTION <= DECODE_IS_A_JALR_INSTRUCTION;
-        EXECUTE_PREDICTED_BRANCH_TAKEN <= DECODE_PREDICTED_BRANCH_TAKEN;
-        EXECUTE_GSHARE_INDEX <= DECODE_GSHARE_INDEX;
-        EXECUTE_GLOBAL_HISTORY_CHECKPOINT <= DECODE_GLOBAL_HISTORY_CHECKPOINT;
-        EXECUTE_WRITEBACK_SELECT <= DECODE_WRITEBACK_SELECT;
-        EXECUTE_ALU_OPERATION <= DECODE_ALU_OPERATION;
-        EXECUTE_PC_TARGET <= DECODE_PC_TARGET;
-        EXECUTE_PC_ADD_4 <= DECODE_PC_ADD_4;
         EXECUTE_RETURN_PREDICTED <= DECODE_RETURN_PREDICTED;
         EXECUTE_IS_A_CALL <= DECODE_IS_A_CALL;
         EXECUTE_IS_A_RETURN <= DECODE_IS_A_RETURN;
-        EXECUTE_RAS_CHECKPOINT <= DECODE_RAS_CHECKPOINT;
-        EXECUTE_GSHARE_PREDICTED_TAKEN <= DECODE_GSHARE_PREDICTED_TAKEN;
         EXECUTE_IS_AN_ECALL <= DECODE_IS_AN_ECALL;
         EXECUTE_IS_AN_EBREAK <= DECODE_IS_AN_EBREAK;
         EXECUTE_IS_AN_MRET <= DECODE_IS_AN_MRET;
-        EXECUTE_BHT_PREDICTED_TAKEN <= DECODE_BHT_PREDICTED_TAKEN;
 
         // Fetch 2 to Decode
         DECODE_VALID <= FETCH2_VALID;
-        DECODE_PC <= FETCH2_PC;
-        DECODE_INSTRUCTION <= FETCH2_INSTRUCTION;
-        DECODE_PREDICTED_BRANCH_TAKEN <= FETCH2_PREDICTED_BRANCH_TAKEN;
-        DECODE_GSHARE_INDEX <= FETCH2_GSHARE_INDEX;
-        DECODE_GLOBAL_HISTORY_CHECKPOINT <= GLOBAL_HISTORY; // History BEFORE this instruction's own speculative update
-        DECODE_PC_TARGET <= FETCH2_REDIRECT_TARGET;
-        DECODE_PC_ADD_4 <= FETCH2_PC_ADD_4;
-        DECODE_RETURN_PREDICTED <= FETCH2_RETURN_PREDICTED;
-        DECODE_IS_A_CALL <= RAS_ENABLE && FETCH2_IS_A_CALL;
-        DECODE_IS_A_RETURN <= RAS_ENABLE && FETCH2_IS_A_RETURN;
-        DECODE_RAS_CHECKPOINT <= RETURN_ADDRESS_STACK_POINTER; // Stack pointer BEFORE this instruction's own push or pop
-        DECODE_GSHARE_PREDICTED_TAKEN <= FETCH2_GSHARE_PREDICTED_TAKEN;
-        DECODE_BHT_PREDICTED_TAKEN <= FETCH2_BHT_PREDICTED_TAKEN;
 
         // Fetch 1 to Fetch 2 (the instruction fetched behind a predicted-taken branch or a JAL is on the wrong path)
         FETCH2_VALID <= !FETCH2_BRANCH_OFF_OR_CONTINUE && icache_hit; // wrong path behind a redirect, or no instruction yet (cache miss)
-        FETCH2_GSHARE_PREDICTED_TAKEN <= FETCH1_GSHARE_PREDICTED_TAKEN;
-        FETCH2_BHT_PREDICTED_TAKEN <= FETCH1_BHT_PREDICTED_TAKEN;
-        FETCH2_PC <= FETCH1_PC;
-        FETCH2_INSTRUCTION <= icache_dout;
-        FETCH2_PREDICTED_BRANCH_TAKEN <= FETCH1_PREDICTED_BRANCH_TAKEN;
-        FETCH2_GSHARE_INDEX <= FETCH1_GSHARE_INDEX;
-        FETCH2_BTB_REDIRECTED <= FETCH1_BTB_REDIRECT;
         FETCH1_PC <= FETCH2_PREDICTED_NEXT_PC;
       end
     end

@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1840 1024" width="1840" height="1024">
 <defs><marker id="a-data" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2B3A31"/></marker><marker id="a-fwdE" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#E08E0B"/></marker><marker id="a-fwdM" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#27AE60"/></marker><marker id="a-fwdW" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C0392B"/></marker><marker id="a-flush" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C2185B"/></marker><marker id="a-redirect" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#17A2B8"/></marker><marker id="a-pred" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#00796B"/></marker><marker id="a-hold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#B8860B"/></marker><marker id="a-ctrl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6A4FC8"/></marker></defs>
 <rect width="100%" height="100%" rx="12" fill="#FBFCF8" stroke="#D5DBD0"/>
-<text x="20" y="28" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="17" font-weight="600" fill="#17251D" text-anchor="start">Riscv64 (src/Riscv64.sv): 6 stage RV64IM pipeline with GShare prediction, forwarding into DECODE and hazard control</text>
+<text x="20" y="28" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="17" font-weight="600" fill="#17251D" text-anchor="start">Sixfold (src/Riscv64.sv): 6-stage RV64IM + Zicsr pipeline with caches, BTB + tournament prediction, RAS, forwarding into DECODE and traps</text>
 <rect x="20" y="44" width="280" height="34" rx="6" fill="#2E86C1"/>
 <text x="30" y="66" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#FFF" text-anchor="start">FETCH1</text>
-<text x="292" y="66" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#FFF" text-anchor="end">PC + gshare lookup</text>
+<text x="292" y="66" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#FFF" text-anchor="end">PC, I-cache, BTB, predictors</text>
 <rect x="20" y="84" width="280" height="672" rx="4" fill="#2E86C1" fill-opacity="0.05"/>
 <rect x="330" y="44" width="230" height="34" rx="6" fill="#17A2B8"/>
 <text x="340" y="66" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#FFF" text-anchor="start">FETCH2</text>
@@ -52,10 +52,10 @@
 <path d="M247,160 L262,160 L262,140 L24,140 L24,186 L34,186" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
 <text x="100" y="136" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#4A5A50" text-anchor="start">FETCH1_PC_ADD_4</text>
 <rect x="84" y="300" width="206" height="76" rx="6" fill="#FFFFFF" stroke="#2B3A31" stroke-width="1.6"/>
-<text x="187" y="318" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="600" fill="#17251D" text-anchor="middle">Instruction memory</text>
-<text x="187" y="332" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#6A4FC8" text-anchor="middle">ScratchpadMemory</text>
-<text x="187" y="347" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">address in FETCH1,</text>
-<text x="187" y="360.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">word latched into FETCH2</text>
+<text x="187" y="318" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="600" fill="#17251D" text-anchor="middle">Instruction cache</text>
+<text x="187" y="332" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#6A4FC8" text-anchor="middle">InstructionCache 4 KiB 2-way</text>
+<text x="187" y="347" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">hit: word latched into FETCH2</text>
+<text x="187" y="360.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">miss: hold FETCH1_PC, refill</text>
 <path d="M127,265 L127,300" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
 <circle cx="127" cy="280" r="3.2" fill="#2B3A31"/>
 <path d="M127,280 L300,280 L300,250 L305,250" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
@@ -63,39 +63,88 @@
 <path d="M290,338 L305,338" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
 <text x="212" y="392" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#4A5A50" text-anchor="middle">icache_dout</text>
 <rect x="34" y="440" width="258" height="208" rx="8" fill="#E6F4F1" stroke="#00796B" stroke-width="1.8"/>
-<text x="163" y="460" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#00796B" text-anchor="middle">GSharePredictor</text>
-<text x="163" y="474" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9" font-weight="400" fill="#4A5A50" text-anchor="middle">src/GShare_Branch_Predictor.sv</text>
+<text x="163" y="460" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#00796B" text-anchor="middle">BTB + tournament predictor</text>
+<text x="163" y="474" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9" font-weight="400" fill="#4A5A50" text-anchor="middle">src/GShare_Branch_Predictor.sv + chooser</text>
 <rect x="46" y="486" width="96" height="40" rx="6" fill="#FFFFFF" stroke="#2B3A31" stroke-width="1.6"/>
-<text x="94" y="504" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="600" fill="#17251D" text-anchor="middle">PC[5:2]</text>
+<text x="94" y="504" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="600" fill="#17251D" text-anchor="middle">PC[7:2]</text>
 <rect x="46" y="536" width="96" height="40" rx="6" fill="#FFFFFF" stroke="#2B3A31" stroke-width="1.6"/>
 <text x="94" y="554" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="600" fill="#17251D" text-anchor="middle">GLOBAL_HISTORY</text>
-<text x="94" y="568" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#4A5A50" text-anchor="middle">4 bits</text>
+<text x="94" y="568" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#4A5A50" text-anchor="middle">6 bits</text>
 <circle cx="176" cy="531" r="15" fill="#FFF" stroke="#00796B" stroke-width="2"/><path d="M165,520 L187,542 M187,520 L165,542" stroke="#00796B" stroke-width="2"/>
 <text x="176" y="562" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#00796B" text-anchor="middle">XOR</text>
 <path d="M142,506 L158,506 L163,520" fill="none" stroke="#00796B" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-pred)"/>
 <path d="M142,556 L158,556 L163,542" fill="none" stroke="#00796B" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-pred)"/>
-<text x="244" y="480" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9" font-weight="400" fill="#4A5A50" text-anchor="middle">PHT: 16 x 2-bit</text>
-<rect x="212" y="486" width="64" height="8" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
-<rect x="212" y="495" width="64" height="8" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
-<rect x="212" y="504" width="64" height="8" fill="#1E8449" stroke="#FFF" stroke-width="0.8"/>
-<rect x="212" y="513" width="64" height="8" fill="#E59866" stroke="#FFF" stroke-width="0.8"/>
-<rect x="212" y="522" width="64" height="8" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
-<rect x="212" y="531" width="64" height="8" fill="#C0392B" stroke="#FFF" stroke-width="0.8"/>
-<rect x="212" y="540" width="64" height="8" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
-<rect x="212" y="549" width="64" height="8" fill="#1E8449" stroke="#FFF" stroke-width="0.8"/>
-<rect x="212" y="558" width="64" height="8" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
-<rect x="212" y="567" width="64" height="8" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
-<rect x="212" y="576" width="64" height="8" fill="#E59866" stroke="#FFF" stroke-width="0.8"/>
-<rect x="212" y="585" width="64" height="8" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
-<rect x="212" y="594" width="64" height="8" fill="#1E8449" stroke="#FFF" stroke-width="0.8"/>
-<rect x="212" y="603" width="64" height="8" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
-<rect x="212" y="612" width="64" height="8" fill="#C0392B" stroke="#FFF" stroke-width="0.8"/>
-<rect x="212" y="621" width="64" height="8" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<text x="244" y="604" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9" font-weight="400" fill="#4A5A50" text-anchor="middle">gshare 64 x 2-bit</text>
+<rect x="212" y="486" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="212" y="493" width="15" height="6" fill="#1E8449" stroke="#FFF" stroke-width="0.8"/>
+<rect x="212" y="500" width="15" height="6" fill="#C0392B" stroke="#FFF" stroke-width="0.8"/>
+<rect x="212" y="507" width="15" height="6" fill="#C0392B" stroke="#FFF" stroke-width="0.8"/>
+<rect x="212" y="514" width="15" height="6" fill="#1E8449" stroke="#FFF" stroke-width="0.8"/>
+<rect x="212" y="521" width="15" height="6" fill="#E59866" stroke="#FFF" stroke-width="0.8"/>
+<rect x="212" y="528" width="15" height="6" fill="#E59866" stroke="#FFF" stroke-width="0.8"/>
+<rect x="212" y="535" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="212" y="542" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="212" y="549" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="212" y="556" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="212" y="563" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="212" y="570" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="212" y="577" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="212" y="584" width="15" height="6" fill="#1E8449" stroke="#FFF" stroke-width="0.8"/>
+<rect x="212" y="591" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="228" y="486" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="228" y="493" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="228" y="500" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="228" y="507" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="228" y="514" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="228" y="521" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="228" y="528" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="228" y="535" width="15" height="6" fill="#1E8449" stroke="#FFF" stroke-width="0.8"/>
+<rect x="228" y="542" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="228" y="549" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="228" y="556" width="15" height="6" fill="#1E8449" stroke="#FFF" stroke-width="0.8"/>
+<rect x="228" y="563" width="15" height="6" fill="#C0392B" stroke="#FFF" stroke-width="0.8"/>
+<rect x="228" y="570" width="15" height="6" fill="#C0392B" stroke="#FFF" stroke-width="0.8"/>
+<rect x="228" y="577" width="15" height="6" fill="#1E8449" stroke="#FFF" stroke-width="0.8"/>
+<rect x="228" y="584" width="15" height="6" fill="#E59866" stroke="#FFF" stroke-width="0.8"/>
+<rect x="228" y="591" width="15" height="6" fill="#E59866" stroke="#FFF" stroke-width="0.8"/>
+<rect x="244" y="486" width="15" height="6" fill="#1E8449" stroke="#FFF" stroke-width="0.8"/>
+<rect x="244" y="493" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="244" y="500" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="244" y="507" width="15" height="6" fill="#1E8449" stroke="#FFF" stroke-width="0.8"/>
+<rect x="244" y="514" width="15" height="6" fill="#C0392B" stroke="#FFF" stroke-width="0.8"/>
+<rect x="244" y="521" width="15" height="6" fill="#C0392B" stroke="#FFF" stroke-width="0.8"/>
+<rect x="244" y="528" width="15" height="6" fill="#1E8449" stroke="#FFF" stroke-width="0.8"/>
+<rect x="244" y="535" width="15" height="6" fill="#E59866" stroke="#FFF" stroke-width="0.8"/>
+<rect x="244" y="542" width="15" height="6" fill="#E59866" stroke="#FFF" stroke-width="0.8"/>
+<rect x="244" y="549" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="244" y="556" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="244" y="563" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="244" y="570" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="244" y="577" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="244" y="584" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="244" y="591" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="260" y="486" width="15" height="6" fill="#E59866" stroke="#FFF" stroke-width="0.8"/>
+<rect x="260" y="493" width="15" height="6" fill="#E59866" stroke="#FFF" stroke-width="0.8"/>
+<rect x="260" y="500" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="260" y="507" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="260" y="514" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="260" y="521" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="260" y="528" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="260" y="535" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="260" y="542" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="260" y="549" width="15" height="6" fill="#1E8449" stroke="#FFF" stroke-width="0.8"/>
+<rect x="260" y="556" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="260" y="563" width="15" height="6" fill="#82C99A" stroke="#FFF" stroke-width="0.8"/>
+<rect x="260" y="570" width="15" height="6" fill="#1E8449" stroke="#FFF" stroke-width="0.8"/>
+<rect x="260" y="577" width="15" height="6" fill="#C0392B" stroke="#FFF" stroke-width="0.8"/>
+<rect x="260" y="584" width="15" height="6" fill="#C0392B" stroke="#FFF" stroke-width="0.8"/>
+<rect x="260" y="591" width="15" height="6" fill="#1E8449" stroke="#FFF" stroke-width="0.8"/>
 <path d="M191,531 L210,531" fill="none" stroke="#00796B" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-pred)"/>
 <path d="M276,540 L300,540 L300,520 L305,520" fill="none" stroke="#00796B" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-pred)"/>
 <text x="344" y="470" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#00796B" text-anchor="start">FETCH1_PREDICTED_BRANCH_TAKEN</text>
 <text x="344" y="483" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#00796B" text-anchor="start">FETCH1_GSHARE_INDEX</text>
-<text x="163" y="640" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#00796B" text-anchor="middle">index = PC[5:2] xor GHR; taken if counter &gt;= 2</text>
+<text x="163" y="624" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#00796B" text-anchor="middle">chooser picks gshare or BHT (128 each);</text>
+<text x="163" y="638" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#00796B" text-anchor="middle">BTB hit + taken: jump with 0 bubbles</text>
 <rect x="344" y="170" width="204" height="64" rx="6" fill="#FFFFFF" stroke="#2B3A31" stroke-width="1.6"/>
 <text x="446" y="188" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="600" fill="#17251D" text-anchor="middle">Predecode</text>
 <text x="446" y="204" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">opcode == OPC_BRANCH ?</text>
@@ -105,10 +154,10 @@
 <text x="446" y="284" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">FETCH2_PC_TARGET =</text>
 <text x="446" y="297.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">FETCH2_PC + B/J immediate</text>
 <rect x="344" y="330" width="204" height="76" rx="6" fill="#FFFFFF" stroke="#2B3A31" stroke-width="1.6"/>
-<text x="446" y="348" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="600" fill="#17251D" text-anchor="middle">Redirect</text>
-<text x="446" y="364" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">JAL or (branch &amp;&amp; predicted</text>
-<text x="446" y="377.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">taken): FETCH2_BRANCH_OFF_</text>
-<text x="446" y="391" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">OR_CONTINUE, squash FETCH1</text>
+<text x="446" y="348" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="600" fill="#17251D" text-anchor="middle">Redirect + RAS</text>
+<text x="446" y="364" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">JAL, predicted-taken branch, or</text>
+<text x="446" y="377.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">return (8-entry RAS): squash</text>
+<text x="446" y="391" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">FETCH1 unless the BTB jumped</text>
 <path d="M315,250 L330,250 L330,202 L344,202" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
 <path d="M330,250 L330,282 L344,282" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
 <path d="M315,520 L338,520 L338,390 L344,390" fill="none" stroke="#00796B" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-pred)"/>
@@ -157,8 +206,8 @@
 <text x="809" y="357.5" font-family="'IBM Plex Mono',Consolas,monospace" font-size="8" font-weight="400" fill="#4A5A50" text-anchor="start">RF</text>
 <path d="M776,190 L792,190 L792,232 L806,232" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
 <path d="M776,260 L796,260 L796,354 L806,354" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
-<path d="M838,202 L905,202" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
-<path d="M838,324 L905,324" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
+<path d="M838,202 L852,202 L852,190 L866,190" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
+<path d="M838,324 L852,324 L852,304 L866,304" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
 <text x="852" y="430" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#4A5A50" text-anchor="middle">priority:</text>
 <text x="852" y="443" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#4A5A50" text-anchor="middle">x0 &gt; E &gt; M &gt; W &gt; RF</text>
 <path d="M776,384 L905,384" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
@@ -168,8 +217,8 @@
 <rect x="606" y="560" width="280" height="72" rx="6" fill="#FFF8E1" stroke="#B8860B" stroke-width="1.6"/>
 <text x="746" y="578" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="600" fill="#17251D" text-anchor="middle">LOAD_STALL</text>
 <text x="746" y="594" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">DECODE_VALID &amp;&amp; EXECUTE is a load &amp;&amp;</text>
-<text x="746" y="607.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">EXECUTE rd == rs1 or rs2 FIELD</text>
-<text x="746" y="621" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">(false stalls possible: Lab 5)</text>
+<text x="746" y="607.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">EXECUTE rd == an rs1/rs2 that this</text>
+<text x="746" y="621" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">instruction really reads (precise)</text>
 <path d="M886,596 L910,596" fill="none" stroke="#B8860B" stroke-width="2" stroke-dasharray="6 4" stroke-linejoin="round" marker-end="url(#a-hold)"/>
 <rect x="172" y="170" width="34.8" height="16" rx="8" fill="#FFF3C4" stroke="#B8860B"/>
 <text x="177" y="182" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#B8860B" text-anchor="start">hold</text>
@@ -180,26 +229,29 @@
 <rect x="918" y="600" width="47.2" height="16" rx="8" fill="#FFF3C4" stroke="#B8860B"/>
 <text x="923" y="612" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#B8860B" text-anchor="start">NOP in</text>
 <text x="606" y="648" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#B8860B" text-anchor="start">LOAD_STALL: hold FETCH1_PC, FETCH2_*, DECODE_*, bubble into EXECUTE</text>
-<polygon points="944,176 970,188 970,224 944,236" fill="#F3F5F0" stroke="#2B3A31" stroke-width="1.6"/>
-<text x="957" y="170" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#4A5A50" text-anchor="middle">A</text>
-<text x="947" y="193.5" font-family="'IBM Plex Mono',Consolas,monospace" font-size="8" font-weight="400" fill="#4A5A50" text-anchor="start">rs1</text>
-<text x="947" y="225.5" font-family="'IBM Plex Mono',Consolas,monospace" font-size="8" font-weight="400" fill="#4A5A50" text-anchor="start">PC</text>
-<polygon points="944,290 970,302 970,338 944,350" fill="#F3F5F0" stroke="#2B3A31" stroke-width="1.6"/>
-<text x="957" y="284" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#4A5A50" text-anchor="middle">B</text>
-<text x="947" y="307.5" font-family="'IBM Plex Mono',Consolas,monospace" font-size="8" font-weight="400" fill="#4A5A50" text-anchor="start">rs2</text>
-<text x="947" y="339.5" font-family="'IBM Plex Mono',Consolas,monospace" font-size="8" font-weight="400" fill="#4A5A50" text-anchor="start">imm</text>
-<path d="M915,202 L930,202 L930,190 L944,190" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
-<path d="M915,324 L930,324 L930,304 L944,304" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
-<path d="M915,500 L936,500 L936,336 L944,336" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
+<polygon points="866,176 892,188 892,224 866,236" fill="#F3F5F0" stroke="#2B3A31" stroke-width="1.6"/>
+<text x="879" y="170" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#4A5A50" text-anchor="middle">A</text>
+<text x="869" y="193.5" font-family="'IBM Plex Mono',Consolas,monospace" font-size="8" font-weight="400" fill="#4A5A50" text-anchor="start">rs1</text>
+<text x="869" y="225.5" font-family="'IBM Plex Mono',Consolas,monospace" font-size="8" font-weight="400" fill="#4A5A50" text-anchor="start">PC</text>
+<polygon points="866,290 892,302 892,338 866,350" fill="#F3F5F0" stroke="#2B3A31" stroke-width="1.6"/>
+<text x="879" y="284" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#4A5A50" text-anchor="middle">B</text>
+<text x="869" y="307.5" font-family="'IBM Plex Mono',Consolas,monospace" font-size="8" font-weight="400" fill="#4A5A50" text-anchor="start">rs2</text>
+<text x="869" y="339.5" font-family="'IBM Plex Mono',Consolas,monospace" font-size="8" font-weight="400" fill="#4A5A50" text-anchor="start">imm</text>
+<path d="M892,206 L905,206" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
+<path d="M892,320 L905,320" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
+<path d="M858,500 L858,336 L866,336" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
+<circle cx="858" cy="500" r="3.2" fill="#2B3A31"/>
 <polygon points="1000,160 1070,190 1070,300 1000,330 1000,262 1014,245 1000,228" fill="#FFF3E0" stroke="#E08E0B" stroke-width="2"/>
 <text x="1040" y="235" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#17251D" text-anchor="middle">ALU</text>
 <text x="1040" y="250" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9" font-weight="400" fill="#4A5A50" text-anchor="middle">65-bit shared</text>
 <text x="1040" y="261" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9" font-weight="400" fill="#4A5A50" text-anchor="middle">adder, W ops</text>
-<path d="M970,206 L1000,206" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
-<path d="M970,320 L1000,320" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
+<path d="M915,206 L1000,206" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
+<path d="M915,320 L1000,320" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
+<text x="930" y="200" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#4A5A50" text-anchor="start">ALU_INPUT_A</text>
+<text x="930" y="314" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#4A5A50" text-anchor="start">ALU_INPUT_B</text>
 <rect x="1000" y="346" width="130" height="56" rx="6" fill="#FFFFFF" stroke="#2B3A31" stroke-width="1.6"/>
 <text x="1065" y="364" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="600" fill="#17251D" text-anchor="middle">Iterative M unit</text>
-<text x="1065" y="380" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">MUL 7, DIV 3+bits cycles</text>
+<text x="1065" y="380" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">MUL 8, DIV 4+bits cycles</text>
 <polygon points="1100,216 1124,232 1124,280 1100,296" fill="#F3F5F0" stroke="#2B3A31" stroke-width="1.6"/>
 <text x="1112" y="210" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#4A5A50" text-anchor="middle">result</text>
 <path d="M1070,240 L1100,240" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
@@ -207,10 +259,10 @@
 <path d="M1124,256 L1305,256" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
 <text x="1136" y="250" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#4A5A50" text-anchor="start">EXECUTE_ALU_RESULT</text>
 <rect x="944" y="424" width="150" height="70" rx="6" fill="#FFFFFF" stroke="#2B3A31" stroke-width="1.6"/>
-<text x="1019" y="442" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="600" fill="#17251D" text-anchor="middle">CSRFile</text>
-<text x="1019" y="456" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#6A4FC8" text-anchor="middle">Zicsr</text>
-<text x="1019" y="471" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">tohost status cycle</text>
-<text x="1019" y="484.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">instret hartid</text>
+<text x="1019" y="442" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="600" fill="#17251D" text-anchor="middle">CSRFile + traps</text>
+<text x="1019" y="456" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#6A4FC8" text-anchor="middle">Zicsr, ecall/mret</text>
+<text x="1019" y="471" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">cycle instret tohost</text>
+<text x="1019" y="484.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">mtvec mepc mcause</text>
 <rect x="1110" y="424" width="176" height="70" rx="6" fill="#FFFFFF" stroke="#2B3A31" stroke-width="1.6"/>
 <text x="1198" y="442" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="600" fill="#17251D" text-anchor="middle">StoreControl</text>
 <text x="1198" y="458" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">byte lanes + 8-bit</text>
@@ -226,10 +278,10 @@
 <text x="1198" y="583" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">ADJUST_NEXT_PC</text>
 <path d="M1094,560 L1110,560" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
 <rect x="1346" y="512" width="220" height="72" rx="6" fill="#FFFFFF" stroke="#2B3A31" stroke-width="1.6"/>
-<text x="1456" y="530" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="600" fill="#17251D" text-anchor="middle">Data memory</text>
-<text x="1456" y="544" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#6A4FC8" text-anchor="middle">ScratchpadMemory data port</text>
-<text x="1456" y="559" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">address + store from EXECUTE,</text>
-<text x="1456" y="572.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">doubleword arrives in MEMORY</text>
+<text x="1456" y="530" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="600" fill="#17251D" text-anchor="middle">Data cache</text>
+<text x="1456" y="544" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#6A4FC8" text-anchor="middle">DataCache 4 KiB 2-way, write-through</text>
+<text x="1456" y="559" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">hit: doubleword in MEMORY</text>
+<text x="1456" y="572.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">miss: load waits in EXECUTE</text>
 <path d="M1300,256 L1300,530 L1346,530" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#a-data)"/>
 <circle cx="1300" cy="256" r="3.2" fill="#2B3A31"/>
 <text x="1318" y="526" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#4A5A50" text-anchor="start">addr</text>
@@ -295,7 +347,7 @@
 <text x="1410" y="850" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#17251D" text-anchor="start">load stall hold</text>
 <text x="36" y="886" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4A5A50" text-anchor="start">Every clock edge, each thick bar captures the results of the stage to its left: 6 instructions are in flight at once.</text>
 <text x="36" y="906" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4A5A50" text-anchor="start">Data hazards are fixed by forwarding INTO DECODE: the newest value of rs1/rs2 is latched into EXECUTE with the instruction.</text>
-<text x="36" y="926" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4A5A50" text-anchor="start">Branches are guessed twice: FETCH1 reads a gshare counter, FETCH2 redirects predicted-taken branches and every JAL; EXECUTE checks the guess.</text>
-<text x="36" y="946" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4A5A50" text-anchor="start">Numbers to remember: pipeline fill 5 cycles, load stall 1, FETCH2 redirect 1, wrong guess 3. Exact: cycles = N + 5 + L + 3F + R + K (docs/MATH.md).</text>
-<text x="36" y="966" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4A5A50" text-anchor="start">Performance edition (default): a Branch Target Buffer beside the GSharePredictor makes known taken branches free, and a Return Address Stack in FETCH2 predicts ret (docs/PERFORMANCE.md).</text>
+<text x="36" y="926" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4A5A50" text-anchor="start">Branches are guessed twice: FETCH1 reads the BTB and a tournament of BHT + gshare, FETCH2 redirects the rest (and returns via the RAS); EXECUTE checks.</text>
+<text x="36" y="946" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4A5A50" text-anchor="start">Numbers to remember: fill 5, load stall 1, FETCH2 redirect 1, wrong guess 3, cache miss 11. Exact: cycles = N + 5 + L + 3F + R + K + I + D (docs/MATH.md).</text>
+<text x="36" y="966" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4A5A50" text-anchor="start">Detailed figures: docs/img/diagrams/branch_prediction.svg (front end), cache.svg (one cache lookup), memory_hierarchy.svg, clock_roadmap.svg.</text>
 </svg>
