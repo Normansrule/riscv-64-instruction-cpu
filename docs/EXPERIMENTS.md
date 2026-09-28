@@ -102,3 +102,12 @@ instruction misses it was hiding. The caches are 2-way set-associative: make the
 
 Try 8 or 10 history bits with the tournament chooser, or give the chooser its own history bits. Use
 `make bp` and the area numbers from `make synth` to decide whether it is worth the silicon.
+
+## Lab 12: build a better predictor
+
+Use the arena (`node tools/predictor_arena.mjs`) as your testbench: change the perceptron's history
+length or the TAGE table sizes in [`model/predictors.js`](../model/predictors.js) and watch accuracy
+on `17_predictor_challenge.s`. Then pick one and design it for FETCH1 in SystemVerilog: how many
+gate levels does a 16-input perceptron sum need, and does it fit in the clock period
+([MODERN_CPUS.md](MODERN_CPUS.md))?
+

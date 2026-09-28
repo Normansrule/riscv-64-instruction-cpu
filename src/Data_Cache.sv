@@ -10,6 +10,8 @@
 // engine brings the line from main memory: MISS_LATENCY + 1 cycles in total.
 // Stores go straight to main memory (write-through) and also update the cached line if it is present
 // (no allocation on a store miss). Replacement: an empty way first, otherwise the least recently used.
+// Next-line prefetch: after a load miss fills line X, line X + 1 is fetched in the background (the
+// simplest of the hardware prefetchers that every modern CPU has; theirs also detect strides).
 // =====================================================================================================
 module DataCache #(
     parameter int MISS_LATENCY = 10
@@ -51,6 +53,12 @@ module DataCache #(
     logic REFILL_VICTIM_WAY;
     logic INSTALL;
     logic STORE_HIT; // A store to a line that is cached: update it
+    logic PREFETCH_PENDING;
+    logic [63:0] PREFETCH_LINE_ADDRESS;
+    logic PREFETCH_PRESENT;
+    logic REFILL_IS_DEMAND;
+    assign PREFETCH_PRESENT = (WAY0_VALID[PREFETCH_LINE_ADDRESS[10:5]] && (WAY0_TAG[PREFETCH_LINE_ADDRESS[10:5]] == PREFETCH_LINE_ADDRESS[31:11]))
+                           || (WAY1_VALID[PREFETCH_LINE_ADDRESS[10:5]] && (WAY1_TAG[PREFETCH_LINE_ADDRESS[10:5]] == PREFETCH_LINE_ADDRESS[31:11]));
     assign REFILL_SET = REFILL_LINE_ADDRESS[10:5];
     assign REFILL_VICTIM_WAY = !WAY0_VALID[REFILL_SET] ? 1'b0 : !WAY1_VALID[REFILL_SET] ? 1'b1 : LEAST_RECENTLY_USED[REFILL_SET];
     assign INSTALL = REFILL_BUSY && (REFILL_CYCLES_LEFT == 6'd1);
@@ -65,18 +73,34 @@ module DataCache #(
             REFILL_BUSY <= 1'b0;
             REFILL_CYCLES_LEFT <= 6'd0;
             REFILL_LINE_ADDRESS <= 64'd0;
+            REFILL_IS_DEMAND <= 1'b0;
+            PREFETCH_PENDING <= 1'b0;
+            PREFETCH_LINE_ADDRESS <= 64'd0;
         end else if (!FREEZE) begin
             if ((LOAD_REQUEST || (|WRITE_MASK)) && LINE_PRESENT) LEAST_RECENTLY_USED[SET] <= HIT_WAY0; // used: the other way is now LRU
             if (!REFILL_BUSY) begin
-                if (LOAD_REQUEST && !LINE_PRESENT) begin
+                if (LOAD_REQUEST && !LINE_PRESENT) begin // demand miss first
                     REFILL_BUSY <= 1'b1;
                     REFILL_CYCLES_LEFT <= MISS_LATENCY[5:0];
                     REFILL_LINE_ADDRESS <= {ADDRESS[63:5], 5'b00000};
+                    REFILL_IS_DEMAND <= 1'b1;
+                end else if (PREFETCH_PENDING) begin
+                    PREFETCH_PENDING <= 1'b0;
+                    if (!PREFETCH_PRESENT) begin
+                        REFILL_BUSY <= 1'b1;
+                        REFILL_CYCLES_LEFT <= MISS_LATENCY[5:0];
+                        REFILL_LINE_ADDRESS <= PREFETCH_LINE_ADDRESS;
+                        REFILL_IS_DEMAND <= 1'b0;
+                    end
                 end
             end else if (INSTALL) begin
                 REFILL_BUSY <= 1'b0;
                 if (REFILL_VICTIM_WAY) WAY1_VALID[REFILL_SET] <= 1'b1; else WAY0_VALID[REFILL_SET] <= 1'b1;
                 LEAST_RECENTLY_USED[REFILL_SET] <= !REFILL_VICTIM_WAY;
+                if (REFILL_IS_DEMAND) begin
+                    PREFETCH_PENDING <= 1'b1;
+                    PREFETCH_LINE_ADDRESS <= REFILL_LINE_ADDRESS + 64'd32;
+                end
             end else begin
                 REFILL_CYCLES_LEFT <= REFILL_CYCLES_LEFT - 6'd1;
             end

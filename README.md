@@ -15,7 +15,8 @@ and how to read its diagrams**.
 | **Pipeline** | FETCH1 → FETCH2 → DECODE → EXECUTE → MEMORY → WRITEBACK, in order, one instruction per cycle |
 | **Hazards** | forwarding into DECODE from EXECUTE / MEMORY / WRITEBACK, 1-cycle `LOAD_STALL` |
 | **Branch prediction** | tournament: a per-branch Branch History Table and `GSharePredictor` (PC xor global history, checkpoint repair) with a chooser; a 16-entry Branch Target Buffer (known taken branches cost 0 cycles); an 8-entry Return Address Stack |
-| **Memory** | 4 KiB instruction cache with next-line prefetch and 4 KiB write-through data cache, both 2-way set-associative with LRU replacement (32-byte lines), in front of a 10-cycle main memory |
+| **Memory** | 4 KiB instruction cache with next-line prefetch and 4 KiB write-through data cache, both 2-way set-associative with LRU replacement and next-line prefetch (32-byte lines), in front of a 10-cycle main memory |
+| **Predictor arena** | the real branch stream of each program replayed through a per-branch table, gshare, the tournament, a perceptron and TAGE (the families in AMD Zen and other modern cores): [MODERN_CPUS.md](docs/MODERN_CPUS.md) |
 | **Traps** | `ecall`, `ebreak`, `mret` with `mtvec`, `mepc`, `mcause`, `mstatus`, `mscratch`: enough to run a tiny kernel ([`15_system_calls.s`](programs/15_system_calls.s)) |
 | **Clock (logic only)** | about **180 MHz** on SkyWater 130 nm and **1.37 GHz** on the ASAP7 7 nm research kit, with the full M extension: [PERFORMANCE.md](docs/PERFORMANCE.md) |
 | **Two builds** | the performance edition (default) and a simple baseline pipeline (`-DBASELINE`), both in the same RTL behind parameters |
@@ -133,17 +134,18 @@ performance edition.
 | [`03_load_use`](programs/03_load_use.s) | the one data hazard forwarding cannot fix | 40 | 3.64 | 40 | 3.64 |
 | [`04_branch_penalty`](programs/04_branch_penalty.s) | what a branch costs in this 6-stage pipe | 53 | 1.61 | 76 | 2.30 |
 | [`05_fibonacci`](programs/05_fibonacci.s) | iterative Fibonacci, fib(50) in a 64-bit register | 328 | 1.08 | 328 | 1.08 |
-| [`06_bubble_sort`](programs/06_bubble_sort.s) | sort 10 signed 64-bit numbers in memory | 1003 | 1.39 | 1116 | 1.55 |
-| [`07_factorial_recursive`](programs/07_factorial_recursive.s) | recursion, the stack, CALL and RET | 518 | 2.19 | 518 | 2.19 |
+| [`06_bubble_sort`](programs/06_bubble_sort.s) | sort 10 signed 64-bit numbers in memory | 992 | 1.38 | 1105 | 1.53 |
+| [`07_factorial_recursive`](programs/07_factorial_recursive.s) | recursion, the stack, CALL and RET | 463 | 1.96 | 463 | 1.96 |
 | [`08_gcd_euclid`](programs/08_gcd_euclid.s) | greatest common divisor with REM (M extension) | 76 | 4.00 | 73 | 3.84 |
-| [`09_primes_sieve`](programs/09_primes_sieve.s) | Sieve of Eratosthenes | 17044 | 1.15 | 19023 | 1.28 |
+| [`09_primes_sieve`](programs/09_primes_sieve.s) | Sieve of Eratosthenes | 16868 | 1.14 | 18847 | 1.27 |
 | [`10_print_numbers`](programs/10_print_numbers.s) | print Fibonacci numbers in decimal using DIVU/REMU | 1024 | 1.90 | 1148 | 2.13 |
 | [`11_gshare_patterns`](programs/11_gshare_patterns.s) | a branch that ALTERNATES taken / not-taken | 1139 | 1.03 | 2020 | 1.83 |
 | [`12_measure_cpi`](programs/12_measure_cpi.s) | a program that measures its OWN performance | 151 | 1.59 | 204 | 2.15 |
 | [`13_function_call_cost`](programs/13_function_call_cost.s) | why function calls are not free on this pipeline | 277 | 2.45 | 300 | 2.65 |
 | [`14_false_load_stall`](programs/14_false_load_stall.s) | a stall caused by bits that only LOOK like a register | 82 | 2.16 | 81 | 2.13 |
 | [`15_system_calls`](programs/15_system_calls.s) | traps, the way an operating system gets control | 116 | 2.19 | 119 | 2.25 |
-| [`16_cache_conflicts`](programs/16_cache_conflicts.s) | why caches have "ways" | 499 | 2.92 | 507 | 2.96 |
+| [`16_cache_conflicts`](programs/16_cache_conflicts.s) | why caches have "ways" | 440 | 2.57 | 472 | 2.76 |
+| [`17_predictor_challenge`](programs/17_predictor_challenge.s) | branches that need history, and a branch that needs OTHER branches | 6277 | 1.24 | 8790 | 1.73 |
 
 ## Down to silicon
 
@@ -187,7 +189,7 @@ faster adder for the critical path, forwarding into EXECUTE, and putting the cac
 | [`model/`](model) | ISA table, assembler, cycle-exact pipeline model (JavaScript) |
 | [`programs/`](programs), [`tests/`](tests) | example programs and the self-check |
 | [`binary/`](binary/README.md) | every instruction and every program in binary |
-| [`docs/`](docs) | [learning path](docs/learn/README.md), [architecture](docs/ARCHITECTURE.md), [performance](docs/PERFORMANCE.md), [math](docs/MATH.md), [experiments](docs/EXPERIMENTS.md), [silicon](docs/SILICON.md), [references](docs/REFERENCES.md) |
+| [`docs/`](docs) | [learning path](docs/learn/README.md), [architecture](docs/ARCHITECTURE.md), [performance](docs/PERFORMANCE.md), [modern CPUs](docs/MODERN_CPUS.md), [math](docs/MATH.md), [experiments](docs/EXPERIMENTS.md), [silicon](docs/SILICON.md), [references](docs/REFERENCES.md) |
 | [`index.html`](index.html), [`site/`](site) | the GitHub Pages front page: 3D pipeline, bit playground, predictor race, chip scope, dashboard (vanilla JavaScript modules + vendored three.js, no build step) |
 | [`web/`](web/index.html) | the pipeline lab: step-by-step simulator |
 | [`tools/`](tools) | CLI, test runner, doc/chart/diagram generators, chip and cell renderers |

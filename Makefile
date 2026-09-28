@@ -15,7 +15,7 @@ MODULES = GSharePredictor BranchComparator BranchControl ALU ImmediateGenerator 
 BPFLAG = $(if $(filter 0,$(BP)),--bp=off) --history=$(HIST) --config=$(CONFIG)
 
 TBDEF = $(if $(filter baseline,$(CONFIG)),-DBASELINE)
-.PHONY: timing help deps test test-model math run pipe bp cycle rtl vsim wave lint docs charts diagram schematics synth serve clean
+.PHONY: arena timing help deps test test-model math run pipe bp cycle rtl vsim wave lint docs charts diagram schematics synth serve clean
 
 help:            ## list targets
 	@grep -E '^[a-z-]+:.*##' Makefile | sed 's/:.*##/\t/' | expand -t 14
@@ -76,6 +76,9 @@ docs:            ## regenerate binary/, docs/img/{formats,instructions,pipeline}
 
 charts:          ## CPI stack and predictor sweep charts (docs/img/charts)
 	node tools/charts.mjs
+
+arena:           ## branch predictor arena: BHT, gshare, tournament, perceptron, TAGE on every program's real branches
+	node tools/predictor_arena.mjs
 
 diagram:         ## datapath block diagram (docs/img/cpu_block_diagram.svg)
 	node tools/blockdiagram.mjs

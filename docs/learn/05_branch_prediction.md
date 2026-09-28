@@ -86,4 +86,13 @@ FETCH2. The **Branch Target Buffer** ([`src/Branch_Target_Buffer.sv`](../../src/
 remembers "the instruction at this PC jumped to that PC" and lets FETCH1 jump immediately, and the
 **Return Address Stack** predicts `ret`.
 
+## Beyond: perceptrons and TAGE
+
+Today's cores go further: AMD's Zen used a **perceptron** (a tiny neural network per branch that
+weighs every bit of history) and Zen 2 added **TAGE** (tables indexed with longer and longer
+histories; the longest one that recognises the situation wins). Both are in the **predictor arena**
+([`model/predictors.js`](../../model/predictors.js), [MODERN_CPUS.md](../MODERN_CPUS.md)), which
+replays a program's real branches through all five predictors. On `17_predictor_challenge.s` TAGE
+reaches 96% where a per-branch table manages 68%.
+
 Next: [6. Measuring performance](06_performance.md)

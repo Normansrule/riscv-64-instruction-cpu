@@ -26,6 +26,7 @@
   <nav aria-label="Sections">
     <a href="#decode">Decode</a>
     <a href="#race">Predict</a>
+    <a href="#arena">Arena</a>
     <a href="#caches">Caches</a>
     <a href="#silicon">Silicon</a>
     <a href="#numbers">Numbers</a>
@@ -131,12 +132,29 @@
   </div>
 </section>
 
+<!-- ============================================================== ARENA -->
+<section class="band alt" id="arena">
+  <div class="wrap">
+    <div class="copy narrow">
+      <h2>Five branch predictors, one race.</h2>
+      <p>Every conditional branch a program runs is replayed through five predictors, from a simple per-branch table to the families inside today's CPUs: a <b>perceptron</b> (a tiny neural network per branch, like AMD's Zen) and <b>TAGE</b> (tables looked up with longer and longer histories, used in AMD Zen 2 onward, Intel and ARM cores). Each guesses before it is told the answer. Try <i>predictor challenge</i>: one of its branches depends on the two branches before it.</p>
+    </div>
+    <div class="race-ctl">
+      <label>Program <select id="a-prog"></select></label>
+      <button id="a-go" class="primary">Race</button>
+    </div>
+    <div class="arena" id="arena-bars"></div>
+    <div class="ticker" id="a-ticker" aria-live="off"></div>
+    <p class="small">gshare and the tournament are built in Sixfold's SystemVerilog; the perceptron and TAGE are software models (<code>model/predictors.js</code>), the way architects try a predictor before building it.</p>
+  </div>
+</section>
+
 <!-- ============================================================== CACHES -->
 <section class="band" id="caches">
   <div class="wrap">
     <div class="copy narrow">
       <h2>Inside the caches.</h2>
-      <p>Main memory needs 10 cycles to deliver anything, so Sixfold keeps two small, fast copies next to the pipeline: 4 KiB for instructions and 4 KiB for data, each 64 sets of two 32-byte lines. Every address is cut into three fields: the <b class="f-tag">tag</b> says which piece of memory, the <b class="f-idx">set index</b> picks one of the 64 sets, the <b class="f-off">offset</b> picks the byte inside the line. Each set can hold two lines (top half: way 0, bottom half: way 1); when both are full the one used longest ago is replaced. After each miss the instruction cache also fetches the next line on its own.</p>
+      <p>Main memory needs 10 cycles to deliver anything, so Sixfold keeps two small, fast copies next to the pipeline: 4 KiB for instructions and 4 KiB for data, each 64 sets of two 32-byte lines. Every address is cut into three fields: the <b class="f-tag">tag</b> says which piece of memory, the <b class="f-idx">set index</b> picks one of the 64 sets, the <b class="f-off">offset</b> picks the byte inside the line. Each set can hold two lines (top half: way 0, bottom half: way 1); when both are full the one used longest ago is replaced. After each miss, both caches also fetch the next line on their own (prefetching, as every modern CPU does).</p>
     </div>
     <div class="race-ctl">
       <label>Program <select id="c-prog"></select></label>

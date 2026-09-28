@@ -18,10 +18,10 @@
 # EXPECT[gshare]: a1 = 102
 # EXPECT[bp-off]: a0 = 91
 # EXPECT[bp-off]: a1 = 107
-# EXPECT[perf]: a0 = 134
-# EXPECT[perf]: a1 = 334
-# EXPECT[perf-bp-off]: a0 = 138
-# EXPECT[perf-bp-off]: a1 = 338
+# EXPECT[perf]: a0 = 124
+# EXPECT[perf]: a1 = 285
+# EXPECT[perf-bp-off]: a0 = 126
+# EXPECT[perf-bp-off]: a1 = 315
 # =============================================================================
     li   s0, 0x8000          # array A
     li   s1, 0x8800          # array B: same sets as A (2 KiB apart)

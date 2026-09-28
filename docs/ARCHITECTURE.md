@@ -18,7 +18,7 @@ introduction read the [learning path](learn/README.md) first.
 | multiply / divide | `IterativeMultiplyDivideUnit`: multiply 7 cycles, divide 3 + significant bits of the dividend (baseline build: single cycle) |
 | clock (logic only) | sky130 130 nm: 5.5 ns, about 180 MHz; ASAP7 7 nm: 0.73 ns, about 1.37 GHz; see [PERFORMANCE.md](PERFORMANCE.md) |
 | builds | performance (default) and baseline (`-DBASELINE`, the plain pipeline); `make test` checks both |
-| memory | performance build: `InstructionCache` (4 KiB, 2-way set-associative with LRU replacement, 32-byte lines, next-line prefetch) and `DataCache` (4 KiB, 2-way LRU, write-through, no store allocation) in front of a 64 KiB main memory with a 10-cycle line refill; baseline: single-cycle 64 KiB `ScratchpadMemory` |
+| memory | performance build: `InstructionCache` (4 KiB, 2-way set-associative with LRU replacement, 32-byte lines, next-line prefetch) and `DataCache` (4 KiB, 2-way LRU, next-line prefetch, write-through, no store allocation) in front of a 64 KiB main memory with a 10-cycle line refill; baseline: single-cycle 64 KiB `ScratchpadMemory` |
 | reset PC | `0x2000` (`PC_RESET` in [`src/const_pkg.sv`](../src/const_pkg.sv)) |
 | program end | write a nonzero value to the `tohost` CSR; the core halts when that instruction reaches WRITEBACK |
 | verification | every program, every cycle, RTL vs [`model/core.js`](../model/core.js), predictor on and off (`make test`) |

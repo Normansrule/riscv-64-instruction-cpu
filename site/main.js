@@ -8,6 +8,7 @@ import { assemble } from '../model/asm.js';
 import { decode, disasm, FORMATS } from '../model/isa.js';
 import { Core, control, WB_NAMES, CONFIGS } from '../model/core.js';
 import { PROGRAMS } from '../web/programs.js';
+import { runArena, branchTrace, PREDICTORS } from '../model/predictors.js';
 
 const $ = id => document.getElementById(id);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -346,4 +347,60 @@ showCmds('Quick start');
   $('c-go').onclick = () => { if (core.halted) reset(); playing = !playing; $('c-go').textContent = playing ? 'Pause' : 'Play'; if (playing) raf = requestAnimationFrame(tick); };
   $('c-reset').onclick = reset; $('c-prog').onchange = reset;
   reset();
+})();
+
+// ---------------------------------------------------------------- predictor arena (animated bar race)
+(() => {
+  const COL = { bht: '--ink3', gshare: '--F1', tournament: '--D', perceptron: '--E', tage: '--M' };
+  const RTL = new Set(['gshare', 'tournament']);
+  for (const n of NAMES) $('a-prog').add(new Option(nice(n), n));
+  $('a-prog').value = NAMES.includes('17_predictor_challenge') ? '17_predictor_challenge' : NAMES[0];
+  const bars = $('arena-bars');
+  bars.innerHTML = Object.entries(PREDICTORS).map(([k, C]) => `<div class="arow${RTL.has(k) ? ' rtl' : ''}" data-k="${k}" style="--c:var(${COL[k]})"><span class="name">${esc(C.label)}</span><div class="track"><div class="fill"></div></div><span class="val">-</span></div>`).join('');
+  let raf = 0;
+  function race() {
+    cancelAnimationFrame(raf);
+    const trace = branchTrace(new Core(assemble(PROGRAMS[$('a-prog').value]), { ...CONFIGS.performance, bp: true }));
+    const preds = Object.entries(PREDICTORS).map(([k, C]) => ({ k, p: new C(), right: 0, last: null }));
+    let i = 0; const per = Math.max(1, Math.ceil(trace.length / (reducedMotion ? 3 : 240)));
+    const rows = Object.fromEntries([...bars.children].map(el => [el.dataset.k, el]));
+    const frame = () => {
+      for (let n = 0; n < per && i < trace.length; n++, i++) {
+        const [pc, taken] = trace[i];
+        for (const r of preds) { r.last = r.p.predict(pc); if (r.last === taken) r.right++; r.p.update(pc, taken); }
+      }
+      const best = Math.max(...preds.map(r => r.right));
+      for (const r of preds) {
+        const acc = i ? r.right / i : 0, row = rows[r.k];
+        row.querySelector('.fill').style.width = `${(100 * Math.max(0, (acc - 0.4) / 0.6)).toFixed(1)}%`;
+        row.querySelector('.val').textContent = `${(100 * acc).toFixed(1)}%`;
+        row.classList.toggle('lead', i === trace.length && r.right === best);
+      }
+      if (i) { const [pc, taken] = trace[i - 1];
+        $('a-ticker').innerHTML = `branch ${i.toLocaleString()} / ${trace.length.toLocaleString()} at 0x${pc.toString(16)}: actually <b>${taken ? 'taken' : 'not taken'}</b> &nbsp; ` + preds.map(r => `<i class="${r.last === taken ? 'ok' : 'no'}">${r.k} ${r.last === taken ? '✓' : '✗'}</i>`).join(' '); }
+      if (i < trace.length) raf = requestAnimationFrame(frame);
+    };
+    raf = requestAnimationFrame(frame);
+  }
+  $('a-go').onclick = race;
+  new IntersectionObserver((es, o) => { if (es[0].isIntersecting) { o.disconnect(); race(); } }, { threshold: 0.3 }).observe(bars);
+})();
+
+// ---------------------------------------------------------------- motion: scroll reveal and count-up numbers
+(() => {
+  if (reducedMotion) return;
+  const targets = document.querySelectorAll('.band .copy, .band .bitlab, .band .lanes, .band .race-foot, .band .scope, .band .facts, .band .cp, .band .cells, .band .dash, .band .chapters, .band .term, .band .cache-grid-wrap, .band .arena');
+  targets.forEach(el => el.classList.add('reveal'));
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: 0.12 });
+  targets.forEach(el => io.observe(el));
+  document.querySelectorAll('.facts strong').forEach(el => {
+    const m = el.textContent.match(/^([\d.,]+)(.*)$/); if (!m) return;
+    const end = parseFloat(m[1].replace(/,/g, '')), dec = (m[1].split('.')[1] || '').length, suffix = m[2], comma = m[1].includes(',');
+    const fmt = v => (comma ? Math.round(v).toLocaleString('en-US') : v.toFixed(dec)) + suffix;
+    const cio = new IntersectionObserver(es => { if (!es[0].isIntersecting) return; cio.disconnect();
+      const t0 = performance.now(), D = 1100;
+      const step = t => { const k = Math.min(1, (t - t0) / D), e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(end * e); if (k < 1) requestAnimationFrame(step); else el.textContent = m[0]; };
+      requestAnimationFrame(step); }, { threshold: 0.5 });
+    cio.observe(el);
+  });
 })();

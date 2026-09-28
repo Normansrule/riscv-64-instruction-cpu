@@ -271,8 +271,8 @@ export class Core {
     return way * 64 + set;
   }
   touch(c, slot) { if (slot >= 0) c.lru[slot & 63] = slot < 64 ? 1 : 0; } // the other way becomes least recently used
-  install(c) {
-    const slot = this.victimSlot(c, c.line), set = slot & 63;
+  install(c) { // uses the victim chosen at the START of the cycle (before this cycle's LRU updates), like the RTL
+    const slot = c.victim >= 0 ? c.victim : this.victimSlot(c, c.line), set = slot & 63;
     c.valid[slot] = 1; c.tag[slot] = (c.line >>> 11) & 0x1fffff; c.lru[set] = slot < 64 ? 1 : 0;
   }
   refill(c, missing, addr) { // one clock edge of the DataCache refill engine
@@ -281,11 +281,11 @@ export class Core {
     else c.left--;
     return false;
   }
-  irefill(missing, pc) { // InstructionCache engine with next-line prefetch
-    const c = this.icache;
+  irefill(missing, pc) { return this.prefetchingRefill(this.icache, missing, pc); }
+  prefetchingRefill(c, missing, addr) { // a refill engine with next-line prefetch (InstructionCache and DataCache)
     if (!c.busy) {
-      if (missing) { c.busy = true; c.left = this.opts.missLatency; c.line = (pc & ~31) >>> 0; c.demand = true; return true; }
-      if (c.pf) { c.pf = false; if (!this.cacheHit(c, c.pfLine)) { c.busy = true; c.left = this.opts.missLatency; c.line = c.pfLine; c.demand = false; this.stats.prefetches = (this.stats.prefetches || 0) + 1; } }
+      if (missing) { c.busy = true; c.left = this.opts.missLatency; c.line = Number(BigInt.asUintN(32, (typeof addr === 'bigint' ? addr : BigInt(addr >>> 0))) & ~31n); c.demand = true; return true; }
+      if (c.pf) { c.pf = false; if (!this.cacheHit(c, c.pfLine)) { c.busy = true; c.left = this.opts.missLatency; c.line = c.pfLine; c.demand = false; this.stats.prefetches = (this.stats.prefetches || 0) + 1; if (c === this.dcache) this.stats.dprefetches = (this.stats.dprefetches || 0) + 1; } }
     } else if (c.left === 1) {
       c.busy = false; this.install(c);
       if (c.demand) { c.pf = true; c.pfLine = (c.line + 32) >>> 0; }
@@ -484,11 +484,12 @@ export class Core {
       }
     }
     if (this.opts.caches) {
+      for (const c of [this.icache, this.dcache]) c.victim = c.busy && c.left === 1 ? this.victimSlot(c, c.line) : -1; // REFILL_VICTIM_WAY from the current LRU state
       if (iHit) this.touch(this.icache, this.cacheSlot(this.icache, this.F1PC)); // LRU first, the install below wins
       if (dReq && dHit) this.touch(this.dcache, this.cacheSlot(this.dcache, dAddr));
       if (storeOp && storeOp.mask && dStoreSlot >= 0) this.touch(this.dcache, dStoreSlot);
       if (this.irefill(!iHit, this.F1PC)) this.stats.icacheMisses++;
-      if (this.refill(this.dcache, dReq && !dHit, dAddr)) this.stats.dcacheMisses++;
+      if (this.prefetchingRefill(this.dcache, dReq && !dHit, dAddr)) this.stats.dcacheMisses++;
     }
     const rasTopBefore = this.ras.top; // DECODE_RAS_CHECKPOINT: the pointer BEFORE this cycle's push or pop
     if (btbWrite) Object.assign(this.btb[btbWrite.idx], { valid: true, tag: btbWrite.tag, target: btbWrite.target, isJal: btbWrite.isJal });

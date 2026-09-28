@@ -22,3 +22,4 @@ Every file in [`programs/`](../../programs) assembled by `model/asm.js` (code st
 * [14_false_load_stall.lst](14_false_load_stall.lst) · [14_false_load_stall.hex](14_false_load_stall.hex)
 * [15_system_calls.lst](15_system_calls.lst) · [15_system_calls.hex](15_system_calls.hex)
 * [16_cache_conflicts.lst](16_cache_conflicts.lst) · [16_cache_conflicts.hex](16_cache_conflicts.hex)
+* [17_predictor_challenge.lst](17_predictor_challenge.lst) · [17_predictor_challenge.hex](17_predictor_challenge.hex)

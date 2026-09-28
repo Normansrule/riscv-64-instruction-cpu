@@ -145,3 +145,35 @@ https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts (platforms/asap7).
 
 **[30]** A. J. Smith, "Cache Memories," *ACM Computing Surveys*, vol. 14, no. 3, 1982. Direct-mapped
 caches, write-through, and sequential (next-line) prefetching.
+
+**[34]** J.-L. Baer, T.-F. Chen, "An Effective On-Chip Preloading Scheme to Reduce Data Access Penalty,"
+*Supercomputing '91*, 1991. Stride prefetching; next-line prefetching goes back to A. J. Smith [30].
+
+**[35]** WikiChip, "Zen 2 - Microarchitectures - AMD," https://en.wikichip.org/wiki/amd/microarchitectures/zen_2 .
+Zen/Zen+ use a hashed perceptron predictor; Zen 2 keeps it and adds a TAGE predictor, with about 30%
+fewer mispredictions according to AMD.
+
+**[36]** A. Seznec, "TAGE-SC-L Branch Predictors Again," *5th Championship Branch Prediction (CBP-5)*,
+2016. The TAGE family with a statistical corrector and loop predictor; winner of CBP-5.
+
+**[37]** C.-L. Lin et al., "Dissecting Conditional Branch Predictors of Apple Firestorm and Qualcomm
+Oryon," arXiv:2411.13900, 2024. Notes TAGE use in AMD Zen 2, ARM and Intel cores.
+
+**[38]** A. Seznec, "A 64-Kbytes ITTAGE indirect branch predictor," *2nd JILP Workshop on Computer
+Architecture Competitions (JWAC-2)*, 2011.
+
+**[39]** Intel, *Intel 64 and IA-32 Architectures Optimization Reference Manual*,
+https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html . Describes the
+decoded instruction cache (micro-op cache), the loop stream detector and macro-fusion.
+
+**[40]** R. M. Tomasulo, "An Efficient Algorithm for Exploiting Multiple Arithmetic Units," *IBM
+Journal of Research and Development*, vol. 11, no. 1, 1967.
+
+**[41]** J. E. Smith, A. R. Pleszkun, "Implementation of Precise Interrupts in Pipelined Processors,"
+*ISCA*, 1985. The reorder buffer.
+
+**[42]** G. Z. Chrysos, J. S. Emer, "Memory Dependence Prediction using Store Sets," *ISCA*, 1998.
+
+**[43]** D. M. Tullsen, S. J. Eggers, H. M. Levy, "Simultaneous Multithreading: Maximizing On-Chip
+Parallelism," *ISCA*, 1995.
+
