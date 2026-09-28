@@ -271,6 +271,9 @@ module Riscv64 #(
   immediate_type_select_t DECODE_IMMEDIATE_TYPE_SELECT; // Immediate Type will consist of these: | I | S | B | U | J | Z |
   writeback_select_t DECODE_WRITEBACK_SELECT; // 4 Possibilities to Writeback: | ALU Result | Load Information | PC ADD 4 | CSR |
   alu_op_t DECODE_ALU_OPERATION; // Determine which ALU operation is required
+  logic DECODE_ALU_OPERAND_A_ZERO_EXTEND; // Zba .uw forms
+  logic [1:0] DECODE_ALU_OPERAND_A_SHIFT; // Zba shNadd
+  logic DECODE_ALU_OPERAND_B_INVERT; // Zbb andn / orn / xnor
 
   assign DECODE_REGISTER1_ADDRESS = DECODE_INSTRUCTION[19:15]; // Register 1 Address (rs1) is always the 5 bits at 19-15
   assign DECODE_REGISTER2_ADDRESS = DECODE_INSTRUCTION[24:20]; // Register 2 Address (rs2) is always the 5 bits at 24-20
@@ -314,7 +317,7 @@ module Riscv64 #(
   always_comb begin
     if (DECODE_REGISTER1_ADDRESS == 5'd0) begin // If the Address is x0 then all the data is just zero
       DECODE_FORWARDED_REGISTER1_DATA = 64'd0; // x0 reads as all 0s
-    end else if (EXECUTE_VALID && EXECUTE_REGISTER_WRITE_ENABLE && !EXECUTE_MEMORY_READ_ENABLE && (EXECUTE_DESTINATION_REGISTER_ADDRESS != 5'd0) && (EXECUTE_DESTINATION_REGISTER_ADDRESS == DECODE_REGISTER1_ADDRESS)) begin // Execute Stage is Valid and Register Writing is Enabled and No Loading is happening, and RS1 is the same as Destination Address
+    end else if (EXECUTE_VALID && EXECUTE_REGISTER_WRITE_ENABLE && !EXECUTE_MEMORY_READ_ENABLE && !EXECUTE_LATE_RESULT && (EXECUTE_DESTINATION_REGISTER_ADDRESS != 5'd0) && (EXECUTE_DESTINATION_REGISTER_ADDRESS == DECODE_REGISTER1_ADDRESS)) begin // Execute Stage is Valid and Register Writing is Enabled and No Loading is happening, and RS1 is the same as Destination Address
       DECODE_FORWARDED_REGISTER1_DATA = EXECUTE_FORWARD_DATA; // Data Hazard: Forward Execute Data to Decode Stage (Loads are not considered will use a load stall)
     end else if (MEMORY_VALID && MEMORY_REGISTER_WRITE_ENABLE && (MEMORY_DESTINATION_REGISTER_ADDRESS != 5'd0) && (MEMORY_DESTINATION_REGISTER_ADDRESS == DECODE_REGISTER1_ADDRESS)) begin // Memory Stage is Valid and Register Writing is Enabled and RS1 is the same as Destination Address
       DECODE_FORWARDED_REGISTER1_DATA = MEMORY_FORWARD_DATA; // Data Hazard: Forward Memory Data
@@ -329,7 +332,7 @@ module Riscv64 #(
   always_comb begin
     if (DECODE_REGISTER2_ADDRESS == 5'd0) begin // If the Address is x0 then all the data is just zero
       DECODE_FORWARDED_REGISTER2_DATA = 64'd0; // x0 reads as all 0s
-    end else if (EXECUTE_VALID && EXECUTE_REGISTER_WRITE_ENABLE && !EXECUTE_MEMORY_READ_ENABLE && (EXECUTE_DESTINATION_REGISTER_ADDRESS != 5'd0) && (EXECUTE_DESTINATION_REGISTER_ADDRESS == DECODE_REGISTER2_ADDRESS)) begin // Execute Stage is Valid and Register Writing is Enabled and No Loading is happening, and RS2 is the same as Destination Address
+    end else if (EXECUTE_VALID && EXECUTE_REGISTER_WRITE_ENABLE && !EXECUTE_MEMORY_READ_ENABLE && !EXECUTE_LATE_RESULT && (EXECUTE_DESTINATION_REGISTER_ADDRESS != 5'd0) && (EXECUTE_DESTINATION_REGISTER_ADDRESS == DECODE_REGISTER2_ADDRESS)) begin // Execute Stage is Valid and Register Writing is Enabled and No Loading is happening, and RS2 is the same as Destination Address
       DECODE_FORWARDED_REGISTER2_DATA = EXECUTE_FORWARD_DATA; // Data Hazard: Forward Execute Data to Decode Stage (Loads are not considered will use a load stall)
     end else if (MEMORY_VALID && MEMORY_REGISTER_WRITE_ENABLE && (MEMORY_DESTINATION_REGISTER_ADDRESS != 5'd0) && (MEMORY_DESTINATION_REGISTER_ADDRESS == DECODE_REGISTER2_ADDRESS)) begin // Memory Stage is Valid and Register Writing is Enabled and RS2 is the same as Destination Address
       DECODE_FORWARDED_REGISTER2_DATA = MEMORY_FORWARD_DATA; // Data Hazard: Forward Memory Data
@@ -345,9 +348,9 @@ module Riscv64 #(
 
   // If the Execute Destination Address during a Load is the same as the Decode's register 1 that is being read a load hazard exists
   // (the rs1/rs2 FIELDS are compared even when an instruction does not use them: simple and safe, sometimes stalls for nothing, see Lab 5)
-  assign LOAD_HAZARD_REGISTER1 = EXECUTE_VALID && EXECUTE_MEMORY_READ_ENABLE && (EXECUTE_DESTINATION_REGISTER_ADDRESS != 5'd0) && (EXECUTE_DESTINATION_REGISTER_ADDRESS == DECODE_REGISTER1_ADDRESS) && (!PRECISE_LOAD_STALL || DECODE_USES_REGISTER1);
+  assign LOAD_HAZARD_REGISTER1 = EXECUTE_VALID && (EXECUTE_MEMORY_READ_ENABLE || EXECUTE_LATE_RESULT) && (EXECUTE_DESTINATION_REGISTER_ADDRESS != 5'd0) && (EXECUTE_DESTINATION_REGISTER_ADDRESS == DECODE_REGISTER1_ADDRESS) && (!PRECISE_LOAD_STALL || DECODE_USES_REGISTER1);
   // If the Execute Destination Address during a Load is the same as the Decode's register 2 that is being read a load hazard exists
-  assign LOAD_HAZARD_REGISTER2 = EXECUTE_VALID && EXECUTE_MEMORY_READ_ENABLE && (EXECUTE_DESTINATION_REGISTER_ADDRESS != 5'd0) && (EXECUTE_DESTINATION_REGISTER_ADDRESS == DECODE_REGISTER2_ADDRESS) && (!PRECISE_LOAD_STALL || DECODE_USES_REGISTER2);
+  assign LOAD_HAZARD_REGISTER2 = EXECUTE_VALID && (EXECUTE_MEMORY_READ_ENABLE || EXECUTE_LATE_RESULT) && (EXECUTE_DESTINATION_REGISTER_ADDRESS != 5'd0) && (EXECUTE_DESTINATION_REGISTER_ADDRESS == DECODE_REGISTER2_ADDRESS) && (!PRECISE_LOAD_STALL || DECODE_USES_REGISTER2);
   assign LOAD_STALL = DECODE_VALID && (LOAD_HAZARD_REGISTER1 || LOAD_HAZARD_REGISTER2); // Load Hazard Exists and thus enable the load stall
 
   ControlUnit control_unit (
@@ -371,8 +374,47 @@ module Riscv64 #(
     .USES_REGISTER2 (DECODE_USES_REGISTER2),
     .IMMEDIATE_TYPE_SELECT (DECODE_IMMEDIATE_TYPE_SELECT),
     .WRITEBACK_SELECT (DECODE_WRITEBACK_SELECT),
-    .ALU_OPERATION (DECODE_ALU_OPERATION)
+    .ALU_OPERATION (DECODE_ALU_OPERATION),
+    .ALU_OPERAND_A_ZERO_EXTEND (DECODE_ALU_OPERAND_A_ZERO_EXTEND),
+    .ALU_OPERAND_A_SHIFT (DECODE_ALU_OPERAND_A_SHIFT),
+    .ALU_OPERAND_B_INVERT (DECODE_ALU_OPERAND_B_INVERT)
   );
+
+  // ALU operands, chosen and prepared in DECODE (Zba / Zbb need: sh1add / sh2add / sh3add: rs1 << 1, 2, 3;
+  // .uw forms: zext(rs1[31:0]); andn / orn / xnor: ~rs2).
+  // The value forwarded from EXECUTE arrives at the very end of the cycle (it is the ALU's output), everything
+  // else (MEMORY, WRITEBACK, register file, PC, immediate) arrives early. So the operand is built in two parts:
+  //   early: x0 / MEMORY / WRITEBACK / register file, prepared, or the PC / immediate   (all the muxing off the loop)
+  //   late:  the EXECUTE value, prepared by one small one-hot multiplexer
+  // and a final 2:1 picks the late one when rs1 / rs2 is being forwarded from EXECUTE. Same values as
+  // DECODE_FORWARDED_*, but the ALU -> forwarding -> ALU loop only passes through two small multiplexers.
+  logic DECODE_REGISTER1_FROM_EXECUTE, DECODE_REGISTER2_FROM_EXECUTE;
+  assign DECODE_REGISTER1_FROM_EXECUTE = (DECODE_REGISTER1_ADDRESS != 5'd0) && EXECUTE_VALID && EXECUTE_REGISTER_WRITE_ENABLE && !EXECUTE_MEMORY_READ_ENABLE && !EXECUTE_LATE_RESULT && (EXECUTE_DESTINATION_REGISTER_ADDRESS == DECODE_REGISTER1_ADDRESS);
+  assign DECODE_REGISTER2_FROM_EXECUTE = (DECODE_REGISTER2_ADDRESS != 5'd0) && EXECUTE_VALID && EXECUTE_REGISTER_WRITE_ENABLE && !EXECUTE_MEMORY_READ_ENABLE && !EXECUTE_LATE_RESULT && (EXECUTE_DESTINATION_REGISTER_ADDRESS == DECODE_REGISTER2_ADDRESS);
+  logic [63:0] DECODE_EARLY_REGISTER1_DATA, DECODE_EARLY_REGISTER2_DATA; // the forwarding choice without EXECUTE
+  always_comb begin
+    if (DECODE_REGISTER1_ADDRESS == 5'd0) DECODE_EARLY_REGISTER1_DATA = 64'd0;
+    else if (MEMORY_VALID && MEMORY_REGISTER_WRITE_ENABLE && (MEMORY_DESTINATION_REGISTER_ADDRESS == DECODE_REGISTER1_ADDRESS)) DECODE_EARLY_REGISTER1_DATA = MEMORY_FORWARD_DATA;
+    else if (WRITEBACK_VALID && WRITEBACK_REGISTER_WRITE_ENABLE && (WRITEBACK_DESTINATION_REGISTER_ADDRESS == DECODE_REGISTER1_ADDRESS)) DECODE_EARLY_REGISTER1_DATA = WRITEBACK_DATA;
+    else DECODE_EARLY_REGISTER1_DATA = DECODE_REGISTER_FILE_REGISTER1_DATA;
+    if (DECODE_REGISTER2_ADDRESS == 5'd0) DECODE_EARLY_REGISTER2_DATA = 64'd0;
+    else if (MEMORY_VALID && MEMORY_REGISTER_WRITE_ENABLE && (MEMORY_DESTINATION_REGISTER_ADDRESS == DECODE_REGISTER2_ADDRESS)) DECODE_EARLY_REGISTER2_DATA = MEMORY_FORWARD_DATA;
+    else if (WRITEBACK_VALID && WRITEBACK_REGISTER_WRITE_ENABLE && (WRITEBACK_DESTINATION_REGISTER_ADDRESS == DECODE_REGISTER2_ADDRESS)) DECODE_EARLY_REGISTER2_DATA = WRITEBACK_DATA;
+    else DECODE_EARLY_REGISTER2_DATA = DECODE_REGISTER_FILE_REGISTER2_DATA;
+  end
+  function automatic logic [63:0] prepare_operand_a(input logic [63:0] value, input logic zero_extend, input logic [1:0] shift);
+    logic [63:0] extended;
+    extended = zero_extend ? {32'd0, value[31:0]} : value;
+    return extended << shift;
+  endfunction
+  logic [63:0] DECODE_EARLY_ALU_INPUT_A, DECODE_EARLY_ALU_INPUT_B, DECODE_LATE_ALU_INPUT_A, DECODE_LATE_ALU_INPUT_B;
+  logic [63:0] DECODE_ALU_INPUT_A, DECODE_ALU_INPUT_B;
+  assign DECODE_EARLY_ALU_INPUT_A = DECODE_ALU_INPUT_A_IS_PC ? DECODE_PC : prepare_operand_a(DECODE_EARLY_REGISTER1_DATA, DECODE_ALU_OPERAND_A_ZERO_EXTEND, DECODE_ALU_OPERAND_A_SHIFT);
+  assign DECODE_EARLY_ALU_INPUT_B = DECODE_ALU_INPUT_B_IS_IMMEDIATE ? DECODE_IMMEDIATE : (DECODE_ALU_OPERAND_B_INVERT ? ~DECODE_EARLY_REGISTER2_DATA : DECODE_EARLY_REGISTER2_DATA);
+  assign DECODE_LATE_ALU_INPUT_A = prepare_operand_a(EXECUTE_FORWARD_DATA, DECODE_ALU_OPERAND_A_ZERO_EXTEND, DECODE_ALU_OPERAND_A_SHIFT);
+  assign DECODE_LATE_ALU_INPUT_B = DECODE_ALU_OPERAND_B_INVERT ? ~EXECUTE_FORWARD_DATA : EXECUTE_FORWARD_DATA;
+  assign DECODE_ALU_INPUT_A = (DECODE_REGISTER1_FROM_EXECUTE && !DECODE_ALU_INPUT_A_IS_PC) ? DECODE_LATE_ALU_INPUT_A : DECODE_EARLY_ALU_INPUT_A;
+  assign DECODE_ALU_INPUT_B = (DECODE_REGISTER2_FROM_EXECUTE && !DECODE_ALU_INPUT_B_IS_IMMEDIATE) ? DECODE_LATE_ALU_INPUT_B : DECODE_EARLY_ALU_INPUT_B;
 
   ImmediateGenerator immediate_generator (
     .INSTRUCTION (DECODE_INSTRUCTION),
@@ -411,7 +453,10 @@ module Riscv64 #(
   logic [63:0] EXECUTE_PC_ADD_4; // Hold Next Program Counter at the Execute Stage
   logic [63:0] EXECUTE_ALU_INPUT_A; // ALU input A (register): rs1 or the PC, chosen in DECODE
   logic [63:0] EXECUTE_ALU_INPUT_B; // ALU input B (register): rs2 or the immediate, chosen in DECODE
-  logic [63:0] EXECUTE_ALU_OUTPUT; // Raw ALU Output
+  logic [63:0] EXECUTE_ALU_OUTPUT; // Raw ALU Output (every operation: goes to MEMORY)
+  logic [63:0] EXECUTE_ALU_FAST_OUTPUT; // Every operation except the late ones: what forwarding, addresses and JALR use
+  logic EXECUTE_LATE_RESULT; // cpop(w), min(u), max(u): result only from MEMORY on (too deep to sit in front of forwarding)
+  logic [63:0] EXECUTE_FAST_RESULT; // ALU fast output or the M unit
   logic [63:0] EXECUTE_MULTIPLY_DIVIDE_OUTPUT; // Raw Multiply Divide Unit Output
   logic [63:0] EXECUTE_ALU_RESULT; // Result at the Execute Stage (ALU or Multiply Divide Unit)
   logic [63:0] EXECUTE_JALR_TARGET; // JALR Target Address is Register1 + Immediate and half word aligned by clearing the LSB
@@ -433,6 +478,8 @@ module Riscv64 #(
     .ALUop (EXECUTE_ALU_OPERATION),
     .SUBTRACT_MODE (EXECUTE_ALU_SUBTRACT),
     .ALU_IS_WORD_OPERATION (EXECUTE_ALU_IS_WORD_OPERATION),
+    .LATE_RESULT (EXECUTE_LATE_RESULT),
+    .ALUOutFast (EXECUTE_ALU_FAST_OUTPUT),
     .ALUOut (EXECUTE_ALU_OUTPUT)
   );
 
@@ -466,7 +513,8 @@ module Riscv64 #(
   assign MULTIPLY_DIVIDE_STALL = EXECUTE_VALID && EXECUTE_IS_A_MULTIPLY_DIVIDE_INSTRUCTION && !MULTIPLY_DIVIDE_READY;
 
   assign EXECUTE_ALU_RESULT = EXECUTE_IS_A_MULTIPLY_DIVIDE_INSTRUCTION ? EXECUTE_MULTIPLY_DIVIDE_OUTPUT : EXECUTE_ALU_OUTPUT;
-  assign EXECUTE_JALR_TARGET = {EXECUTE_ALU_OUTPUT[63:1], 1'b0}; // JALR requires even addresses (Least Significant Bit forced to 0 to maintain halfword alignment)
+  assign EXECUTE_FAST_RESULT = EXECUTE_IS_A_MULTIPLY_DIVIDE_INSTRUCTION ? EXECUTE_MULTIPLY_DIVIDE_OUTPUT : EXECUTE_ALU_FAST_OUTPUT;
+  assign EXECUTE_JALR_TARGET = {EXECUTE_ALU_FAST_OUTPUT[63:1], 1'b0}; // JALR requires even addresses (Least Significant Bit forced to 0 to maintain halfword alignment)
 
   BranchComparator branch_comparator (
     .A (EXECUTE_REGISTER1_DATA),
@@ -519,7 +567,7 @@ module Riscv64 #(
 
   StoreControl store_control (
     .STORE_FUNCT3 (EXECUTE_FUNCT3),
-    .MEMORY_ADDRESS ({EXECUTE_ALU_RESULT[63:3], EXECUTE_STORE_BYTE_OFFSET}),
+    .MEMORY_ADDRESS ({EXECUTE_FAST_RESULT[63:3], EXECUTE_STORE_BYTE_OFFSET}),
     .MEMORY_INFO (EXECUTE_REGISTER2_DATA),
     .WRITE_MASK_FOR_STORE (EXECUTE_STORE_MASK),
     .DATA_TO_STORE (EXECUTE_STORE_DATA)
@@ -537,6 +585,7 @@ module Riscv64 #(
     .CSR_OPERATION (EXECUTE_FUNCT3),
     .CSR_WRITE_DATA (EXECUTE_CSR_WRITE_DATA),
     .INSTRUCTION_RETIRED (WRITEBACK_VALID),
+    .PERFORMANCE_EVENTS ({TRACE_DATA_MISS, TRACE_INSTRUCTION_MISS, TRACE_MULTIPLY_DIVIDE_STALL, TRACE_REDIRECT, TRACE_FLUSH, TRACE_LOAD_STALL}),
     .TAKE_TRAP (!FREEZE && EXECUTE_TAKES_TRAP),
     .TRAP_PC (EXECUTE_PC),
     .TRAP_CAUSE (EXECUTE_IS_AN_EBREAK ? CAUSE_BREAKPOINT : CAUSE_ENVIRONMENT_CALL),
@@ -550,15 +599,15 @@ module Riscv64 #(
   // Execute Writeback to Decode Stage MUX
   always_comb begin
     unique case (EXECUTE_WRITEBACK_SELECT)
-      WRITEBACK_ALU: EXECUTE_FORWARD_DATA = EXECUTE_ALU_RESULT; // ALU Result
+      WRITEBACK_ALU: EXECUTE_FORWARD_DATA = EXECUTE_FAST_RESULT; // ALU Result (cpop never forwards from here)
       WRITEBACK_PC_ADD_4: EXECUTE_FORWARD_DATA = EXECUTE_PC_ADD_4; // Program Counter + 4
       WRITEBACK_CSR: EXECUTE_FORWARD_DATA = EXECUTE_CSR_READ_DATA; // Control Status Register Data
       WRITEBACK_MEMORY: EXECUTE_FORWARD_DATA = 64'd0; // Load is not covered instead a load stall is used
-      default: EXECUTE_FORWARD_DATA = EXECUTE_ALU_RESULT; // In general the writeback would use the result from the ALU
+      default: EXECUTE_FORWARD_DATA = EXECUTE_FAST_RESULT; // In general the writeback would use the result from the ALU
     endcase
   end
 
-  assign dcache_addr = EXECUTE_ALU_RESULT; // Feed Data Memory the calculated Target Address
+  assign dcache_addr = EXECUTE_FAST_RESULT; // Feed Data Memory the calculated Target Address
   assign dcache_din = EXECUTE_STORE_DATA; // Feed Data Memory Data from Store Instruction
   assign dcache_we = (!FREEZE && EXECUTE_VALID && EXECUTE_MEMORY_WRITE_ENABLE) ? EXECUTE_STORE_MASK : 8'b0000_0000; // Place Write Mask If the Execute Stage is Valid and a Write
 
@@ -662,6 +711,7 @@ module Riscv64 #(
       EXECUTE_WRITEBACK_SELECT <= WRITEBACK_ALU;
       EXECUTE_ALU_OPERATION <= ALU_XXX;
       EXECUTE_ALU_SUBTRACT <= 1'b0;
+      EXECUTE_LATE_RESULT <= 1'b0;
       EXECUTE_MULTIPLY_DIVIDE_PREDECODED <= 3'b000;
       EXECUTE_PC_TARGET <= 64'd0;
       EXECUTE_PC_ADD_4 <= 64'd0;
@@ -728,8 +778,8 @@ module Riscv64 #(
       if (!DATA_CACHE_STALL && !MULTIPLY_DIVIDE_STALL) begin
           EXECUTE_PC <= DECODE_PC;
           EXECUTE_REGISTER1_DATA <= DECODE_FORWARDED_REGISTER1_DATA;
-          EXECUTE_ALU_INPUT_A <= DECODE_ALU_INPUT_A_IS_PC ? DECODE_PC : DECODE_FORWARDED_REGISTER1_DATA;
-          EXECUTE_ALU_INPUT_B <= DECODE_ALU_INPUT_B_IS_IMMEDIATE ? DECODE_IMMEDIATE : DECODE_FORWARDED_REGISTER2_DATA;
+          EXECUTE_ALU_INPUT_A <= DECODE_ALU_INPUT_A;
+          EXECUTE_ALU_INPUT_B <= DECODE_ALU_INPUT_B;
           EXECUTE_REGISTER2_DATA <= DECODE_FORWARDED_REGISTER2_DATA;
           EXECUTE_IMMEDIATE <= DECODE_IMMEDIATE;
           EXECUTE_DESTINATION_REGISTER_ADDRESS <= DECODE_DESTINATION_REGISTER_ADDRESS;
@@ -744,7 +794,10 @@ module Riscv64 #(
           EXECUTE_GLOBAL_HISTORY_CHECKPOINT <= DECODE_GLOBAL_HISTORY_CHECKPOINT;
           EXECUTE_WRITEBACK_SELECT <= DECODE_WRITEBACK_SELECT;
           EXECUTE_ALU_OPERATION <= DECODE_ALU_OPERATION;
-          EXECUTE_ALU_SUBTRACT <= (DECODE_ALU_OPERATION == ALU_SUB) || (DECODE_ALU_OPERATION == ALU_SLT) || (DECODE_ALU_OPERATION == ALU_SLTU);
+          EXECUTE_LATE_RESULT <= (DECODE_ALU_OPERATION == ALU_CPOP) || (DECODE_ALU_OPERATION == ALU_MIN) || (DECODE_ALU_OPERATION == ALU_MINU)
+            || (DECODE_ALU_OPERATION == ALU_MAX) || (DECODE_ALU_OPERATION == ALU_MAXU);
+          EXECUTE_ALU_SUBTRACT <= (DECODE_ALU_OPERATION == ALU_SUB) || (DECODE_ALU_OPERATION == ALU_SLT) || (DECODE_ALU_OPERATION == ALU_SLTU)
+            || (DECODE_ALU_OPERATION == ALU_MIN) || (DECODE_ALU_OPERATION == ALU_MINU) || (DECODE_ALU_OPERATION == ALU_MAX) || (DECODE_ALU_OPERATION == ALU_MAXU);
           EXECUTE_MULTIPLY_DIVIDE_PREDECODED <= {
             (DECODE_ALU_OPERATION == ALU_MULH) || (DECODE_ALU_OPERATION == ALU_MULHSU) || (DECODE_ALU_OPERATION == ALU_DIV) || (DECODE_ALU_OPERATION == ALU_REM),
             (DECODE_ALU_OPERATION == ALU_MULH) || (DECODE_ALU_OPERATION == ALU_DIV) || (DECODE_ALU_OPERATION == ALU_REM),

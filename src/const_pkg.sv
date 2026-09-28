@@ -41,6 +41,14 @@ package const_pkg;
   localparam logic [11:0] CSR_CYCLE   = 12'hC00; // rdcycle   : clock cycles since reset
   localparam logic [11:0] CSR_INSTRET = 12'hC02; // rdinstret : instructions retired since reset
   localparam logic [11:0] CSR_MHARTID = 12'hF14; // Machine Hardware Thread ID (always 0 on this single core)
+  // Hardware performance counters (read-only): one per term of the cycle equation in docs/MATH.md,
+  //   cycles = N + 5 + L + 3F + R + K + I + D   (N = instret)
+  localparam logic [11:0] CSR_HPMCOUNTER3 = 12'hC03; // L: load-stall cycles (loads and 2-cycle Zbb results)
+  localparam logic [11:0] CSR_HPMCOUNTER4 = 12'hC04; // F: flushes (wrong branch guesses, JALR misses, traps)
+  localparam logic [11:0] CSR_HPMCOUNTER5 = 12'hC05; // R: FETCH2 redirects
+  localparam logic [11:0] CSR_HPMCOUNTER6 = 12'hC06; // K: cycles the multiply/divide unit holds EXECUTE
+  localparam logic [11:0] CSR_HPMCOUNTER7 = 12'hC07; // I: instruction-cache miss cycles
+  localparam logic [11:0] CSR_HPMCOUNTER8 = 12'hC08; // D: data-cache miss cycles
   // ===============================================
   // Machine-mode trap CSRs (RISC-V privileged specification):
   localparam logic [11:0] CSR_MSTATUS  = 12'h300; // bit 3 MIE (interrupts enabled), bit 7 MPIE (MIE before the trap)

@@ -180,6 +180,7 @@ function expand(mn, ops, symbolsPass1) {
   switch (d.syntax) {
     case 'rrr': need(3); return one(mn, () => ({ rd: regNum(ops[0]), rs1: regNum(ops[1]), rs2: regNum(ops[2]) }));
     case 'rri': need(3); return one(mn, (s) => ({ rd: regNum(ops[0]), rs1: regNum(ops[1]), imm: Number(E(ops[2], s)) }));
+    case 'rr': need(2); return one(mn, () => ({ rd: regNum(ops[0]), rs1: regNum(ops[1]) }));
     case 'load': need(2); return one(mn, (s) => { const m = parseMem(ops[1]); return { rd: regNum(ops[0]), rs1: m.reg, imm: Number(E(m.off, s)) }; });
     case 'store': need(2); return one(mn, (s) => { const m = parseMem(ops[1]); return { rs2: regNum(ops[0]), rs1: m.reg, imm: Number(E(m.off, s)) }; });
     case 'branch': need(3); return one(mn, (s, pc) => ({ rs1: regNum(ops[0]), rs2: regNum(ops[1]), imm: rel(ops[2])(s, pc) }));

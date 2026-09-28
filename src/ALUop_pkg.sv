@@ -1,32 +1,50 @@
 `default_nettype none
 
 package alu_op_pkg;
-  typedef enum logic [4:0] {
-    ALU_ADD    = 5'd0,
-    ALU_SUB    = 5'd1,
-    ALU_AND    = 5'd2,
-    ALU_OR     = 5'd3,
-    ALU_XOR    = 5'd4,
-    ALU_SLT    = 5'd5,
-    ALU_SLTU   = 5'd6,
-    ALU_SLL    = 5'd7,
-    ALU_SRA    = 5'd8,
-    ALU_SRL    = 5'd9,
-    ALU_COPY_B = 5'd10,
-    ALU_CSR    = 5'd11, // Added for CSR instructions
-    ALU_JALR   = 5'd12, // Added for JALR instruction
+  typedef enum logic [5:0] {
+    ALU_ADD    = 6'd0,
+    ALU_SUB    = 6'd1,
+    ALU_AND    = 6'd2,
+    ALU_OR     = 6'd3,
+    ALU_XOR    = 6'd4,
+    ALU_SLT    = 6'd5,
+    ALU_SLTU   = 6'd6,
+    ALU_SLL    = 6'd7,
+    ALU_SRA    = 6'd8,
+    ALU_SRL    = 6'd9,
+    ALU_COPY_B = 6'd10,
+    ALU_CSR    = 6'd11, // Added for CSR instructions
+    ALU_JALR   = 6'd12, // Added for JALR instruction
     // ===============================================
     // M extension: handled by the Multiply Divide Unit next to the ALU
-    ALU_MUL    = 5'd16,
-    ALU_MULH   = 5'd17,
-    ALU_MULHSU = 5'd18,
-    ALU_MULHU  = 5'd19,
-    ALU_DIV    = 5'd20,
-    ALU_DIVU   = 5'd21,
-    ALU_REM    = 5'd22,
-    ALU_REMU   = 5'd23,
+    ALU_MUL    = 6'd16,
+    ALU_MULH   = 6'd17,
+    ALU_MULHSU = 6'd18,
+    ALU_MULHU  = 6'd19,
+    ALU_DIV    = 6'd20,
+    ALU_DIVU   = 6'd21,
+    ALU_REM    = 6'd22,
+    ALU_REMU   = 6'd23,
     // ===============================================
-    ALU_XXX    = 5'd31
+    // Zbb: bit manipulation
+    ALU_MIN    = 6'd32,
+    ALU_MINU   = 6'd33,
+    ALU_MAX    = 6'd34,
+    ALU_MAXU   = 6'd35,
+    ALU_CLZ    = 6'd36, // count leading zeros (clz, clzw)
+    ALU_CTZ    = 6'd37, // count trailing zeros (ctz, ctzw)
+    ALU_CPOP   = 6'd38, // count set bits (cpop, cpopw)
+    ALU_ROL    = 6'd39,
+    ALU_ROR    = 6'd40,
+    ALU_SEXT_B = 6'd41,
+    ALU_SEXT_H = 6'd42,
+    ALU_ZEXT_H = 6'd43,
+    ALU_REV8   = 6'd44, // byte reverse
+    ALU_ORC_B  = 6'd45, // OR-combine each byte
+    // (Zba needs no new operation: shNadd and .uw are an ADD or SLL with operand A prepared in DECODE,
+    //  andn / orn / xnor are AND / OR / XOR with operand B inverted in DECODE)
+    // ===============================================
+    ALU_XXX    = 6'd63
   } alu_op_t;
 endpackage : alu_op_pkg
 

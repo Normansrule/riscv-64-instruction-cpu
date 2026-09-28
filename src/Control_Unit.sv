@@ -26,29 +26,35 @@ module ControlUnit (
     output logic USES_REGISTER2, // This instruction really reads rs2
     output immediate_type_select_t IMMEDIATE_TYPE_SELECT,
     output writeback_select_t WRITEBACK_SELECT,
-    output alu_op_t ALU_OPERATION
+    output alu_op_t ALU_OPERATION,
+    output logic ALU_OPERAND_A_ZERO_EXTEND, // Zba .uw: operand A = zext(rs1[31:0])   (applied in DECODE)
+    output logic [1:0] ALU_OPERAND_A_SHIFT, // Zba shNadd: operand A = rs1 << N
+    output logic ALU_OPERAND_B_INVERT // Zbb andn / orn / xnor: operand B = ~rs2
 );
 
     logic [6:0] INSTRUCTION_OPCODE;
     logic [2:0] INSTRUCTION_FUNCT3;
     logic [6:0] INSTRUCTION_FUNCT7;
     logic [4:0] INSTRUCTION_REGISTER1_FIELD; // rs1 field (also the 5-bit zimm of CSRRWI/CSRRSI/CSRRCI)
-    logic INSTRUCTION_ADD_RSHIFT_TYPE; // if 0 its an ADD or Right Logical shift, if 1 its an SUB or Right Arithmetic Shift
     logic INSTRUCTION_MULTIPLY_DIVIDE_TYPE; // if 1 this R-type instruction belongs to the M extension (funct7 = 0000001)
 
     assign INSTRUCTION_OPCODE = INSTRUCTION[6:0];
     assign INSTRUCTION_FUNCT3 = INSTRUCTION[14:12];
     assign INSTRUCTION_FUNCT7 = INSTRUCTION[31:25];
     assign INSTRUCTION_REGISTER1_FIELD = INSTRUCTION[19:15];
-    assign INSTRUCTION_ADD_RSHIFT_TYPE = INSTRUCTION[30];
     assign INSTRUCTION_MULTIPLY_DIVIDE_TYPE = (INSTRUCTION_FUNCT7 == FNC7_MULTIPLY_DIVIDE);
 
+    logic FULL_WIDTH_RESULT; // add.uw, shNadd.uw, slli.uw, zext.h: W opcode space, 64-bit result
     ALUdec alu_decode (
         .opcode(INSTRUCTION_OPCODE),
         .funct(INSTRUCTION_FUNCT3),
-        .add_rshift_type(INSTRUCTION_ADD_RSHIFT_TYPE),
-        .multiply_divide_type(INSTRUCTION_MULTIPLY_DIVIDE_TYPE),
-        .ALUop(ALU_OPERATION)
+        .funct7(INSTRUCTION_FUNCT7),
+        .funct12(INSTRUCTION[31:20]),
+        .ALUop(ALU_OPERATION),
+        .OPERAND_A_ZERO_EXTEND(ALU_OPERAND_A_ZERO_EXTEND),
+        .OPERAND_A_SHIFT(ALU_OPERAND_A_SHIFT),
+        .OPERAND_B_INVERT(ALU_OPERAND_B_INVERT),
+        .FULL_WIDTH_RESULT(FULL_WIDTH_RESULT)
     );
 
     // System instructions with funct3 = 000 are told apart by bits 31:20 (rd and rs1 must be x0)
@@ -147,14 +153,14 @@ module ControlUnit (
             // RV64 Word instructions: same as above but 32-bit and sign extended
             OPC_ARI_RTYPE_WORD: begin
                 REGISTER_WRITE_ENABLE = 1'b1;
-                ALU_IS_WORD_OPERATION = 1'b1;
+                ALU_IS_WORD_OPERATION = !FULL_WIDTH_RESULT;
                 IS_A_MULTIPLY_DIVIDE_INSTRUCTION = INSTRUCTION_MULTIPLY_DIVIDE_TYPE;
                 WRITEBACK_SELECT = WRITEBACK_ALU;
             end
             OPC_ARI_ITYPE_WORD: begin
                 REGISTER_WRITE_ENABLE = 1'b1;
                 ALU_INPUT_B_IS_IMMEDIATE = 1'b1;
-                ALU_IS_WORD_OPERATION = 1'b1;
+                ALU_IS_WORD_OPERATION = !FULL_WIDTH_RESULT;
                 IMMEDIATE_TYPE_SELECT = IMMEDIATE_I;
                 WRITEBACK_SELECT = WRITEBACK_ALU;
             end

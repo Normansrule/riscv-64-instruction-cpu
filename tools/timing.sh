@@ -66,7 +66,7 @@ cat > build/synth/timing_$TAG.ys <<YS
 read_verilog build/synth/flat_$CFG.v
 $PARAMS
 $BLACKBOX
-synth -noabc -top Riscv64 -flatten
+synth -noabc -noshare -top Riscv64 -flatten
 $DFFMAP
 abc -D 100 $LIBARGS -script build/synth/abc_timing.scr
 YS

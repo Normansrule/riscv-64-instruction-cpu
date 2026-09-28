@@ -43,6 +43,34 @@ I = {
  'slli':lambda a,i:u(a<<i),'srli':lambda a,i:a>>i,'srai':lambda a,i:u(s(a)>>i),
  'addiw':lambda a,i:sx(a+i),'slliw':lambda a,i:sx(a<<i),'srliw':lambda a,i:sx(u32(a)>>i),'sraiw':lambda a,i:sx(s32(a)>>i),
 }
+def clz(x,w=64):
+    x%=1<<w
+    return w - x.bit_length()
+def ctz(x,w=64):
+    x%=1<<w
+    return w if x==0 else (x & -x).bit_length()-1
+def rotl(x,n,w): x%=1<<w; n%=w; return ((x<<n)|(x>>(w-n)))%(1<<w) if n else x
+def rotr(x,n,w): x%=1<<w; n%=w; return ((x>>n)|(x<<(w-n)))%(1<<w) if n else x
+def sext_n(x,n): x%=1<<n; return u(x-(1<<n) if x>>(n-1) else x)
+def rev8(x): return int.from_bytes(u(x).to_bytes(8,'little'),'big')
+def orcb(x): return sum((0xff if (x>>(8*i))&0xff else 0)<<(8*i) for i in range(8))
+ZR = {  # Zba / Zbb register-register
+ 'sh1add':lambda a,b:u(b+(a<<1)),'sh2add':lambda a,b:u(b+(a<<2)),'sh3add':lambda a,b:u(b+(a<<3)),
+ 'add.uw':lambda a,b:u(b+u32(a)),'sh1add.uw':lambda a,b:u(b+(u32(a)<<1)),'sh2add.uw':lambda a,b:u(b+(u32(a)<<2)),'sh3add.uw':lambda a,b:u(b+(u32(a)<<3)),
+ 'andn':lambda a,b:a&~b%M,'orn':lambda a,b:u(a|(~b%M)),'xnor':lambda a,b:u(~(a^b)),
+ 'min':lambda a,b:a if s(a)<s(b) else b,'minu':lambda a,b:min(a,b),'max':lambda a,b:a if s(a)>s(b) else b,'maxu':lambda a,b:max(a,b),
+ 'rol':lambda a,b:rotl(a,b&63,64),'ror':lambda a,b:rotr(a,b&63,64),
+ 'rolw':lambda a,b:sx(rotl(a,b&31,32)),'rorw':lambda a,b:sx(rotr(a,b&31,32)),
+}
+ZI = {  # immediates
+ 'slli.uw':lambda a,i:u(u32(a)<<i),'rori':lambda a,i:rotr(a,i,64),'roriw':lambda a,i:sx(rotr(a,i,32)),
+}
+ZU = {  # unary
+ 'clz':lambda a:clz(a),'ctz':lambda a:ctz(a),'cpop':lambda a:bin(u(a)).count('1'),
+ 'clzw':lambda a:clz(a,32),'ctzw':lambda a:ctz(a,32),'cpopw':lambda a:bin(u32(a)).count('1'),
+ 'sext.b':lambda a:sext_n(a,8),'sext.h':lambda a:sext_n(a,16),'zext.h':lambda a:a&0xffff,
+ 'rev8':rev8,'orc.b':orcb,
+}
 B = {'beq':lambda a,b:a==b,'bne':lambda a,b:a!=b,'blt':lambda a,b:s(a)<s(b),'bge':lambda a,b:s(a)>=s(b),
      'bltu':lambda a,b:a<b,'bgeu':lambda a,b:a>=b}
 V=[0,1,u(-1),7,u(-7),MIN,MIN-1,0x80000000,0x7fffffff,u(-0x80000000),0x123456789abcdef0,0xfedcba9876543210,63,64,33]
@@ -65,6 +93,25 @@ for op,f in I.items():
         for i in imms:
             n+=1; out.append(f"t{n}: # {op} {h(a)}, {i}"); out.append(f"    li   a0, {n}")
             out.append(f"    li   a1, {h(a)}"); out.append(f"    {op} a3, a1, {i}"); check('a3',f(a,i))
+for op,f in ZR.items():
+    for a,b in pairs[::5]:
+        n+=1; out.append(f"t{n}: # {op} {h(a)}, {h(b)}"); out.append(f"    li   a0, {n}")
+        out.append(f"    li   a1, {h(a)}"); out.append(f"    li   a2, {h(b)}"); out.append(f"    {op} a3, a1, a2"); check('a3',f(a,b))
+for op,f in ZI.items():
+    for a in V[::3]:
+        for i in ([0,1,13,31] if op=='roriw' else [0,1,13,32,63]):
+            n+=1; out.append(f"t{n}: # {op} {h(a)}, {i}"); out.append(f"    li   a0, {n}")
+            out.append(f"    li   a1, {h(a)}"); out.append(f"    {op} a3, a1, {i}"); check('a3',f(a,i))
+ZV = V + [0x00ff00ff00ff00ff, 0x0000000100000000, 0x8000000000000001, 0x00000000ffff8000, 0x0102030400000080]
+for op,f in ZU.items():
+    for a in ZV:
+        n+=1; out.append(f"t{n}: # {op} {h(a)}"); out.append(f"    li   a0, {n}")
+        out.append(f"    li   a1, {h(a)}"); out.append(f"    {op} a3, a1"); check('a3',f(a))
+n+=1; out+=[f"t{n}: # sh3add indexes an array of doublewords (forwarded both ways)", f"    li   a0, {n}", "    la   s0, scratch", "    li   t0, 3", "    li   t1, 0x77",
+            "    sd   t1, 24(s0)", "    sh3add t2, t0, s0", "    ld   a3, 0(t2)"]; check('a3',0x77)
+n+=1; out+=[f"t{n}: # max result used right away (2-cycle latency: one stall, then forwarded from MEMORY)", f"    li   a0, {n}", "    li   t0, -5", "    li   t1, 7", "    max  t2, t0, t1", "    sub  a3, t2, t1"]; check('a3',0)
+n+=1; out+=[f"t{n}: # performance counters are readable and count forward", f"    li   a0, {n}", "    csrr t0, hpmcounter4", "    nop", "    csrr t1, hpmcounter4", "    sltu a3, t1, t0"]; check('a3',0)
+n+=1; out+=[f"t{n}: # cpop result forwarded to the next instruction", f"    li   a0, {n}", "    li   t0, 0xff", "    cpop t1, t0", "    addi a3, t1, 1"]; check('a3',9)
 for op,f in B.items():
     for a,b in pairs[::9]:
         n+=1; out+= [f"t{n}: # {op} {h(a)}, {h(b)}", f"    li   a0, {n}", f"    li   a1, {h(a)}", f"    li   a2, {h(b)}",
@@ -128,12 +175,13 @@ csr_case("mcause = 3 after ebreak", ["    ebreak", "    csrr a3, mcause"], 'a3',
 csr_case("mepc = address of the ecall (the handler added 4)", ["trap_site:", "    ecall", "    csrr a3, mepc", "    la   t1, trap_site", "    sub  a3, a3, t1"], 'a3', 4)
 csr_case("mret restores MIE from MPIE", ["    csrsi mstatus, 8", "    ecall", "    csrr a3, mstatus", "    andi a3, a3, 0x88"], 'a3', 0x88)
 csr_case("cycle counter moves forward", ["    rdcycle t0", "    nop", "    nop", "    rdcycle t1", "    sltu a3, t0, t1"], 'a3', 1)
-csr_case("instret counts 3 retired instructions between reads (3 nops first so no earlier bubble is still draining)", ["    nop", "    nop", "    nop", "    rdinstret t0", "    nop", "    nop", "    rdinstret t1", "    sub  a3, t1, t0"], 'a3', 3)
+csr_case("instret counts 3 retired instructions between reads (second pass: warm instruction cache; 3 nops first so no earlier bubble is still draining)",
+         ["    li   t2, 2", f"t{n+1}_pass:", "    nop", "    nop", "    nop", "    rdinstret t0", "    nop", "    nop", "    rdinstret t1", "    addi t2, t2, -1", f"    bnez t2, t{n+1}_pass", "    sub  a3, t1, t0"], 'a3', 3)
 csr_case("cycle counter is read-only", ["    rdcycle t0", "    csrw cycle, zero", "    rdcycle t1", "    sltu a3, t0, t1"], 'a3', 1)
 
 hdr=f"""# =============================================================================
 # tests/isa_selfcheck.s: AUTO-GENERATED self-checking test of every RV64IM +
-# Zicsr + trap instruction ({n} test cases, expected values computed by an independent
+# Zicsr + Zba + Zbb + trap instruction ({n} test cases, expected values computed by an independent
 # Python reference model). Uses the riscv-tests convention:
 #   PASS: tohost = 1           FAIL: tohost = (test number << 1) | 1
 # so the testbench prints "FAIL in test N": search for "tN:" below.

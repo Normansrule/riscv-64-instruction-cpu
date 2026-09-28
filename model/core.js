@@ -23,6 +23,7 @@ export const STAGES = ['FETCH1', 'FETCH2', 'DECODE', 'EXECUTE', 'MEMORY', 'WRITE
 export const SHORT = { FETCH1: 'F1', FETCH2: 'F2', DECODE: 'D', EXECUTE: 'E', MEMORY: 'M', WRITEBACK: 'W' };
 export const RESET_PC = 0x2000;
 export const MMIO_PUTCHAR = 0x10000000n;
+export const HPM = { 0xC03: 'stall', 0xC04: 'flush', 0xC05: 'redirect', 0xC06: 'busy', 0xC07: 'imiss', 0xC08: 'dmiss' }; // hpmcounter3..8 = L F R K I D
 export const CSR = { TOHOST: 0x51E, STATUS: 0x50A, HARTID: 0x50B, CYCLE: 0xC00, INSTRET: 0xC02, MHARTID: 0xF14,
   MSTATUS: 0x300, MTVEC: 0x305, MSCRATCH: 0x340, MEPC: 0x341, MCAUSE: 0x342 };
 export const DEFAULT_HISTORY_BITS = 6; // GSHARE_HISTORY_BITS in src/Riscv64.sv
@@ -66,12 +67,57 @@ export const WB_NAMES = ['ALU', 'MEMORY', 'PC_ADD_4', 'CSR'];
 const ARITH = ['ADD', 'SLL', 'SLT', 'SLTU', 'XOR', 'SRL_SRA', 'OR', 'AND'];
 const MULDIV = ['MUL', 'MULH', 'MULHSU', 'MULHU', 'DIV', 'DIVU', 'REM', 'REMU'];
 
+// ALUdec (src/ALUdec.sv): opcode + funct3 + funct7 / funct12 -> ALU operation, plus the operand preparation
+// DECODE applies for Zba/Zbb (aZext: use zext(rs1[31:0]); aShift: rs1 << n; invB: ~rs2; full: 64-bit result
+// although the opcode is in the W space).
+export function aluDecode(word) {
+  const op = word & 0x7f, f3 = bits(word, 14, 12), f7 = bits(word, 31, 25), f6 = f7 >> 1, f12 = bits(word, 31, 20), b30 = bits(word, 30, 30);
+  const r = { aluOp: 'XXX', aZext: 0, aShift: 0, invB: 0, full: 0 };
+  const base = () => { const n = ARITH[f3]; return n === 'SRL_SRA' ? (b30 ? 'SRA' : 'SRL') : n; };
+  switch (op) {
+    case OPC.OP_IMM:
+      if (f3 === 0b001) r.aluOp = ({ 0x600: 'CLZ', 0x601: 'CTZ', 0x602: 'CPOP', 0x604: 'SEXT_B', 0x605: 'SEXT_H' })[f12] || 'SLL';
+      else if (f3 === 0b101) r.aluOp = f12 === 0x6b8 ? 'REV8' : f12 === 0x287 ? 'ORC_B' : f6 === 0b011000 ? 'ROR' : (b30 ? 'SRA' : 'SRL');
+      else r.aluOp = f3 === 0 ? 'ADD' : base();
+      break;
+    case OPC.OP_IMM_32:
+      if (f3 === 0b001) {
+        const u = ({ 0x600: 'CLZ', 0x601: 'CTZ', 0x602: 'CPOP' })[f12];
+        if (u) r.aluOp = u; else if (f6 === 0b000010) Object.assign(r, { aluOp: 'SLL', aZext: 1, full: 1 }); else r.aluOp = 'SLL';
+      } else if (f3 === 0b101) r.aluOp = f7 === 0b0110000 ? 'ROR' : (b30 ? 'SRA' : 'SRL');
+      else r.aluOp = f3 === 0 ? 'ADD' : base();
+      break;
+    case OPC.OP: case OPC.OP_32: {
+      const word32 = op === OPC.OP_32;
+      if (f7 === 0b0000001) r.aluOp = MULDIV[f3];
+      else if (f7 === 0b0000000) r.aluOp = f3 === 0 ? 'ADD' : base();
+      else if (f7 === 0b0100000) {
+        if (f3 === 0b000) r.aluOp = 'SUB'; else if (f3 === 0b101) r.aluOp = 'SRA';
+        else if (!word32 && f3 === 0b111) Object.assign(r, { aluOp: 'AND', invB: 1 });
+        else if (!word32 && f3 === 0b110) Object.assign(r, { aluOp: 'OR', invB: 1 });
+        else if (!word32 && f3 === 0b100) Object.assign(r, { aluOp: 'XOR', invB: 1 });
+      } else if (f7 === 0b0010000 && (f3 === 0b010 || f3 === 0b100 || f3 === 0b110)) Object.assign(r, { aluOp: 'ADD', aShift: f3 >> 1, aZext: word32 ? 1 : 0, full: word32 ? 1 : 0 });
+      else if (f7 === 0b0000101 && !word32 && f3 >= 0b100) r.aluOp = ['MIN', 'MINU', 'MAX', 'MAXU'][f3 - 4];
+      else if (f7 === 0b0110000 && (f3 === 0b001 || f3 === 0b101)) r.aluOp = f3 === 0b001 ? 'ROL' : 'ROR';
+      else if (f7 === 0b0000100 && word32 && f3 === 0b000) Object.assign(r, { aluOp: 'ADD', aZext: 1, full: 1 });
+      else if (f7 === 0b0000100 && word32 && f3 === 0b100) Object.assign(r, { aluOp: 'ZEXT_H', full: 1 });
+      break;
+    }
+    default: break;
+  }
+  return r;
+}
+
+// Zbb results with a 2-cycle latency: forwarded from MEMORY, and a dependent next instruction waits (LOAD_STALL)
+export const LATE_OPS = new Set(['CPOP', 'MIN', 'MINU', 'MAX', 'MAXU']);
+
 export function control(word) {
-  const op = word & 0x7f, f3 = bits(word, 14, 12), f7 = bits(word, 31, 25), b30 = bits(word, 30, 30), rs1f = bits(word, 19, 15);
+  const op = word & 0x7f, f3 = bits(word, 14, 12), f7 = bits(word, 31, 25), rs1f = bits(word, 19, 15);
   const c = { regWrite: 0, memRead: 0, memWrite: 0, csrWrite: 0, csrImm: 0, aIsPC: 0, bIsImm: 0, isWord: 0, isMulDiv: 0,
-    isBranch: 0, isJal: 0, isJalr: 0, isEcall: 0, isEbreak: 0, isMret: 0, immType: 'I', wbSel: WB.ALU, aluOp: 'XXX' };
+    isBranch: 0, isJal: 0, isJalr: 0, isEcall: 0, isEbreak: 0, isMret: 0, immType: 'I', wbSel: WB.ALU, aluOp: 'XXX',
+    aZext: 0, aShift: 0, invB: 0, late: 0 };
   const md = f7 === 0b0000001;
-  const arith = () => { const n = ARITH[f3]; return n === 'SRL_SRA' ? (b30 ? 'SRA' : 'SRL') : n; };
+  const dec = () => { const d = aluDecode(word); Object.assign(c, { aluOp: d.aluOp, aZext: d.aZext, aShift: d.aShift, invB: d.invB, late: LATE_OPS.has(d.aluOp) ? 1 : 0 }); return d; };
   switch (op) {
     case OPC.LUI: Object.assign(c, { regWrite: 1, bIsImm: 1, immType: 'U', aluOp: 'COPY_B' }); break;
     case OPC.AUIPC: Object.assign(c, { regWrite: 1, aIsPC: 1, bIsImm: 1, immType: 'U', aluOp: 'ADD' }); break;
@@ -80,14 +126,16 @@ export function control(word) {
     case OPC.BRANCH: Object.assign(c, { isBranch: 1, aIsPC: 1, bIsImm: 1, immType: 'B', aluOp: 'ADD' }); break;
     case OPC.STORE: Object.assign(c, { memWrite: 1, bIsImm: 1, immType: 'S', aluOp: 'ADD' }); break;
     case OPC.LOAD: Object.assign(c, { regWrite: 1, memRead: 1, bIsImm: 1, immType: 'I', wbSel: WB.MEMORY, aluOp: 'ADD' }); break;
-    case OPC.OP: case OPC.OP_32:
-      Object.assign(c, { regWrite: 1, isMulDiv: md ? 1 : 0, isWord: op === OPC.OP_32 ? 1 : 0 });
-      c.aluOp = md ? MULDIV[f3] : (f3 === 0 ? (b30 ? 'SUB' : 'ADD') : arith());
+    case OPC.OP: case OPC.OP_32: {
+      Object.assign(c, { regWrite: 1, isMulDiv: md ? 1 : 0 });
+      const d = dec(); c.isWord = op === OPC.OP_32 && !d.full ? 1 : 0;
       break;
-    case OPC.OP_IMM: case OPC.OP_IMM_32:
-      Object.assign(c, { regWrite: 1, bIsImm: 1, immType: 'I', isWord: op === OPC.OP_IMM_32 ? 1 : 0 });
-      c.aluOp = f3 === 0 ? 'ADD' : arith();
+    }
+    case OPC.OP_IMM: case OPC.OP_IMM_32: {
+      Object.assign(c, { regWrite: 1, bIsImm: 1, immType: 'I' });
+      const d = dec(); c.isWord = op === OPC.OP_IMM_32 && !d.full ? 1 : 0;
       break;
+    }
     case OPC.SYSTEM:
       c.regWrite = f3 !== 0 ? 1 : 0; c.wbSel = WB.CSR;
       if (f3 === 0b001 || f3 === 0b101) c.csrWrite = 1; else if (f3 !== 0) c.csrWrite = rs1f !== 0 ? 1 : 0;
@@ -103,6 +151,10 @@ export function control(word) {
   return c;
 }
 
+// DECODE's operand preparation (Riscv64.sv: EXECUTE_ALU_INPUT_A / _B are chosen and prepared in DECODE)
+export function prepareA(rs1, c) { const x = c.aZext ? (rs1 & 0xffffffffn) : rs1; return u64(x << BigInt(c.aShift || 0)); }
+export function prepareB(rs2, c) { return c.invB ? u64(~rs2) : rs2; }
+
 // ---------------------------------------------------------------- ImmediateGenerator
 export function immediate(word, type) {
   switch (type) {
@@ -117,14 +169,26 @@ export function immediate(word, type) {
 }
 
 // ---------------------------------------------------------------- ALU (src/ALU.sv)
+const clz64 = x => { if (x === 0n) return 64n; let n = 0n; for (let i = 63n; i >= 0n && !((x >> i) & 1n); i--) n++; return n; };
+const ctz64 = x => { if (x === 0n) return 64n; let n = 0n; while (!((x >> n) & 1n)) n++; return n; };
+const cpop64 = x => { let n = 0n; while (x) { n += x & 1n; x >>= 1n; } return n; };
+const rot = (x, s, w, left) => { const m = (1n << w) - 1n; s %= w; if (s === 0n) return x & m; return left ? (((x << s) | (x >> (w - s))) & m) : (((x >> s) | (x << (w - s))) & m); };
+export const SUBTRACTS = new Set(['SUB', 'SLT', 'SLTU', 'MIN', 'MINU', 'MAX', 'MAXU']);
 export function alu(a, b, op, isWord) {
-  const sub = op === 'SUB' || op === 'SLT' || op === 'SLTU';
+  const sub = SUBTRACTS.has(op);
   const sum = a + (sub ? u64(~b) : b) + (sub ? 1n : 0n); // 65-bit shared adder
+  const slt = ((a >> 63n) !== (b >> 63n)) ? (a >> 63n) : ((u64(sum) >> 63n) & 1n);
+  const sltu = ((sum >> 64n) & 1n) ? 0n : 1n;
   if (isWord) {
     const sh = BigInt(Number(b & 31n)), lo = u32(a);
     if (op === 'SLL') return sx32(lo << sh);
     if (op === 'SRL') return sx32(lo >> sh);
     if (op === 'SRA') return sx32(u32(s32(lo) >> sh));
+    if (op === 'ROL') return sx32(rot(lo, sh, 32n, true));
+    if (op === 'ROR') return sx32(rot(lo, sh, 32n, false));
+    if (op === 'CLZ') return lo === 0n ? 32n : clz64(lo) - 32n;
+    if (op === 'CTZ') return lo === 0n ? 32n : ctz64(lo);
+    if (op === 'CPOP') return cpop64(lo);
     return sx32(sum); // ADDW / ADDIW / SUBW use the low half of the shared adder
   }
   const sh = BigInt(Number(b & 63n));
@@ -133,13 +197,27 @@ export function alu(a, b, op, isWord) {
     case 'AND': return a & b;
     case 'OR': return a | b;
     case 'XOR': return a ^ b;
-    case 'SLT': return ((a >> 63n) !== (b >> 63n)) ? (a >> 63n) : ((u64(sum) >> 63n) & 1n);
-    case 'SLTU': return ((sum >> 64n) & 1n) ? 0n : 1n;
+    case 'SLT': return slt;
+    case 'SLTU': return sltu;
     case 'SLL': return u64(a << sh);
     case 'SRL': return a >> sh;
     case 'SRA': return u64(s64(a) >> sh);
     case 'COPY_B': return b;
     case 'CSR': return a & u64(~b);
+    case 'MIN': return slt ? a : b;
+    case 'MINU': return sltu ? a : b;
+    case 'MAX': return slt ? b : a;
+    case 'MAXU': return sltu ? b : a;
+    case 'ROL': return rot(a, sh, 64n, true);
+    case 'ROR': return rot(a, sh, 64n, false);
+    case 'CLZ': return clz64(a);
+    case 'CTZ': return ctz64(a);
+    case 'CPOP': return cpop64(a);
+    case 'SEXT_B': return u64(BigInt.asIntN(8, a));
+    case 'SEXT_H': return u64(BigInt.asIntN(16, a));
+    case 'ZEXT_H': return a & 0xffffn;
+    case 'REV8': { let r = 0n; for (let i = 0n; i < 8n; i++) r |= ((a >> (8n * i)) & 0xffn) << (8n * (7n - i)); return r; }
+    case 'ORC_B': { let r = 0n; for (let i = 0n; i < 8n; i++) if ((a >> (8n * i)) & 0xffn) r |= 0xffn << (8n * i); return r; }
     default: return 0n;
   }
 }
@@ -247,6 +325,7 @@ export class Core {
     this.regs = new Array(32).fill(0n);
     this.bp = new GShare(historyBits, bp);
     this.csr = { tohost: 0n, status: 0n, cycle: 0n, instret: 0n, mstatus: 0n, mtvec: 0n, mscratch: 0n, mepc: 0n, mcause: 0n };
+    this.hpm = { stall: 0n, flush: 0n, redirect: 0n, busy: 0n, imiss: 0n, dmiss: 0n };
     this.F1PC = RESET_PC;
     this.f2 = BUBBLE('fill'); this.d = BUBBLE('fill'); this.e = BUBBLE('fill'); this.m = BUBBLE('fill'); this.w = BUBBLE('fill');
     this.cycle = 0; this.halted = false; this.output = '';
@@ -305,6 +384,7 @@ export class Core {
       case CSR.STATUS: return this.csr.status;
       case CSR.CYCLE: return this.csr.cycle;
       case CSR.INSTRET: return this.csr.instret;
+      case 0xC03: case 0xC04: case 0xC05: case 0xC06: case 0xC07: case 0xC08: return this.hpm[HPM[addr]];
       case CSR.MSTATUS: return this.csr.mstatus;
       case CSR.MTVEC: return this.csr.mtvec;
       case CSR.MSCRATCH: return this.csr.mscratch;
@@ -344,7 +424,7 @@ export class Core {
     let FLUSH = false, adjust = 0, fwdE = 0n, exNext = null, storeOp = null, csrWrite = null, bpTrain = null, restoreGhr = null, btbWrite = null, MDU_STALL = false, mduSteps = 0;
     let dReq = false, dHit = true, dAddr = 0n, D_STALL = false, trap = null, mret = false, dStoreSlot = -1;
     if (e.valid) {
-      const A = e.aIsPC ? BigInt(e.pc) : e.rs1v, B = e.bIsImm ? e.imm : e.rs2v;
+      const A = e.aIsPC ? BigInt(e.pc) : prepareA(e.rs1v, e), B = e.bIsImm ? e.imm : prepareB(e.rs2v, e);
       const aluOut = alu(A, B, e.aluOp, e.isWord);
       const result = e.isMulDiv ? multiplyDivide(e.rs1v, e.rs2v, e.aluOp, e.isWord) : aluOut;
       const pc4 = u64(BigInt(e.pc) + 4n);
@@ -391,13 +471,13 @@ export class Core {
     const rs1f = bits(dw, 19, 15), rs2f = bits(dw, 24, 20), rdf = bits(dw, 11, 7);
     const forward = (r) => {
       if (r === 0) return [0n, null];
-      if (e.valid && e.regWrite && !e.memRead && e.rd !== 0 && e.rd === r) return [fwdE, 'EXECUTE'];
+      if (e.valid && e.regWrite && !e.memRead && !e.late && e.rd !== 0 && e.rd === r) return [fwdE, 'EXECUTE']; // loads and cpop forward from MEMORY
       if (m.valid && m.regWrite && m.rd !== 0 && m.rd === r) return [fwdM, 'MEMORY'];
       if (w.valid && w.regWrite && w.rd !== 0 && w.rd === r) return [w.data, 'WRITEBACK'];
       return [this.regs[r], null];
     };
     const useD = usesRegisters(dw), exact = this.opts.preciseStall;
-    const LOAD_STALL = d.valid && e.valid && !!e.memRead && e.rd !== 0 && ((e.rd === rs1f && (!exact || useD.rs1)) || (e.rd === rs2f && (!exact || useD.rs2)));
+    const LOAD_STALL = d.valid && e.valid && (!!e.memRead || !!e.late) && e.rd !== 0 && ((e.rd === rs1f && (!exact || useD.rs1)) || (e.rd === rs2f && (!exact || useD.rs2)));
     let deNext = null;
     if (d.valid) {
       ev.stages.DECODE = { id: d.id, pc: d.pc };
@@ -475,6 +555,7 @@ export class Core {
       else if (a === CSR.MTVEC) c.mtvec = v; else if (a === CSR.MSCRATCH) c.mscratch = v; else if (a === CSR.MEPC) c.mepc = v & ~1n; else if (a === CSR.MCAUSE) c.mcause = v;
     }
     this.csr.cycle++; if (w.valid) this.csr.instret++;
+    for (const k of ['stall', 'flush', 'redirect', 'busy', 'imiss', 'dmiss']) if (ev[k]) this.hpm[k]++; // performance counters (CSRFile EventCounter)
     if (bpTrain) {
       ev.bpUpdate = { ...this.bp.train(bpTrain.idx, bpTrain.taken), taken: bpTrain.taken }; this.stats.branches++;
       if (this.opts.tournament) {

@@ -5,6 +5,8 @@ src/WRITEBACK_op_pkg.sv
 src/const_pkg.sv
 src/Parallel_Prefix_Adder.sv
 src/Prefix_Negate.sv
+src/Leading_Zero_Counter.sv
+src/Population_Count.sv
 src/ALU.sv
 src/Multiply_Divide_Unit.sv
 src/Carry_Save_Multiplier.sv

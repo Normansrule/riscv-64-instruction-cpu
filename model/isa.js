@@ -1,6 +1,7 @@
 // =============================================================================
 // model/isa.js — THE single source of truth for the RV64IM + Zicsr instruction set.
 //
+// RV64IM + Zicsr + Zba + Zbb (the bit-manipulation extensions every current RISC-V application core has).
 // Every other part of the repo derives from this table:
 //   * model/asm.js        assembles text into machine code using `encode()`
 //   * model/core.js       decodes machine code using `decode()`
@@ -33,6 +34,7 @@ export const FORMATS = {
   I: [['imm[11:0]', 31, 20], ['rs1', 19, 15], ['funct3', 14, 12], ['rd', 11, 7], ['opcode', 6, 0]],
   'I-sh64': [['funct6', 31, 26], ['shamt[5:0]', 25, 20], ['rs1', 19, 15], ['funct3', 14, 12], ['rd', 11, 7], ['opcode', 6, 0]],
   'I-sh32': [['funct7', 31, 25], ['shamt[4:0]', 24, 20], ['rs1', 19, 15], ['funct3', 14, 12], ['rd', 11, 7], ['opcode', 6, 0]],
+  'I-unary': [['funct12', 31, 20], ['rs1', 19, 15], ['funct3', 14, 12], ['rd', 11, 7], ['opcode', 6, 0]],
   S: [['imm[11:5]', 31, 25], ['rs2', 24, 20], ['rs1', 19, 15], ['funct3', 14, 12], ['imm[4:0]', 11, 7], ['opcode', 6, 0]],
   B: [['imm[12|10:5]', 31, 25], ['rs2', 24, 20], ['rs1', 19, 15], ['funct3', 14, 12], ['imm[4:1|11]', 11, 7], ['opcode', 6, 0]],
   U: [['imm[31:12]', 31, 12], ['rd', 11, 7], ['opcode', 6, 0]],
@@ -47,6 +49,7 @@ export const FORMATS = {
 //   rrr: rd, rs1, rs2      rri: rd, rs1, imm       load: rd, off(rs1)
 //   store: rs2, off(rs1)   branch: rs1, rs2, label  ui: rd, imm20
 //   jal: rd, label         jalr: rd, off(rs1)       none
+//   rr: rd, rs1 (one source register, Zbb unary operations; funct7 holds the whole funct12)
 const I = (name, fmt, opcode, funct3, funct7, syntax, ext, cls, desc, sem) =>
   ({ name, fmt, opcode, funct3, funct7, syntax, ext, cls, desc, sem });
 
@@ -134,13 +137,48 @@ export const INSTRUCTIONS = [
   I('divuw',  'R', O.OP_32, 0b101, 0b0000001, 'rrr', 'RV64M', 'Divide', 'Divide Word Unsigned', 'rd = sext(rs1[31:0] /u rs2[31:0])'),
   I('remw',   'R', O.OP_32, 0b110, 0b0000001, 'rrr', 'RV64M', 'Divide', 'Remainder Word (signed)', 'rd = sext(rs1[31:0] %s rs2[31:0])'),
   I('remuw',  'R', O.OP_32, 0b111, 0b0000001, 'rrr', 'RV64M', 'Divide', 'Remainder Word Unsigned', 'rd = sext(rs1[31:0] %u rs2[31:0])'),
+  // ---------------- Zba: address generation (array indexing in one instruction) ----------
+  I('sh1add',    'R', O.OP,    0b010, 0b0010000, 'rrr', 'Zba', 'Address generation', 'Shift left by 1 and Add', 'rd = rs2 + (rs1 << 1)'),
+  I('sh2add',    'R', O.OP,    0b100, 0b0010000, 'rrr', 'Zba', 'Address generation', 'Shift left by 2 and Add', 'rd = rs2 + (rs1 << 2)'),
+  I('sh3add',    'R', O.OP,    0b110, 0b0010000, 'rrr', 'Zba', 'Address generation', 'Shift left by 3 and Add', 'rd = rs2 + (rs1 << 3)'),
+  I('add.uw',    'R', O.OP_32, 0b000, 0b0000100, 'rrr', 'Zba', 'Address generation', 'Add Unsigned Word', 'rd = rs2 + zext(rs1[31:0])'),
+  I('sh1add.uw', 'R', O.OP_32, 0b010, 0b0010000, 'rrr', 'Zba', 'Address generation', 'Shift Unsigned Word left by 1 and Add', 'rd = rs2 + (zext(rs1[31:0]) << 1)'),
+  I('sh2add.uw', 'R', O.OP_32, 0b100, 0b0010000, 'rrr', 'Zba', 'Address generation', 'Shift Unsigned Word left by 2 and Add', 'rd = rs2 + (zext(rs1[31:0]) << 2)'),
+  I('sh3add.uw', 'R', O.OP_32, 0b110, 0b0010000, 'rrr', 'Zba', 'Address generation', 'Shift Unsigned Word left by 3 and Add', 'rd = rs2 + (zext(rs1[31:0]) << 3)'),
+  I('slli.uw',   'I-sh64', O.OP_IMM_32, 0b001, 0b000010, 'rri', 'Zba', 'Address generation', 'Shift Left Logical Immediate Unsigned Word', 'rd = zext(rs1[31:0]) << shamt[5:0]'),
+  // ---------------- Zbb: basic bit manipulation --------------------------------------------
+  I('andn',  'R', O.OP, 0b111, 0b0100000, 'rrr', 'Zbb', 'Bit manipulation', 'AND with inverted operand', 'rd = rs1 & ~rs2'),
+  I('orn',   'R', O.OP, 0b110, 0b0100000, 'rrr', 'Zbb', 'Bit manipulation', 'OR with inverted operand', 'rd = rs1 | ~rs2'),
+  I('xnor',  'R', O.OP, 0b100, 0b0100000, 'rrr', 'Zbb', 'Bit manipulation', 'Exclusive NOR', 'rd = ~(rs1 ^ rs2)'),
+  I('min',   'R', O.OP, 0b100, 0b0000101, 'rrr', 'Zbb', 'Bit manipulation', 'Minimum (signed)', 'rd = (rs1 <s rs2) ? rs1 : rs2'),
+  I('minu',  'R', O.OP, 0b101, 0b0000101, 'rrr', 'Zbb', 'Bit manipulation', 'Minimum Unsigned', 'rd = (rs1 <u rs2) ? rs1 : rs2'),
+  I('max',   'R', O.OP, 0b110, 0b0000101, 'rrr', 'Zbb', 'Bit manipulation', 'Maximum (signed)', 'rd = (rs1 <s rs2) ? rs2 : rs1'),
+  I('maxu',  'R', O.OP, 0b111, 0b0000101, 'rrr', 'Zbb', 'Bit manipulation', 'Maximum Unsigned', 'rd = (rs1 <u rs2) ? rs2 : rs1'),
+  I('rol',   'R', O.OP, 0b001, 0b0110000, 'rrr', 'Zbb', 'Bit manipulation', 'Rotate Left', 'rd = (rs1 << rs2[5:0]) | (rs1 >>u (64 - rs2[5:0]))'),
+  I('ror',   'R', O.OP, 0b101, 0b0110000, 'rrr', 'Zbb', 'Bit manipulation', 'Rotate Right', 'rd = (rs1 >>u rs2[5:0]) | (rs1 << (64 - rs2[5:0]))'),
+  I('rori',  'I-sh64', O.OP_IMM, 0b101, 0b011000, 'rri', 'Zbb', 'Bit manipulation', 'Rotate Right Immediate', 'rd = (rs1 >>u shamt) | (rs1 << (64 - shamt))'),
+  I('rolw',  'R', O.OP_32, 0b001, 0b0110000, 'rrr', 'Zbb', 'Bit manipulation', 'Rotate Left Word', 'rd = sext(rotate_left(rs1[31:0], rs2[4:0]))'),
+  I('rorw',  'R', O.OP_32, 0b101, 0b0110000, 'rrr', 'Zbb', 'Bit manipulation', 'Rotate Right Word', 'rd = sext(rotate_right(rs1[31:0], rs2[4:0]))'),
+  I('roriw', 'I-sh32', O.OP_IMM_32, 0b101, 0b0110000, 'rri', 'Zbb', 'Bit manipulation', 'Rotate Right Immediate Word', 'rd = sext(rotate_right(rs1[31:0], shamt[4:0]))'),
+  I('clz',    'I-unary', O.OP_IMM,    0b001, 0x600, 'rr', 'Zbb', 'Bit manipulation', 'Count Leading Zeros', 'rd = number of 0 bits above the highest 1 (64 if rs1 = 0)'),
+  I('ctz',    'I-unary', O.OP_IMM,    0b001, 0x601, 'rr', 'Zbb', 'Bit manipulation', 'Count Trailing Zeros', 'rd = number of 0 bits below the lowest 1 (64 if rs1 = 0)'),
+  I('cpop',   'I-unary', O.OP_IMM,    0b001, 0x602, 'rr', 'Zbb', 'Bit manipulation', 'Count Population (set bits)', 'rd = number of 1 bits in rs1'),
+  I('clzw',   'I-unary', O.OP_IMM_32, 0b001, 0x600, 'rr', 'Zbb', 'Bit manipulation', 'Count Leading Zeros Word', 'rd = leading zeros of rs1[31:0] (32 if zero)'),
+  I('ctzw',   'I-unary', O.OP_IMM_32, 0b001, 0x601, 'rr', 'Zbb', 'Bit manipulation', 'Count Trailing Zeros Word', 'rd = trailing zeros of rs1[31:0] (32 if zero)'),
+  I('cpopw',  'I-unary', O.OP_IMM_32, 0b001, 0x602, 'rr', 'Zbb', 'Bit manipulation', 'Count Population Word', 'rd = number of 1 bits in rs1[31:0]'),
+  I('sext.b', 'I-unary', O.OP_IMM,    0b001, 0x604, 'rr', 'Zbb', 'Bit manipulation', 'Sign-extend Byte', 'rd = sext(rs1[7:0])'),
+  I('sext.h', 'I-unary', O.OP_IMM,    0b001, 0x605, 'rr', 'Zbb', 'Bit manipulation', 'Sign-extend Halfword', 'rd = sext(rs1[15:0])'),
+  I('zext.h', 'I-unary', O.OP_32,     0b100, 0x080, 'rr', 'Zbb', 'Bit manipulation', 'Zero-extend Halfword', 'rd = zext(rs1[15:0])'),
+  I('rev8',   'I-unary', O.OP_IMM,    0b101, 0x6B8, 'rr', 'Zbb', 'Bit manipulation', 'Reverse byte order', 'rd = the 8 bytes of rs1 in reverse order (endianness swap)'),
+  I('orc.b',  'I-unary', O.OP_IMM,    0b101, 0x287, 'rr', 'Zbb', 'Bit manipulation', 'OR-Combine each Byte', 'rd byte i = (rs1 byte i != 0) ? 0xFF : 0x00 (finds the 0 byte ending a string)'),
 ];
 
 export const BY_NAME = Object.fromEntries(INSTRUCTIONS.map(i => [i.name, i]));
 
 // CSR names understood by the assembler (addresses match src/const_pkg.sv)
 export const CSR_NAMES = { tohost: 0x51E, status: 0x50A, hartid: 0x50B, cycle: 0xC00, instret: 0xC02, mhartid: 0xF14,
-  mstatus: 0x300, mtvec: 0x305, mscratch: 0x340, mepc: 0x341, mcause: 0x342 };
+  mstatus: 0x300, mtvec: 0x305, mscratch: 0x340, mepc: 0x341, mcause: 0x342,
+  hpmcounter3: 0xC03, hpmcounter4: 0xC04, hpmcounter5: 0xC05, hpmcounter6: 0xC06, hpmcounter7: 0xC07, hpmcounter8: 0xC08 };
 export const CSR_BY_ADDRESS = Object.fromEntries(Object.entries(CSR_NAMES).map(([k, v]) => [v, k]));
 
 // ABI register names
@@ -198,6 +236,8 @@ export function encode(name, f) {
       if (imm & 1) throw new Error(`${name} jump offset must be even`);
       return u32((bits(imm, 20, 20) << 31) | (bits(imm, 10, 1) << 21) | (bits(imm, 11, 11) << 20) |
         (bits(imm, 19, 12) << 12) | (rd << 7) | op);
+    case 'I-unary':
+      return u32((d.funct7 << 20) | (rs1 << 15) | (f3 << 12) | (rd << 7) | op);
     case 'SYS':
       return u32(({ ecall: 0, ebreak: 1, mret: 0x302 }[name] << 20) | op);
     case 'CSR': case 'CSR-I':
@@ -224,6 +264,7 @@ export function decode(word) {
     if (d.fmt === 'R' && d.funct7 !== f7) continue;
     if (d.fmt === 'I-sh64' && d.funct7 !== f6) continue;
     if (d.fmt === 'I-sh32' && d.funct7 !== f7) continue;
+    if (d.fmt === 'I-unary' && d.funct7 !== bits(w, 31, 20)) continue;
     if (d.fmt === 'SYS') {
       if (rd !== 0 || rs1 !== 0 || f3 !== 0) continue;
       const f12 = bits(w, 31, 20);
@@ -252,9 +293,9 @@ export function usesRegs(d) {
   if (!d.def) return { rs1: false, rs2: false, rd: false };
   const s = d.def.syntax;
   return {
-    rs1: ['rrr', 'rri', 'load', 'store', 'branch', 'jalr', 'csr'].includes(s),
+    rs1: ['rrr', 'rri', 'rr', 'load', 'store', 'branch', 'jalr', 'csr'].includes(s),
     rs2: ['rrr', 'store', 'branch'].includes(s),
-    rd: ['rrr', 'rri', 'load', 'ui', 'jal', 'jalr', 'csr', 'csri'].includes(s),
+    rd: ['rrr', 'rri', 'rr', 'load', 'ui', 'jal', 'jalr', 'csr', 'csri'].includes(s),
   };
 }
 
@@ -265,6 +306,7 @@ export function disasm(d, pc = null) {
   switch (d.def.syntax) {
     case 'rrr': return `${n} ${r(d.rd)}, ${r(d.rs1)}, ${r(d.rs2)}`;
     case 'rri': return `${n} ${r(d.rd)}, ${r(d.rs1)}, ${d.imm}`;
+    case 'rr': return `${n} ${r(d.rd)}, ${r(d.rs1)}`;
     case 'load': return `${n} ${r(d.rd)}, ${d.imm}(${r(d.rs1)})`;
     case 'store': return `${n} ${r(d.rs2)}, ${d.imm}(${r(d.rs1)})`;
     case 'branch': return `${n} ${r(d.rs1)}, ${r(d.rs2)}, ${pc !== null ? '0x' + (pc + d.imm).toString(16) : d.imm}`;

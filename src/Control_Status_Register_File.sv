@@ -11,6 +11,7 @@ module CSRFile (
     input logic [2:0] CSR_OPERATION, // funct3: CSRRW(I) write, CSRRS(I) set bits, CSRRC(I) clear bits
     input logic [63:0] CSR_WRITE_DATA, // rs1 value or the 5-bit zero extended immediate
     input logic INSTRUCTION_RETIRED, // An instruction finished in Writeback this cycle (counts instret)
+    input logic [5:0] PERFORMANCE_EVENTS, // {D miss, I miss, M busy, redirect, flush, load stall}: the TRACE_* signals of this cycle
     input logic TAKE_TRAP, // ecall / ebreak in Execute: record the trap
     input logic [63:0] TRAP_PC, // ... the address of that instruction
     input logic [63:0] TRAP_CAUSE, // ... and why (11 or 3)
@@ -31,6 +32,15 @@ module CSRFile (
     // lags by one cycle once every 2^32 counts, which is harmless for performance counters.)
     logic CYCLE_CARRY_PENDING, INSTRET_CARRY_PENDING;
     logic [63:0] CSR_NEW_VALUE; // Value after applying the read-modify-write operation
+
+    // Performance counters hpmcounter3..8: the cycle equation, counted by the hardware itself
+    logic [63:0] EVENT_COUNT [0:5];
+    genvar EVENT;
+    generate
+        for (EVENT = 0; EVENT < 6; EVENT = EVENT + 1) begin : performance_counter
+            EventCounter counter (.clk (clk), .reset (reset), .INCREMENT (PERFORMANCE_EVENTS[EVENT]), .COUNT (EVENT_COUNT[EVENT]));
+        end
+    endgenerate
 
     logic [31:0] CYCLE_LOW_NEXT, CYCLE_HIGH_NEXT, INSTRET_LOW_NEXT, INSTRET_HIGH_NEXT;
     logic CYCLE_LOW_CARRY, CYCLE_HIGH_CARRY_UNUSED, INSTRET_LOW_CARRY, INSTRET_HIGH_CARRY_UNUSED;
@@ -110,6 +120,12 @@ module CSRFile (
             CSR_MHARTID: CSR_READ_DATA = 64'd0; // Standard Machine Hardware Thread ID: also 0
             CSR_CYCLE: CSR_READ_DATA = CSR_CYCLE_COUNTER;
             CSR_INSTRET: CSR_READ_DATA = CSR_INSTRET_COUNTER;
+            CSR_HPMCOUNTER3: CSR_READ_DATA = EVENT_COUNT[0]; // L
+            CSR_HPMCOUNTER4: CSR_READ_DATA = EVENT_COUNT[1]; // F
+            CSR_HPMCOUNTER5: CSR_READ_DATA = EVENT_COUNT[2]; // R
+            CSR_HPMCOUNTER6: CSR_READ_DATA = EVENT_COUNT[3]; // K
+            CSR_HPMCOUNTER7: CSR_READ_DATA = EVENT_COUNT[4]; // I
+            CSR_HPMCOUNTER8: CSR_READ_DATA = EVENT_COUNT[5]; // D
             default: CSR_READ_DATA = 64'd0;
         endcase
     end
@@ -120,6 +136,32 @@ module CSRFile (
     assign TRAP_VECTOR = {CSR_MTVEC_REGISTER[63:2], 2'b00}; // direct mode
     assign EXCEPTION_PC = CSR_MEPC_REGISTER;
 
+endmodule
+
+// =====================================================================================================
+// EventCounter: a 64-bit event counter split into two 32-bit halves with a registered carry (like cycle and
+// instret above), so no 64-bit carry chain sits between two flip-flops.
+// =====================================================================================================
+module EventCounter (
+    input  logic clk,
+    input  logic reset,
+    input  logic INCREMENT,
+    output logic [63:0] COUNT
+);
+    logic CARRY_PENDING, LOW_CARRY, HIGH_CARRY_UNUSED;
+    logic [31:0] LOW_NEXT, HIGH_NEXT;
+    ParallelPrefixAdder #(.WIDTH(32)) low_incrementer (.A (COUNT[31:0]), .B (32'd0), .CARRY_IN (1'b1), .SUM (LOW_NEXT), .CARRY_OUT (LOW_CARRY));
+    ParallelPrefixAdder #(.WIDTH(32)) high_incrementer (.A (COUNT[63:32]), .B (32'd0), .CARRY_IN (CARRY_PENDING), .SUM (HIGH_NEXT), .CARRY_OUT (HIGH_CARRY_UNUSED));
+    always_ff @(posedge clk) begin
+        if (reset) begin
+            COUNT <= 64'd0;
+            CARRY_PENDING <= 1'b0;
+        end else begin
+            COUNT[63:32] <= HIGH_NEXT;
+            CARRY_PENDING <= INCREMENT && LOW_CARRY;
+            if (INCREMENT) COUNT[31:0] <= LOW_NEXT;
+        end
+    end
 endmodule
 
 `default_nettype wire

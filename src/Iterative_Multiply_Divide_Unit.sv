@@ -84,26 +84,8 @@ module IterativeMultiplyDivideUnit (
     logic [6:0] DIVIDE_STEPS; // significant bits of |A| (1 for zero)
     logic [63:0] ALIGNED_DIVIDEND; // |A| << leading zeros
     logic [5:0] LEADING_ZEROS;
-    genvar COUNT_LEVEL, BLOCK;
-    generate
-        for (COUNT_LEVEL = 1; COUNT_LEVEL <= 6; COUNT_LEVEL = COUNT_LEVEL + 1) begin : zero_count
-            localparam int BLOCKS = 64 >> COUNT_LEVEL;
-            logic [BLOCKS-1:0] ALL_ZERO;
-            logic [COUNT_LEVEL-1:0] COUNT [0:BLOCKS-1];
-            for (BLOCK = 0; BLOCK < BLOCKS; BLOCK = BLOCK + 1) begin : block
-                if (COUNT_LEVEL == 1) begin : pair_of_bits
-                    assign ALL_ZERO[BLOCK] = ~A_MAGNITUDE[2*BLOCK+1] & ~A_MAGNITUDE[2*BLOCK];
-                    assign COUNT[BLOCK] = ~A_MAGNITUDE[2*BLOCK+1];
-                end else begin : pair_of_blocks
-                    logic UPPER_ZERO;
-                    assign UPPER_ZERO = zero_count[COUNT_LEVEL-1].ALL_ZERO[2*BLOCK+1];
-                    assign ALL_ZERO[BLOCK] = UPPER_ZERO & zero_count[COUNT_LEVEL-1].ALL_ZERO[2*BLOCK];
-                    assign COUNT[BLOCK] = UPPER_ZERO ? {1'b1, zero_count[COUNT_LEVEL-1].COUNT[2*BLOCK]} : {1'b0, zero_count[COUNT_LEVEL-1].COUNT[2*BLOCK+1]};
-                end
-            end
-        end
-    endgenerate
-    assign LEADING_ZEROS = zero_count[6].COUNT[0]; // |A| = 0 counts 63 (the last bit is never counted), as the loop expects
+    logic DIVIDEND_IS_ZERO_UNUSED; // |A| = 0 counts 63 (the last bit is never counted): 1 step, as the loop expects
+    LeadingZeroCounter count_dividend_zeros (.X (A_MAGNITUDE), .COUNT (LEADING_ZEROS), .ALL_ZERO (DIVIDEND_IS_ZERO_UNUSED));
 
     // The shift itself happens one cycle later (ALIGN), from the registered count: counting AND shifting
     // in the same cycle made this the longest path of the unit.

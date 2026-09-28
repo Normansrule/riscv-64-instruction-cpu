@@ -1,6 +1,6 @@
 # =============================================================================
 # tests/isa_selfcheck.s: AUTO-GENERATED self-checking test of every RV64IM +
-# Zicsr + trap instruction (864 test cases, expected values computed by an independent
+# Zicsr + Zba + Zbb + trap instruction (1428 test cases, expected values computed by an independent
 # Python reference model). Uses the riscv-tests convention:
 #   PASS: tohost = 1           FAIL: tohost = (test number << 1) | 1
 # so the testbench prints "FAIL in test N": search for "tN:" below.
@@ -6519,1102 +6519,5893 @@ t756: # sraiw 0x3f, 31
     beq  a3, t6, t756_ok
     j    fail
 t756_ok:
-t757: # beq 0x0, 0x0
+t757: # sh1add 0x0, 0x0
     li   a0, 757
     li   a1, 0x0
     li   a2, 0x0
-    li   a3, 0
-    beq a1, a2, t757_taken
-    j    t757_chk
-t757_taken:
-    li   a3, 1
-t757_chk:
-    li   t6, 0x1
+    sh1add a3, a1, a2
+    li   t6, 0x0
     beq  a3, t6, t757_ok
     j    fail
 t757_ok:
-t758: # beq 0xffffffffffffffff, 0x1
+t758: # sh1add 0x1, 0x1
     li   a0, 758
-    li   a1, 0xffffffffffffffff
+    li   a1, 0x1
     li   a2, 0x1
-    li   a3, 0
-    beq a1, a2, t758_taken
-    j    t758_chk
-t758_taken:
-    li   a3, 1
-t758_chk:
-    li   t6, 0x0
+    sh1add a3, a1, a2
+    li   t6, 0x3
     beq  a3, t6, t758_ok
     j    fail
 t758_ok:
-t759: # beq 0xfffffffffffffff9, 0x1
+t759: # sh1add 0xffffffffffffffff, 0xffffffffffffffff
     li   a0, 759
-    li   a1, 0xfffffffffffffff9
-    li   a2, 0x1
-    li   a3, 0
-    beq a1, a2, t759_taken
-    j    t759_chk
-t759_taken:
-    li   a3, 1
-t759_chk:
-    li   t6, 0x0
+    li   a1, 0xffffffffffffffff
+    li   a2, 0xffffffffffffffff
+    sh1add a3, a1, a2
+    li   t6, 0xfffffffffffffffd
     beq  a3, t6, t759_ok
     j    fail
 t759_ok:
-t760: # beq 0x8000000000000000, 0x21
+t760: # sh1add 0x7, 0x7
     li   a0, 760
-    li   a1, 0x8000000000000000
-    li   a2, 0x21
-    li   a3, 0
-    beq a1, a2, t760_taken
-    j    t760_chk
-t760_taken:
-    li   a3, 1
-t760_chk:
-    li   t6, 0x0
+    li   a1, 0x7
+    li   a2, 0x7
+    sh1add a3, a1, a2
+    li   t6, 0x15
     beq  a3, t6, t760_ok
     j    fail
 t760_ok:
-t761: # beq 0x80000000, 0x80000000
+t761: # sh1add 0xfffffffffffffff9, 0xfffffffffffffff9
     li   a0, 761
-    li   a1, 0x80000000
-    li   a2, 0x80000000
-    li   a3, 0
-    beq a1, a2, t761_taken
-    j    t761_chk
-t761_taken:
-    li   a3, 1
-t761_chk:
-    li   t6, 0x1
+    li   a1, 0xfffffffffffffff9
+    li   a2, 0xfffffffffffffff9
+    sh1add a3, a1, a2
+    li   t6, 0xffffffffffffffeb
     beq  a3, t6, t761_ok
     j    fail
 t761_ok:
-t762: # beq 0xffffffff80000000, 0xffffffffffffffff
+t762: # sh1add 0x8000000000000000, 0x7
     li   a0, 762
-    li   a1, 0xffffffff80000000
-    li   a2, 0xffffffffffffffff
-    li   a3, 0
-    beq a1, a2, t762_taken
-    j    t762_chk
-t762_taken:
-    li   a3, 1
-t762_chk:
-    li   t6, 0x0
+    li   a1, 0x8000000000000000
+    li   a2, 0x7
+    sh1add a3, a1, a2
+    li   t6, 0x7
     beq  a3, t6, t762_ok
     j    fail
 t762_ok:
-t763: # beq 0xfedcba9876543210, 0x1
+t763: # sh1add 0x7fffffffffffffff, 0xffffffffffffffff
     li   a0, 763
-    li   a1, 0xfedcba9876543210
-    li   a2, 0x1
-    li   a3, 0
-    beq a1, a2, t763_taken
-    j    t763_chk
-t763_taken:
-    li   a3, 1
-t763_chk:
-    li   t6, 0x0
+    li   a1, 0x7fffffffffffffff
+    li   a2, 0xffffffffffffffff
+    sh1add a3, a1, a2
+    li   t6, 0xfffffffffffffffd
     beq  a3, t6, t763_ok
     j    fail
 t763_ok:
-t764: # beq 0x40, 0x1
+t764: # sh1add 0x80000000, 0xffffffffffffffff
     li   a0, 764
-    li   a1, 0x40
-    li   a2, 0x1
-    li   a3, 0
-    beq a1, a2, t764_taken
-    j    t764_chk
-t764_taken:
-    li   a3, 1
-t764_chk:
-    li   t6, 0x0
+    li   a1, 0x80000000
+    li   a2, 0xffffffffffffffff
+    sh1add a3, a1, a2
+    li   t6, 0xffffffff
     beq  a3, t6, t764_ok
     j    fail
 t764_ok:
-t765: # bne 0x0, 0x0
+t765: # sh1add 0x7fffffff, 0xffffffffffffffff
     li   a0, 765
-    li   a1, 0x0
-    li   a2, 0x0
-    li   a3, 0
-    bne a1, a2, t765_taken
-    j    t765_chk
-t765_taken:
-    li   a3, 1
-t765_chk:
-    li   t6, 0x0
+    li   a1, 0x7fffffff
+    li   a2, 0xffffffffffffffff
+    sh1add a3, a1, a2
+    li   t6, 0xfffffffd
     beq  a3, t6, t765_ok
     j    fail
 t765_ok:
-t766: # bne 0xffffffffffffffff, 0x1
+t766: # sh1add 0xffffffff80000000, 0xffffffffffffffff
     li   a0, 766
-    li   a1, 0xffffffffffffffff
-    li   a2, 0x1
-    li   a3, 0
-    bne a1, a2, t766_taken
-    j    t766_chk
-t766_taken:
-    li   a3, 1
-t766_chk:
-    li   t6, 0x1
+    li   a1, 0xffffffff80000000
+    li   a2, 0xffffffffffffffff
+    sh1add a3, a1, a2
+    li   t6, 0xfffffffeffffffff
     beq  a3, t6, t766_ok
     j    fail
 t766_ok:
-t767: # bne 0xfffffffffffffff9, 0x1
+t767: # sh1add 0x123456789abcdef0, 0xffffffffffffffff
     li   a0, 767
-    li   a1, 0xfffffffffffffff9
-    li   a2, 0x1
-    li   a3, 0
-    bne a1, a2, t767_taken
-    j    t767_chk
-t767_taken:
-    li   a3, 1
-t767_chk:
-    li   t6, 0x1
+    li   a1, 0x123456789abcdef0
+    li   a2, 0xffffffffffffffff
+    sh1add a3, a1, a2
+    li   t6, 0x2468acf13579bddf
     beq  a3, t6, t767_ok
     j    fail
 t767_ok:
-t768: # bne 0x8000000000000000, 0x21
+t768: # sh1add 0xfedcba9876543210, 0xffffffffffffffff
     li   a0, 768
-    li   a1, 0x8000000000000000
-    li   a2, 0x21
-    li   a3, 0
-    bne a1, a2, t768_taken
-    j    t768_chk
-t768_taken:
-    li   a3, 1
-t768_chk:
-    li   t6, 0x1
+    li   a1, 0xfedcba9876543210
+    li   a2, 0xffffffffffffffff
+    sh1add a3, a1, a2
+    li   t6, 0xfdb97530eca8641f
     beq  a3, t6, t768_ok
     j    fail
 t768_ok:
-t769: # bne 0x80000000, 0x80000000
+t769: # sh1add 0x3f, 0x8000000000000000
     li   a0, 769
-    li   a1, 0x80000000
-    li   a2, 0x80000000
-    li   a3, 0
-    bne a1, a2, t769_taken
-    j    t769_chk
-t769_taken:
-    li   a3, 1
-t769_chk:
-    li   t6, 0x0
+    li   a1, 0x3f
+    li   a2, 0x8000000000000000
+    sh1add a3, a1, a2
+    li   t6, 0x800000000000007e
     beq  a3, t6, t769_ok
     j    fail
 t769_ok:
-t770: # bne 0xffffffff80000000, 0xffffffffffffffff
+t770: # sh1add 0x40, 0x123456789abcdef0
     li   a0, 770
-    li   a1, 0xffffffff80000000
-    li   a2, 0xffffffffffffffff
-    li   a3, 0
-    bne a1, a2, t770_taken
-    j    t770_chk
-t770_taken:
-    li   a3, 1
-t770_chk:
-    li   t6, 0x1
+    li   a1, 0x40
+    li   a2, 0x123456789abcdef0
+    sh1add a3, a1, a2
+    li   t6, 0x123456789abcdf70
     beq  a3, t6, t770_ok
     j    fail
 t770_ok:
-t771: # bne 0xfedcba9876543210, 0x1
+t771: # sh1add 0x21, 0xfffffffffffffff9
     li   a0, 771
-    li   a1, 0xfedcba9876543210
-    li   a2, 0x1
-    li   a3, 0
-    bne a1, a2, t771_taken
-    j    t771_chk
-t771_taken:
-    li   a3, 1
-t771_chk:
-    li   t6, 0x1
+    li   a1, 0x21
+    li   a2, 0xfffffffffffffff9
+    sh1add a3, a1, a2
+    li   t6, 0x3b
     beq  a3, t6, t771_ok
     j    fail
 t771_ok:
-t772: # bne 0x40, 0x1
+t772: # sh2add 0x0, 0x0
     li   a0, 772
-    li   a1, 0x40
-    li   a2, 0x1
-    li   a3, 0
-    bne a1, a2, t772_taken
-    j    t772_chk
-t772_taken:
-    li   a3, 1
-t772_chk:
-    li   t6, 0x1
+    li   a1, 0x0
+    li   a2, 0x0
+    sh2add a3, a1, a2
+    li   t6, 0x0
     beq  a3, t6, t772_ok
     j    fail
 t772_ok:
-t773: # blt 0x0, 0x0
+t773: # sh2add 0x1, 0x1
     li   a0, 773
-    li   a1, 0x0
-    li   a2, 0x0
-    li   a3, 0
-    blt a1, a2, t773_taken
-    j    t773_chk
-t773_taken:
-    li   a3, 1
-t773_chk:
-    li   t6, 0x0
+    li   a1, 0x1
+    li   a2, 0x1
+    sh2add a3, a1, a2
+    li   t6, 0x5
     beq  a3, t6, t773_ok
     j    fail
 t773_ok:
-t774: # blt 0xffffffffffffffff, 0x1
+t774: # sh2add 0xffffffffffffffff, 0xffffffffffffffff
     li   a0, 774
     li   a1, 0xffffffffffffffff
-    li   a2, 0x1
-    li   a3, 0
-    blt a1, a2, t774_taken
-    j    t774_chk
-t774_taken:
-    li   a3, 1
-t774_chk:
-    li   t6, 0x1
+    li   a2, 0xffffffffffffffff
+    sh2add a3, a1, a2
+    li   t6, 0xfffffffffffffffb
     beq  a3, t6, t774_ok
     j    fail
 t774_ok:
-t775: # blt 0xfffffffffffffff9, 0x1
+t775: # sh2add 0x7, 0x7
     li   a0, 775
-    li   a1, 0xfffffffffffffff9
-    li   a2, 0x1
-    li   a3, 0
-    blt a1, a2, t775_taken
-    j    t775_chk
-t775_taken:
-    li   a3, 1
-t775_chk:
-    li   t6, 0x1
+    li   a1, 0x7
+    li   a2, 0x7
+    sh2add a3, a1, a2
+    li   t6, 0x23
     beq  a3, t6, t775_ok
     j    fail
 t775_ok:
-t776: # blt 0x8000000000000000, 0x21
+t776: # sh2add 0xfffffffffffffff9, 0xfffffffffffffff9
     li   a0, 776
-    li   a1, 0x8000000000000000
-    li   a2, 0x21
-    li   a3, 0
-    blt a1, a2, t776_taken
-    j    t776_chk
-t776_taken:
-    li   a3, 1
-t776_chk:
-    li   t6, 0x1
+    li   a1, 0xfffffffffffffff9
+    li   a2, 0xfffffffffffffff9
+    sh2add a3, a1, a2
+    li   t6, 0xffffffffffffffdd
     beq  a3, t6, t776_ok
     j    fail
 t776_ok:
-t777: # blt 0x80000000, 0x80000000
+t777: # sh2add 0x8000000000000000, 0x7
     li   a0, 777
-    li   a1, 0x80000000
-    li   a2, 0x80000000
-    li   a3, 0
-    blt a1, a2, t777_taken
-    j    t777_chk
-t777_taken:
-    li   a3, 1
-t777_chk:
-    li   t6, 0x0
+    li   a1, 0x8000000000000000
+    li   a2, 0x7
+    sh2add a3, a1, a2
+    li   t6, 0x7
     beq  a3, t6, t777_ok
     j    fail
 t777_ok:
-t778: # blt 0xffffffff80000000, 0xffffffffffffffff
+t778: # sh2add 0x7fffffffffffffff, 0xffffffffffffffff
     li   a0, 778
-    li   a1, 0xffffffff80000000
+    li   a1, 0x7fffffffffffffff
     li   a2, 0xffffffffffffffff
-    li   a3, 0
-    blt a1, a2, t778_taken
-    j    t778_chk
-t778_taken:
-    li   a3, 1
-t778_chk:
-    li   t6, 0x1
+    sh2add a3, a1, a2
+    li   t6, 0xfffffffffffffffb
     beq  a3, t6, t778_ok
     j    fail
 t778_ok:
-t779: # blt 0xfedcba9876543210, 0x1
+t779: # sh2add 0x80000000, 0xffffffffffffffff
     li   a0, 779
-    li   a1, 0xfedcba9876543210
-    li   a2, 0x1
-    li   a3, 0
-    blt a1, a2, t779_taken
-    j    t779_chk
-t779_taken:
-    li   a3, 1
-t779_chk:
-    li   t6, 0x1
+    li   a1, 0x80000000
+    li   a2, 0xffffffffffffffff
+    sh2add a3, a1, a2
+    li   t6, 0x1ffffffff
     beq  a3, t6, t779_ok
     j    fail
 t779_ok:
-t780: # blt 0x40, 0x1
+t780: # sh2add 0x7fffffff, 0xffffffffffffffff
     li   a0, 780
-    li   a1, 0x40
-    li   a2, 0x1
-    li   a3, 0
-    blt a1, a2, t780_taken
-    j    t780_chk
-t780_taken:
-    li   a3, 1
-t780_chk:
-    li   t6, 0x0
+    li   a1, 0x7fffffff
+    li   a2, 0xffffffffffffffff
+    sh2add a3, a1, a2
+    li   t6, 0x1fffffffb
     beq  a3, t6, t780_ok
     j    fail
 t780_ok:
-t781: # bge 0x0, 0x0
+t781: # sh2add 0xffffffff80000000, 0xffffffffffffffff
     li   a0, 781
-    li   a1, 0x0
-    li   a2, 0x0
-    li   a3, 0
-    bge a1, a2, t781_taken
-    j    t781_chk
-t781_taken:
-    li   a3, 1
-t781_chk:
-    li   t6, 0x1
+    li   a1, 0xffffffff80000000
+    li   a2, 0xffffffffffffffff
+    sh2add a3, a1, a2
+    li   t6, 0xfffffffdffffffff
     beq  a3, t6, t781_ok
     j    fail
 t781_ok:
-t782: # bge 0xffffffffffffffff, 0x1
+t782: # sh2add 0x123456789abcdef0, 0xffffffffffffffff
     li   a0, 782
-    li   a1, 0xffffffffffffffff
-    li   a2, 0x1
-    li   a3, 0
-    bge a1, a2, t782_taken
-    j    t782_chk
-t782_taken:
-    li   a3, 1
-t782_chk:
-    li   t6, 0x0
+    li   a1, 0x123456789abcdef0
+    li   a2, 0xffffffffffffffff
+    sh2add a3, a1, a2
+    li   t6, 0x48d159e26af37bbf
     beq  a3, t6, t782_ok
     j    fail
 t782_ok:
-t783: # bge 0xfffffffffffffff9, 0x1
+t783: # sh2add 0xfedcba9876543210, 0xffffffffffffffff
     li   a0, 783
-    li   a1, 0xfffffffffffffff9
-    li   a2, 0x1
-    li   a3, 0
-    bge a1, a2, t783_taken
-    j    t783_chk
-t783_taken:
-    li   a3, 1
-t783_chk:
-    li   t6, 0x0
+    li   a1, 0xfedcba9876543210
+    li   a2, 0xffffffffffffffff
+    sh2add a3, a1, a2
+    li   t6, 0xfb72ea61d950c83f
     beq  a3, t6, t783_ok
     j    fail
 t783_ok:
-t784: # bge 0x8000000000000000, 0x21
+t784: # sh2add 0x3f, 0x8000000000000000
     li   a0, 784
-    li   a1, 0x8000000000000000
-    li   a2, 0x21
-    li   a3, 0
-    bge a1, a2, t784_taken
-    j    t784_chk
-t784_taken:
-    li   a3, 1
-t784_chk:
-    li   t6, 0x0
+    li   a1, 0x3f
+    li   a2, 0x8000000000000000
+    sh2add a3, a1, a2
+    li   t6, 0x80000000000000fc
     beq  a3, t6, t784_ok
     j    fail
 t784_ok:
-t785: # bge 0x80000000, 0x80000000
+t785: # sh2add 0x40, 0x123456789abcdef0
     li   a0, 785
-    li   a1, 0x80000000
-    li   a2, 0x80000000
-    li   a3, 0
-    bge a1, a2, t785_taken
-    j    t785_chk
-t785_taken:
-    li   a3, 1
-t785_chk:
-    li   t6, 0x1
+    li   a1, 0x40
+    li   a2, 0x123456789abcdef0
+    sh2add a3, a1, a2
+    li   t6, 0x123456789abcdff0
     beq  a3, t6, t785_ok
     j    fail
 t785_ok:
-t786: # bge 0xffffffff80000000, 0xffffffffffffffff
+t786: # sh2add 0x21, 0xfffffffffffffff9
     li   a0, 786
-    li   a1, 0xffffffff80000000
-    li   a2, 0xffffffffffffffff
-    li   a3, 0
-    bge a1, a2, t786_taken
-    j    t786_chk
-t786_taken:
-    li   a3, 1
-t786_chk:
-    li   t6, 0x0
+    li   a1, 0x21
+    li   a2, 0xfffffffffffffff9
+    sh2add a3, a1, a2
+    li   t6, 0x7d
     beq  a3, t6, t786_ok
     j    fail
 t786_ok:
-t787: # bge 0xfedcba9876543210, 0x1
+t787: # sh3add 0x0, 0x0
     li   a0, 787
-    li   a1, 0xfedcba9876543210
-    li   a2, 0x1
-    li   a3, 0
-    bge a1, a2, t787_taken
-    j    t787_chk
-t787_taken:
-    li   a3, 1
-t787_chk:
+    li   a1, 0x0
+    li   a2, 0x0
+    sh3add a3, a1, a2
     li   t6, 0x0
     beq  a3, t6, t787_ok
     j    fail
 t787_ok:
-t788: # bge 0x40, 0x1
+t788: # sh3add 0x1, 0x1
     li   a0, 788
-    li   a1, 0x40
+    li   a1, 0x1
     li   a2, 0x1
-    li   a3, 0
-    bge a1, a2, t788_taken
-    j    t788_chk
-t788_taken:
-    li   a3, 1
-t788_chk:
-    li   t6, 0x1
+    sh3add a3, a1, a2
+    li   t6, 0x9
     beq  a3, t6, t788_ok
     j    fail
 t788_ok:
-t789: # bltu 0x0, 0x0
+t789: # sh3add 0xffffffffffffffff, 0xffffffffffffffff
     li   a0, 789
-    li   a1, 0x0
-    li   a2, 0x0
-    li   a3, 0
-    bltu a1, a2, t789_taken
-    j    t789_chk
-t789_taken:
-    li   a3, 1
-t789_chk:
-    li   t6, 0x0
+    li   a1, 0xffffffffffffffff
+    li   a2, 0xffffffffffffffff
+    sh3add a3, a1, a2
+    li   t6, 0xfffffffffffffff7
     beq  a3, t6, t789_ok
     j    fail
 t789_ok:
-t790: # bltu 0xffffffffffffffff, 0x1
+t790: # sh3add 0x7, 0x7
     li   a0, 790
-    li   a1, 0xffffffffffffffff
-    li   a2, 0x1
-    li   a3, 0
-    bltu a1, a2, t790_taken
-    j    t790_chk
-t790_taken:
-    li   a3, 1
-t790_chk:
-    li   t6, 0x0
+    li   a1, 0x7
+    li   a2, 0x7
+    sh3add a3, a1, a2
+    li   t6, 0x3f
     beq  a3, t6, t790_ok
     j    fail
 t790_ok:
-t791: # bltu 0xfffffffffffffff9, 0x1
+t791: # sh3add 0xfffffffffffffff9, 0xfffffffffffffff9
     li   a0, 791
     li   a1, 0xfffffffffffffff9
-    li   a2, 0x1
-    li   a3, 0
-    bltu a1, a2, t791_taken
-    j    t791_chk
-t791_taken:
-    li   a3, 1
-t791_chk:
-    li   t6, 0x0
+    li   a2, 0xfffffffffffffff9
+    sh3add a3, a1, a2
+    li   t6, 0xffffffffffffffc1
     beq  a3, t6, t791_ok
     j    fail
 t791_ok:
-t792: # bltu 0x8000000000000000, 0x21
+t792: # sh3add 0x8000000000000000, 0x7
     li   a0, 792
     li   a1, 0x8000000000000000
-    li   a2, 0x21
-    li   a3, 0
-    bltu a1, a2, t792_taken
-    j    t792_chk
-t792_taken:
-    li   a3, 1
-t792_chk:
-    li   t6, 0x0
+    li   a2, 0x7
+    sh3add a3, a1, a2
+    li   t6, 0x7
     beq  a3, t6, t792_ok
     j    fail
 t792_ok:
-t793: # bltu 0x80000000, 0x80000000
+t793: # sh3add 0x7fffffffffffffff, 0xffffffffffffffff
     li   a0, 793
-    li   a1, 0x80000000
-    li   a2, 0x80000000
-    li   a3, 0
-    bltu a1, a2, t793_taken
-    j    t793_chk
-t793_taken:
-    li   a3, 1
-t793_chk:
-    li   t6, 0x0
+    li   a1, 0x7fffffffffffffff
+    li   a2, 0xffffffffffffffff
+    sh3add a3, a1, a2
+    li   t6, 0xfffffffffffffff7
     beq  a3, t6, t793_ok
     j    fail
 t793_ok:
-t794: # bltu 0xffffffff80000000, 0xffffffffffffffff
+t794: # sh3add 0x80000000, 0xffffffffffffffff
     li   a0, 794
-    li   a1, 0xffffffff80000000
+    li   a1, 0x80000000
     li   a2, 0xffffffffffffffff
-    li   a3, 0
-    bltu a1, a2, t794_taken
-    j    t794_chk
-t794_taken:
-    li   a3, 1
-t794_chk:
-    li   t6, 0x1
+    sh3add a3, a1, a2
+    li   t6, 0x3ffffffff
     beq  a3, t6, t794_ok
     j    fail
 t794_ok:
-t795: # bltu 0xfedcba9876543210, 0x1
+t795: # sh3add 0x7fffffff, 0xffffffffffffffff
     li   a0, 795
-    li   a1, 0xfedcba9876543210
-    li   a2, 0x1
-    li   a3, 0
-    bltu a1, a2, t795_taken
-    j    t795_chk
-t795_taken:
-    li   a3, 1
-t795_chk:
-    li   t6, 0x0
+    li   a1, 0x7fffffff
+    li   a2, 0xffffffffffffffff
+    sh3add a3, a1, a2
+    li   t6, 0x3fffffff7
     beq  a3, t6, t795_ok
     j    fail
 t795_ok:
-t796: # bltu 0x40, 0x1
+t796: # sh3add 0xffffffff80000000, 0xffffffffffffffff
     li   a0, 796
-    li   a1, 0x40
-    li   a2, 0x1
-    li   a3, 0
-    bltu a1, a2, t796_taken
-    j    t796_chk
-t796_taken:
-    li   a3, 1
-t796_chk:
-    li   t6, 0x0
+    li   a1, 0xffffffff80000000
+    li   a2, 0xffffffffffffffff
+    sh3add a3, a1, a2
+    li   t6, 0xfffffffbffffffff
     beq  a3, t6, t796_ok
     j    fail
 t796_ok:
-t797: # bgeu 0x0, 0x0
+t797: # sh3add 0x123456789abcdef0, 0xffffffffffffffff
     li   a0, 797
-    li   a1, 0x0
-    li   a2, 0x0
-    li   a3, 0
-    bgeu a1, a2, t797_taken
-    j    t797_chk
-t797_taken:
-    li   a3, 1
-t797_chk:
-    li   t6, 0x1
+    li   a1, 0x123456789abcdef0
+    li   a2, 0xffffffffffffffff
+    sh3add a3, a1, a2
+    li   t6, 0x91a2b3c4d5e6f77f
     beq  a3, t6, t797_ok
     j    fail
 t797_ok:
-t798: # bgeu 0xffffffffffffffff, 0x1
+t798: # sh3add 0xfedcba9876543210, 0xffffffffffffffff
     li   a0, 798
-    li   a1, 0xffffffffffffffff
-    li   a2, 0x1
-    li   a3, 0
-    bgeu a1, a2, t798_taken
-    j    t798_chk
-t798_taken:
-    li   a3, 1
-t798_chk:
-    li   t6, 0x1
+    li   a1, 0xfedcba9876543210
+    li   a2, 0xffffffffffffffff
+    sh3add a3, a1, a2
+    li   t6, 0xf6e5d4c3b2a1907f
     beq  a3, t6, t798_ok
     j    fail
 t798_ok:
-t799: # bgeu 0xfffffffffffffff9, 0x1
+t799: # sh3add 0x3f, 0x8000000000000000
     li   a0, 799
-    li   a1, 0xfffffffffffffff9
-    li   a2, 0x1
-    li   a3, 0
-    bgeu a1, a2, t799_taken
-    j    t799_chk
-t799_taken:
-    li   a3, 1
-t799_chk:
-    li   t6, 0x1
+    li   a1, 0x3f
+    li   a2, 0x8000000000000000
+    sh3add a3, a1, a2
+    li   t6, 0x80000000000001f8
     beq  a3, t6, t799_ok
     j    fail
 t799_ok:
-t800: # bgeu 0x8000000000000000, 0x21
+t800: # sh3add 0x40, 0x123456789abcdef0
     li   a0, 800
-    li   a1, 0x8000000000000000
-    li   a2, 0x21
-    li   a3, 0
-    bgeu a1, a2, t800_taken
-    j    t800_chk
-t800_taken:
-    li   a3, 1
-t800_chk:
-    li   t6, 0x1
+    li   a1, 0x40
+    li   a2, 0x123456789abcdef0
+    sh3add a3, a1, a2
+    li   t6, 0x123456789abce0f0
     beq  a3, t6, t800_ok
     j    fail
 t800_ok:
-t801: # bgeu 0x80000000, 0x80000000
+t801: # sh3add 0x21, 0xfffffffffffffff9
     li   a0, 801
-    li   a1, 0x80000000
-    li   a2, 0x80000000
-    li   a3, 0
-    bgeu a1, a2, t801_taken
-    j    t801_chk
-t801_taken:
-    li   a3, 1
-t801_chk:
-    li   t6, 0x1
+    li   a1, 0x21
+    li   a2, 0xfffffffffffffff9
+    sh3add a3, a1, a2
+    li   t6, 0x101
     beq  a3, t6, t801_ok
     j    fail
 t801_ok:
-t802: # bgeu 0xffffffff80000000, 0xffffffffffffffff
+t802: # add.uw 0x0, 0x0
     li   a0, 802
-    li   a1, 0xffffffff80000000
-    li   a2, 0xffffffffffffffff
-    li   a3, 0
-    bgeu a1, a2, t802_taken
-    j    t802_chk
-t802_taken:
-    li   a3, 1
-t802_chk:
+    li   a1, 0x0
+    li   a2, 0x0
+    add.uw a3, a1, a2
     li   t6, 0x0
     beq  a3, t6, t802_ok
     j    fail
 t802_ok:
-t803: # bgeu 0xfedcba9876543210, 0x1
+t803: # add.uw 0x1, 0x1
     li   a0, 803
-    li   a1, 0xfedcba9876543210
+    li   a1, 0x1
     li   a2, 0x1
-    li   a3, 0
-    bgeu a1, a2, t803_taken
-    j    t803_chk
-t803_taken:
-    li   a3, 1
-t803_chk:
-    li   t6, 0x1
+    add.uw a3, a1, a2
+    li   t6, 0x2
     beq  a3, t6, t803_ok
     j    fail
 t803_ok:
-t804: # bgeu 0x40, 0x1
+t804: # add.uw 0xffffffffffffffff, 0xffffffffffffffff
     li   a0, 804
-    li   a1, 0x40
-    li   a2, 0x1
-    li   a3, 0
-    bgeu a1, a2, t804_taken
-    j    t804_chk
-t804_taken:
-    li   a3, 1
-t804_chk:
-    li   t6, 0x1
+    li   a1, 0xffffffffffffffff
+    li   a2, 0xffffffffffffffff
+    add.uw a3, a1, a2
+    li   t6, 0xfffffffe
     beq  a3, t6, t804_ok
     j    fail
 t804_ok:
-t805: # lui 0x0
+t805: # add.uw 0x7, 0x7
     li   a0, 805
-    lui  a3, 0x0
-    li   t6, 0x0
+    li   a1, 0x7
+    li   a2, 0x7
+    add.uw a3, a1, a2
+    li   t6, 0xe
     beq  a3, t6, t805_ok
     j    fail
 t805_ok:
-t806: # auipc 0x0
+t806: # add.uw 0xfffffffffffffff9, 0xfffffffffffffff9
     li   a0, 806
-t806_pc:
-    auipc a3, 0x0
-    la   t5, t806_pc
-    li   t6, 0x0
-    add  t5, t5, t6
-    beq  a3, t5, t806_ok
+    li   a1, 0xfffffffffffffff9
+    li   a2, 0xfffffffffffffff9
+    add.uw a3, a1, a2
+    li   t6, 0xfffffff2
+    beq  a3, t6, t806_ok
     j    fail
 t806_ok:
-t807: # lui 0x1
+t807: # add.uw 0x8000000000000000, 0x7
     li   a0, 807
-    lui  a3, 0x1
-    li   t6, 0x1000
+    li   a1, 0x8000000000000000
+    li   a2, 0x7
+    add.uw a3, a1, a2
+    li   t6, 0x7
     beq  a3, t6, t807_ok
     j    fail
 t807_ok:
-t808: # auipc 0x1
+t808: # add.uw 0x7fffffffffffffff, 0xffffffffffffffff
     li   a0, 808
-t808_pc:
-    auipc a3, 0x1
-    la   t5, t808_pc
-    li   t6, 0x1000
-    add  t5, t5, t6
-    beq  a3, t5, t808_ok
+    li   a1, 0x7fffffffffffffff
+    li   a2, 0xffffffffffffffff
+    add.uw a3, a1, a2
+    li   t6, 0xfffffffe
+    beq  a3, t6, t808_ok
     j    fail
 t808_ok:
-t809: # lui 0x7ffff
+t809: # add.uw 0x80000000, 0xffffffffffffffff
     li   a0, 809
-    lui  a3, 0x7ffff
-    li   t6, 0x7ffff000
+    li   a1, 0x80000000
+    li   a2, 0xffffffffffffffff
+    add.uw a3, a1, a2
+    li   t6, 0x7fffffff
     beq  a3, t6, t809_ok
     j    fail
 t809_ok:
-t810: # auipc 0x7ffff
+t810: # add.uw 0x7fffffff, 0xffffffffffffffff
     li   a0, 810
-t810_pc:
-    auipc a3, 0x7ffff
-    la   t5, t810_pc
-    li   t6, 0x7ffff000
-    add  t5, t5, t6
-    beq  a3, t5, t810_ok
+    li   a1, 0x7fffffff
+    li   a2, 0xffffffffffffffff
+    add.uw a3, a1, a2
+    li   t6, 0x7ffffffe
+    beq  a3, t6, t810_ok
     j    fail
 t810_ok:
-t811: # lui 0x80000
+t811: # add.uw 0xffffffff80000000, 0xffffffffffffffff
     li   a0, 811
-    lui  a3, 0x80000
-    li   t6, 0xffffffff80000000
+    li   a1, 0xffffffff80000000
+    li   a2, 0xffffffffffffffff
+    add.uw a3, a1, a2
+    li   t6, 0x7fffffff
     beq  a3, t6, t811_ok
     j    fail
 t811_ok:
-t812: # auipc 0x80000
+t812: # add.uw 0x123456789abcdef0, 0xffffffffffffffff
     li   a0, 812
-t812_pc:
-    auipc a3, 0x80000
-    la   t5, t812_pc
-    li   t6, 0xffffffff80000000
-    add  t5, t5, t6
-    beq  a3, t5, t812_ok
+    li   a1, 0x123456789abcdef0
+    li   a2, 0xffffffffffffffff
+    add.uw a3, a1, a2
+    li   t6, 0x9abcdeef
+    beq  a3, t6, t812_ok
     j    fail
 t812_ok:
-t813: # lui 0xfffff
+t813: # add.uw 0xfedcba9876543210, 0xffffffffffffffff
     li   a0, 813
-    lui  a3, 0xfffff
-    li   t6, 0xfffffffffffff000
+    li   a1, 0xfedcba9876543210
+    li   a2, 0xffffffffffffffff
+    add.uw a3, a1, a2
+    li   t6, 0x7654320f
     beq  a3, t6, t813_ok
     j    fail
 t813_ok:
-t814: # auipc 0xfffff
+t814: # add.uw 0x3f, 0x8000000000000000
     li   a0, 814
-t814_pc:
-    auipc a3, 0xfffff
-    la   t5, t814_pc
-    li   t6, 0xfffffffffffff000
-    add  t5, t5, t6
-    beq  a3, t5, t814_ok
+    li   a1, 0x3f
+    li   a2, 0x8000000000000000
+    add.uw a3, a1, a2
+    li   t6, 0x800000000000003f
+    beq  a3, t6, t814_ok
     j    fail
 t814_ok:
-t815: # lui 0x12345
+t815: # add.uw 0x40, 0x123456789abcdef0
     li   a0, 815
-    lui  a3, 0x12345
-    li   t6, 0x12345000
+    li   a1, 0x40
+    li   a2, 0x123456789abcdef0
+    add.uw a3, a1, a2
+    li   t6, 0x123456789abcdf30
     beq  a3, t6, t815_ok
     j    fail
 t815_ok:
-t816: # auipc 0x12345
+t816: # add.uw 0x21, 0xfffffffffffffff9
     li   a0, 816
-t816_pc:
-    auipc a3, 0x12345
-    la   t5, t816_pc
-    li   t6, 0x12345000
-    add  t5, t5, t6
-    beq  a3, t5, t816_ok
+    li   a1, 0x21
+    li   a2, 0xfffffffffffffff9
+    add.uw a3, a1, a2
+    li   t6, 0x1a
+    beq  a3, t6, t816_ok
     j    fail
 t816_ok:
-t817: # jal link + target
+t817: # sh1add.uw 0x0, 0x0
     li   a0, 817
-    jal  ra, t817_tgt
-t817_ret:
-    j    fail
-t817_tgt:
-    la   t6, t817_ret
-    beq  ra, t6, t817_ok
+    li   a1, 0x0
+    li   a2, 0x0
+    sh1add.uw a3, a1, a2
+    li   t6, 0x0
+    beq  a3, t6, t817_ok
     j    fail
 t817_ok:
-t818: # jalr clears bit 0 of the target
+t818: # sh1add.uw 0x1, 0x1
     li   a0, 818
-    la   t0, t818_tgt
-    jalr ra, 1(t0)
-t818_ret:
-    j    fail
-t818_tgt:
-    la   t6, t818_ret
-    beq  ra, t6, t818_ok
+    li   a1, 0x1
+    li   a2, 0x1
+    sh1add.uw a3, a1, a2
+    li   t6, 0x3
+    beq  a3, t6, t818_ok
     j    fail
 t818_ok:
-t819: # jal x0 (no link) and rd=x0 writes are dropped
+t819: # sh1add.uw 0xffffffffffffffff, 0xffffffffffffffff
     li   a0, 819
-    jal  zero, t819_tgt
-    j    fail
-t819_tgt:
-    addi zero, zero, 5
-    beqz zero, t819_ok
+    li   a1, 0xffffffffffffffff
+    li   a2, 0xffffffffffffffff
+    sh1add.uw a3, a1, a2
+    li   t6, 0x1fffffffd
+    beq  a3, t6, t819_ok
     j    fail
 t819_ok:
-t820: # sd then every load width
+t820: # sh1add.uw 0x7, 0x7
     li   a0, 820
-    la   s0, scratch
-    li   t0, 0x8182838485868788
-    sd   t0, 0(s0)
-t821: # lb 0
+    li   a1, 0x7
+    li   a2, 0x7
+    sh1add.uw a3, a1, a2
+    li   t6, 0x15
+    beq  a3, t6, t820_ok
+    j    fail
+t820_ok:
+t821: # sh1add.uw 0xfffffffffffffff9, 0xfffffffffffffff9
     li   a0, 821
-    lb   a3, 0(s0)
-    li   t6, 0xffffffffffffff88
+    li   a1, 0xfffffffffffffff9
+    li   a2, 0xfffffffffffffff9
+    sh1add.uw a3, a1, a2
+    li   t6, 0x1ffffffeb
     beq  a3, t6, t821_ok
     j    fail
 t821_ok:
-t822: # lb 1
+t822: # sh1add.uw 0x8000000000000000, 0x7
     li   a0, 822
-    lb   a3, 1(s0)
-    li   t6, 0xffffffffffffff87
+    li   a1, 0x8000000000000000
+    li   a2, 0x7
+    sh1add.uw a3, a1, a2
+    li   t6, 0x7
     beq  a3, t6, t822_ok
     j    fail
 t822_ok:
-t823: # lb 2
+t823: # sh1add.uw 0x7fffffffffffffff, 0xffffffffffffffff
     li   a0, 823
-    lb   a3, 2(s0)
-    li   t6, 0xffffffffffffff86
+    li   a1, 0x7fffffffffffffff
+    li   a2, 0xffffffffffffffff
+    sh1add.uw a3, a1, a2
+    li   t6, 0x1fffffffd
     beq  a3, t6, t823_ok
     j    fail
 t823_ok:
-t824: # lb 4
+t824: # sh1add.uw 0x80000000, 0xffffffffffffffff
     li   a0, 824
-    lb   a3, 4(s0)
-    li   t6, 0xffffffffffffff84
+    li   a1, 0x80000000
+    li   a2, 0xffffffffffffffff
+    sh1add.uw a3, a1, a2
+    li   t6, 0xffffffff
     beq  a3, t6, t824_ok
     j    fail
 t824_ok:
-t825: # lbu 0
+t825: # sh1add.uw 0x7fffffff, 0xffffffffffffffff
     li   a0, 825
-    lbu   a3, 0(s0)
-    li   t6, 0x88
+    li   a1, 0x7fffffff
+    li   a2, 0xffffffffffffffff
+    sh1add.uw a3, a1, a2
+    li   t6, 0xfffffffd
     beq  a3, t6, t825_ok
     j    fail
 t825_ok:
-t826: # lbu 1
+t826: # sh1add.uw 0xffffffff80000000, 0xffffffffffffffff
     li   a0, 826
-    lbu   a3, 1(s0)
-    li   t6, 0x87
+    li   a1, 0xffffffff80000000
+    li   a2, 0xffffffffffffffff
+    sh1add.uw a3, a1, a2
+    li   t6, 0xffffffff
     beq  a3, t6, t826_ok
     j    fail
 t826_ok:
-t827: # lbu 2
+t827: # sh1add.uw 0x123456789abcdef0, 0xffffffffffffffff
     li   a0, 827
-    lbu   a3, 2(s0)
-    li   t6, 0x86
+    li   a1, 0x123456789abcdef0
+    li   a2, 0xffffffffffffffff
+    sh1add.uw a3, a1, a2
+    li   t6, 0x13579bddf
     beq  a3, t6, t827_ok
     j    fail
 t827_ok:
-t828: # lbu 4
+t828: # sh1add.uw 0xfedcba9876543210, 0xffffffffffffffff
     li   a0, 828
-    lbu   a3, 4(s0)
-    li   t6, 0x84
+    li   a1, 0xfedcba9876543210
+    li   a2, 0xffffffffffffffff
+    sh1add.uw a3, a1, a2
+    li   t6, 0xeca8641f
     beq  a3, t6, t828_ok
     j    fail
 t828_ok:
-t829: # lh 0
+t829: # sh1add.uw 0x3f, 0x8000000000000000
     li   a0, 829
-    lh   a3, 0(s0)
-    li   t6, 0xffffffffffff8788
+    li   a1, 0x3f
+    li   a2, 0x8000000000000000
+    sh1add.uw a3, a1, a2
+    li   t6, 0x800000000000007e
     beq  a3, t6, t829_ok
     j    fail
 t829_ok:
-t830: # lh 2
+t830: # sh1add.uw 0x40, 0x123456789abcdef0
     li   a0, 830
-    lh   a3, 2(s0)
-    li   t6, 0xffffffffffff8586
+    li   a1, 0x40
+    li   a2, 0x123456789abcdef0
+    sh1add.uw a3, a1, a2
+    li   t6, 0x123456789abcdf70
     beq  a3, t6, t830_ok
     j    fail
 t830_ok:
-t831: # lh 4
+t831: # sh1add.uw 0x21, 0xfffffffffffffff9
     li   a0, 831
-    lh   a3, 4(s0)
-    li   t6, 0xffffffffffff8384
+    li   a1, 0x21
+    li   a2, 0xfffffffffffffff9
+    sh1add.uw a3, a1, a2
+    li   t6, 0x3b
     beq  a3, t6, t831_ok
     j    fail
 t831_ok:
-t832: # lhu 0
+t832: # sh2add.uw 0x0, 0x0
     li   a0, 832
-    lhu   a3, 0(s0)
-    li   t6, 0x8788
+    li   a1, 0x0
+    li   a2, 0x0
+    sh2add.uw a3, a1, a2
+    li   t6, 0x0
     beq  a3, t6, t832_ok
     j    fail
 t832_ok:
-t833: # lhu 2
+t833: # sh2add.uw 0x1, 0x1
     li   a0, 833
-    lhu   a3, 2(s0)
-    li   t6, 0x8586
+    li   a1, 0x1
+    li   a2, 0x1
+    sh2add.uw a3, a1, a2
+    li   t6, 0x5
     beq  a3, t6, t833_ok
     j    fail
 t833_ok:
-t834: # lhu 4
+t834: # sh2add.uw 0xffffffffffffffff, 0xffffffffffffffff
     li   a0, 834
-    lhu   a3, 4(s0)
-    li   t6, 0x8384
+    li   a1, 0xffffffffffffffff
+    li   a2, 0xffffffffffffffff
+    sh2add.uw a3, a1, a2
+    li   t6, 0x3fffffffb
     beq  a3, t6, t834_ok
     j    fail
 t834_ok:
-t835: # lw 0
+t835: # sh2add.uw 0x7, 0x7
     li   a0, 835
-    lw   a3, 0(s0)
-    li   t6, 0xffffffff85868788
+    li   a1, 0x7
+    li   a2, 0x7
+    sh2add.uw a3, a1, a2
+    li   t6, 0x23
     beq  a3, t6, t835_ok
     j    fail
 t835_ok:
-t836: # lw 4
+t836: # sh2add.uw 0xfffffffffffffff9, 0xfffffffffffffff9
     li   a0, 836
-    lw   a3, 4(s0)
-    li   t6, 0xffffffff81828384
+    li   a1, 0xfffffffffffffff9
+    li   a2, 0xfffffffffffffff9
+    sh2add.uw a3, a1, a2
+    li   t6, 0x3ffffffdd
     beq  a3, t6, t836_ok
     j    fail
 t836_ok:
-t837: # lwu 0
+t837: # sh2add.uw 0x8000000000000000, 0x7
     li   a0, 837
-    lwu   a3, 0(s0)
-    li   t6, 0x85868788
+    li   a1, 0x8000000000000000
+    li   a2, 0x7
+    sh2add.uw a3, a1, a2
+    li   t6, 0x7
     beq  a3, t6, t837_ok
     j    fail
 t837_ok:
-t838: # lwu 4
+t838: # sh2add.uw 0x7fffffffffffffff, 0xffffffffffffffff
     li   a0, 838
-    lwu   a3, 4(s0)
-    li   t6, 0x81828384
+    li   a1, 0x7fffffffffffffff
+    li   a2, 0xffffffffffffffff
+    sh2add.uw a3, a1, a2
+    li   t6, 0x3fffffffb
     beq  a3, t6, t838_ok
     j    fail
 t838_ok:
-t839: # ld 0
+t839: # sh2add.uw 0x80000000, 0xffffffffffffffff
     li   a0, 839
-    ld   a3, 0(s0)
-    li   t6, 0x8182838485868788
+    li   a1, 0x80000000
+    li   a2, 0xffffffffffffffff
+    sh2add.uw a3, a1, a2
+    li   t6, 0x1ffffffff
     beq  a3, t6, t839_ok
     j    fail
 t839_ok:
-t840: # sb then ld
+t840: # sh2add.uw 0x7fffffff, 0xffffffffffffffff
     li   a0, 840
+    li   a1, 0x7fffffff
+    li   a2, 0xffffffffffffffff
+    sh2add.uw a3, a1, a2
+    li   t6, 0x1fffffffb
+    beq  a3, t6, t840_ok
+    j    fail
+t840_ok:
+t841: # sh2add.uw 0xffffffff80000000, 0xffffffffffffffff
+    li   a0, 841
+    li   a1, 0xffffffff80000000
+    li   a2, 0xffffffffffffffff
+    sh2add.uw a3, a1, a2
+    li   t6, 0x1ffffffff
+    beq  a3, t6, t841_ok
+    j    fail
+t841_ok:
+t842: # sh2add.uw 0x123456789abcdef0, 0xffffffffffffffff
+    li   a0, 842
+    li   a1, 0x123456789abcdef0
+    li   a2, 0xffffffffffffffff
+    sh2add.uw a3, a1, a2
+    li   t6, 0x26af37bbf
+    beq  a3, t6, t842_ok
+    j    fail
+t842_ok:
+t843: # sh2add.uw 0xfedcba9876543210, 0xffffffffffffffff
+    li   a0, 843
+    li   a1, 0xfedcba9876543210
+    li   a2, 0xffffffffffffffff
+    sh2add.uw a3, a1, a2
+    li   t6, 0x1d950c83f
+    beq  a3, t6, t843_ok
+    j    fail
+t843_ok:
+t844: # sh2add.uw 0x3f, 0x8000000000000000
+    li   a0, 844
+    li   a1, 0x3f
+    li   a2, 0x8000000000000000
+    sh2add.uw a3, a1, a2
+    li   t6, 0x80000000000000fc
+    beq  a3, t6, t844_ok
+    j    fail
+t844_ok:
+t845: # sh2add.uw 0x40, 0x123456789abcdef0
+    li   a0, 845
+    li   a1, 0x40
+    li   a2, 0x123456789abcdef0
+    sh2add.uw a3, a1, a2
+    li   t6, 0x123456789abcdff0
+    beq  a3, t6, t845_ok
+    j    fail
+t845_ok:
+t846: # sh2add.uw 0x21, 0xfffffffffffffff9
+    li   a0, 846
+    li   a1, 0x21
+    li   a2, 0xfffffffffffffff9
+    sh2add.uw a3, a1, a2
+    li   t6, 0x7d
+    beq  a3, t6, t846_ok
+    j    fail
+t846_ok:
+t847: # sh3add.uw 0x0, 0x0
+    li   a0, 847
+    li   a1, 0x0
+    li   a2, 0x0
+    sh3add.uw a3, a1, a2
+    li   t6, 0x0
+    beq  a3, t6, t847_ok
+    j    fail
+t847_ok:
+t848: # sh3add.uw 0x1, 0x1
+    li   a0, 848
+    li   a1, 0x1
+    li   a2, 0x1
+    sh3add.uw a3, a1, a2
+    li   t6, 0x9
+    beq  a3, t6, t848_ok
+    j    fail
+t848_ok:
+t849: # sh3add.uw 0xffffffffffffffff, 0xffffffffffffffff
+    li   a0, 849
+    li   a1, 0xffffffffffffffff
+    li   a2, 0xffffffffffffffff
+    sh3add.uw a3, a1, a2
+    li   t6, 0x7fffffff7
+    beq  a3, t6, t849_ok
+    j    fail
+t849_ok:
+t850: # sh3add.uw 0x7, 0x7
+    li   a0, 850
+    li   a1, 0x7
+    li   a2, 0x7
+    sh3add.uw a3, a1, a2
+    li   t6, 0x3f
+    beq  a3, t6, t850_ok
+    j    fail
+t850_ok:
+t851: # sh3add.uw 0xfffffffffffffff9, 0xfffffffffffffff9
+    li   a0, 851
+    li   a1, 0xfffffffffffffff9
+    li   a2, 0xfffffffffffffff9
+    sh3add.uw a3, a1, a2
+    li   t6, 0x7ffffffc1
+    beq  a3, t6, t851_ok
+    j    fail
+t851_ok:
+t852: # sh3add.uw 0x8000000000000000, 0x7
+    li   a0, 852
+    li   a1, 0x8000000000000000
+    li   a2, 0x7
+    sh3add.uw a3, a1, a2
+    li   t6, 0x7
+    beq  a3, t6, t852_ok
+    j    fail
+t852_ok:
+t853: # sh3add.uw 0x7fffffffffffffff, 0xffffffffffffffff
+    li   a0, 853
+    li   a1, 0x7fffffffffffffff
+    li   a2, 0xffffffffffffffff
+    sh3add.uw a3, a1, a2
+    li   t6, 0x7fffffff7
+    beq  a3, t6, t853_ok
+    j    fail
+t853_ok:
+t854: # sh3add.uw 0x80000000, 0xffffffffffffffff
+    li   a0, 854
+    li   a1, 0x80000000
+    li   a2, 0xffffffffffffffff
+    sh3add.uw a3, a1, a2
+    li   t6, 0x3ffffffff
+    beq  a3, t6, t854_ok
+    j    fail
+t854_ok:
+t855: # sh3add.uw 0x7fffffff, 0xffffffffffffffff
+    li   a0, 855
+    li   a1, 0x7fffffff
+    li   a2, 0xffffffffffffffff
+    sh3add.uw a3, a1, a2
+    li   t6, 0x3fffffff7
+    beq  a3, t6, t855_ok
+    j    fail
+t855_ok:
+t856: # sh3add.uw 0xffffffff80000000, 0xffffffffffffffff
+    li   a0, 856
+    li   a1, 0xffffffff80000000
+    li   a2, 0xffffffffffffffff
+    sh3add.uw a3, a1, a2
+    li   t6, 0x3ffffffff
+    beq  a3, t6, t856_ok
+    j    fail
+t856_ok:
+t857: # sh3add.uw 0x123456789abcdef0, 0xffffffffffffffff
+    li   a0, 857
+    li   a1, 0x123456789abcdef0
+    li   a2, 0xffffffffffffffff
+    sh3add.uw a3, a1, a2
+    li   t6, 0x4d5e6f77f
+    beq  a3, t6, t857_ok
+    j    fail
+t857_ok:
+t858: # sh3add.uw 0xfedcba9876543210, 0xffffffffffffffff
+    li   a0, 858
+    li   a1, 0xfedcba9876543210
+    li   a2, 0xffffffffffffffff
+    sh3add.uw a3, a1, a2
+    li   t6, 0x3b2a1907f
+    beq  a3, t6, t858_ok
+    j    fail
+t858_ok:
+t859: # sh3add.uw 0x3f, 0x8000000000000000
+    li   a0, 859
+    li   a1, 0x3f
+    li   a2, 0x8000000000000000
+    sh3add.uw a3, a1, a2
+    li   t6, 0x80000000000001f8
+    beq  a3, t6, t859_ok
+    j    fail
+t859_ok:
+t860: # sh3add.uw 0x40, 0x123456789abcdef0
+    li   a0, 860
+    li   a1, 0x40
+    li   a2, 0x123456789abcdef0
+    sh3add.uw a3, a1, a2
+    li   t6, 0x123456789abce0f0
+    beq  a3, t6, t860_ok
+    j    fail
+t860_ok:
+t861: # sh3add.uw 0x21, 0xfffffffffffffff9
+    li   a0, 861
+    li   a1, 0x21
+    li   a2, 0xfffffffffffffff9
+    sh3add.uw a3, a1, a2
+    li   t6, 0x101
+    beq  a3, t6, t861_ok
+    j    fail
+t861_ok:
+t862: # andn 0x0, 0x0
+    li   a0, 862
+    li   a1, 0x0
+    li   a2, 0x0
+    andn a3, a1, a2
+    li   t6, 0x0
+    beq  a3, t6, t862_ok
+    j    fail
+t862_ok:
+t863: # andn 0x1, 0x1
+    li   a0, 863
+    li   a1, 0x1
+    li   a2, 0x1
+    andn a3, a1, a2
+    li   t6, 0x0
+    beq  a3, t6, t863_ok
+    j    fail
+t863_ok:
+t864: # andn 0xffffffffffffffff, 0xffffffffffffffff
+    li   a0, 864
+    li   a1, 0xffffffffffffffff
+    li   a2, 0xffffffffffffffff
+    andn a3, a1, a2
+    li   t6, 0x0
+    beq  a3, t6, t864_ok
+    j    fail
+t864_ok:
+t865: # andn 0x7, 0x7
+    li   a0, 865
+    li   a1, 0x7
+    li   a2, 0x7
+    andn a3, a1, a2
+    li   t6, 0x0
+    beq  a3, t6, t865_ok
+    j    fail
+t865_ok:
+t866: # andn 0xfffffffffffffff9, 0xfffffffffffffff9
+    li   a0, 866
+    li   a1, 0xfffffffffffffff9
+    li   a2, 0xfffffffffffffff9
+    andn a3, a1, a2
+    li   t6, 0x0
+    beq  a3, t6, t866_ok
+    j    fail
+t866_ok:
+t867: # andn 0x8000000000000000, 0x7
+    li   a0, 867
+    li   a1, 0x8000000000000000
+    li   a2, 0x7
+    andn a3, a1, a2
+    li   t6, 0x8000000000000000
+    beq  a3, t6, t867_ok
+    j    fail
+t867_ok:
+t868: # andn 0x7fffffffffffffff, 0xffffffffffffffff
+    li   a0, 868
+    li   a1, 0x7fffffffffffffff
+    li   a2, 0xffffffffffffffff
+    andn a3, a1, a2
+    li   t6, 0x0
+    beq  a3, t6, t868_ok
+    j    fail
+t868_ok:
+t869: # andn 0x80000000, 0xffffffffffffffff
+    li   a0, 869
+    li   a1, 0x80000000
+    li   a2, 0xffffffffffffffff
+    andn a3, a1, a2
+    li   t6, 0x0
+    beq  a3, t6, t869_ok
+    j    fail
+t869_ok:
+t870: # andn 0x7fffffff, 0xffffffffffffffff
+    li   a0, 870
+    li   a1, 0x7fffffff
+    li   a2, 0xffffffffffffffff
+    andn a3, a1, a2
+    li   t6, 0x0
+    beq  a3, t6, t870_ok
+    j    fail
+t870_ok:
+t871: # andn 0xffffffff80000000, 0xffffffffffffffff
+    li   a0, 871
+    li   a1, 0xffffffff80000000
+    li   a2, 0xffffffffffffffff
+    andn a3, a1, a2
+    li   t6, 0x0
+    beq  a3, t6, t871_ok
+    j    fail
+t871_ok:
+t872: # andn 0x123456789abcdef0, 0xffffffffffffffff
+    li   a0, 872
+    li   a1, 0x123456789abcdef0
+    li   a2, 0xffffffffffffffff
+    andn a3, a1, a2
+    li   t6, 0x0
+    beq  a3, t6, t872_ok
+    j    fail
+t872_ok:
+t873: # andn 0xfedcba9876543210, 0xffffffffffffffff
+    li   a0, 873
+    li   a1, 0xfedcba9876543210
+    li   a2, 0xffffffffffffffff
+    andn a3, a1, a2
+    li   t6, 0x0
+    beq  a3, t6, t873_ok
+    j    fail
+t873_ok:
+t874: # andn 0x3f, 0x8000000000000000
+    li   a0, 874
+    li   a1, 0x3f
+    li   a2, 0x8000000000000000
+    andn a3, a1, a2
+    li   t6, 0x3f
+    beq  a3, t6, t874_ok
+    j    fail
+t874_ok:
+t875: # andn 0x40, 0x123456789abcdef0
+    li   a0, 875
+    li   a1, 0x40
+    li   a2, 0x123456789abcdef0
+    andn a3, a1, a2
+    li   t6, 0x0
+    beq  a3, t6, t875_ok
+    j    fail
+t875_ok:
+t876: # andn 0x21, 0xfffffffffffffff9
+    li   a0, 876
+    li   a1, 0x21
+    li   a2, 0xfffffffffffffff9
+    andn a3, a1, a2
+    li   t6, 0x0
+    beq  a3, t6, t876_ok
+    j    fail
+t876_ok:
+t877: # orn 0x0, 0x0
+    li   a0, 877
+    li   a1, 0x0
+    li   a2, 0x0
+    orn a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t877_ok
+    j    fail
+t877_ok:
+t878: # orn 0x1, 0x1
+    li   a0, 878
+    li   a1, 0x1
+    li   a2, 0x1
+    orn a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t878_ok
+    j    fail
+t878_ok:
+t879: # orn 0xffffffffffffffff, 0xffffffffffffffff
+    li   a0, 879
+    li   a1, 0xffffffffffffffff
+    li   a2, 0xffffffffffffffff
+    orn a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t879_ok
+    j    fail
+t879_ok:
+t880: # orn 0x7, 0x7
+    li   a0, 880
+    li   a1, 0x7
+    li   a2, 0x7
+    orn a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t880_ok
+    j    fail
+t880_ok:
+t881: # orn 0xfffffffffffffff9, 0xfffffffffffffff9
+    li   a0, 881
+    li   a1, 0xfffffffffffffff9
+    li   a2, 0xfffffffffffffff9
+    orn a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t881_ok
+    j    fail
+t881_ok:
+t882: # orn 0x8000000000000000, 0x7
+    li   a0, 882
+    li   a1, 0x8000000000000000
+    li   a2, 0x7
+    orn a3, a1, a2
+    li   t6, 0xfffffffffffffff8
+    beq  a3, t6, t882_ok
+    j    fail
+t882_ok:
+t883: # orn 0x7fffffffffffffff, 0xffffffffffffffff
+    li   a0, 883
+    li   a1, 0x7fffffffffffffff
+    li   a2, 0xffffffffffffffff
+    orn a3, a1, a2
+    li   t6, 0x7fffffffffffffff
+    beq  a3, t6, t883_ok
+    j    fail
+t883_ok:
+t884: # orn 0x80000000, 0xffffffffffffffff
+    li   a0, 884
+    li   a1, 0x80000000
+    li   a2, 0xffffffffffffffff
+    orn a3, a1, a2
+    li   t6, 0x80000000
+    beq  a3, t6, t884_ok
+    j    fail
+t884_ok:
+t885: # orn 0x7fffffff, 0xffffffffffffffff
+    li   a0, 885
+    li   a1, 0x7fffffff
+    li   a2, 0xffffffffffffffff
+    orn a3, a1, a2
+    li   t6, 0x7fffffff
+    beq  a3, t6, t885_ok
+    j    fail
+t885_ok:
+t886: # orn 0xffffffff80000000, 0xffffffffffffffff
+    li   a0, 886
+    li   a1, 0xffffffff80000000
+    li   a2, 0xffffffffffffffff
+    orn a3, a1, a2
+    li   t6, 0xffffffff80000000
+    beq  a3, t6, t886_ok
+    j    fail
+t886_ok:
+t887: # orn 0x123456789abcdef0, 0xffffffffffffffff
+    li   a0, 887
+    li   a1, 0x123456789abcdef0
+    li   a2, 0xffffffffffffffff
+    orn a3, a1, a2
+    li   t6, 0x123456789abcdef0
+    beq  a3, t6, t887_ok
+    j    fail
+t887_ok:
+t888: # orn 0xfedcba9876543210, 0xffffffffffffffff
+    li   a0, 888
+    li   a1, 0xfedcba9876543210
+    li   a2, 0xffffffffffffffff
+    orn a3, a1, a2
+    li   t6, 0xfedcba9876543210
+    beq  a3, t6, t888_ok
+    j    fail
+t888_ok:
+t889: # orn 0x3f, 0x8000000000000000
+    li   a0, 889
+    li   a1, 0x3f
+    li   a2, 0x8000000000000000
+    orn a3, a1, a2
+    li   t6, 0x7fffffffffffffff
+    beq  a3, t6, t889_ok
+    j    fail
+t889_ok:
+t890: # orn 0x40, 0x123456789abcdef0
+    li   a0, 890
+    li   a1, 0x40
+    li   a2, 0x123456789abcdef0
+    orn a3, a1, a2
+    li   t6, 0xedcba9876543214f
+    beq  a3, t6, t890_ok
+    j    fail
+t890_ok:
+t891: # orn 0x21, 0xfffffffffffffff9
+    li   a0, 891
+    li   a1, 0x21
+    li   a2, 0xfffffffffffffff9
+    orn a3, a1, a2
+    li   t6, 0x27
+    beq  a3, t6, t891_ok
+    j    fail
+t891_ok:
+t892: # xnor 0x0, 0x0
+    li   a0, 892
+    li   a1, 0x0
+    li   a2, 0x0
+    xnor a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t892_ok
+    j    fail
+t892_ok:
+t893: # xnor 0x1, 0x1
+    li   a0, 893
+    li   a1, 0x1
+    li   a2, 0x1
+    xnor a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t893_ok
+    j    fail
+t893_ok:
+t894: # xnor 0xffffffffffffffff, 0xffffffffffffffff
+    li   a0, 894
+    li   a1, 0xffffffffffffffff
+    li   a2, 0xffffffffffffffff
+    xnor a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t894_ok
+    j    fail
+t894_ok:
+t895: # xnor 0x7, 0x7
+    li   a0, 895
+    li   a1, 0x7
+    li   a2, 0x7
+    xnor a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t895_ok
+    j    fail
+t895_ok:
+t896: # xnor 0xfffffffffffffff9, 0xfffffffffffffff9
+    li   a0, 896
+    li   a1, 0xfffffffffffffff9
+    li   a2, 0xfffffffffffffff9
+    xnor a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t896_ok
+    j    fail
+t896_ok:
+t897: # xnor 0x8000000000000000, 0x7
+    li   a0, 897
+    li   a1, 0x8000000000000000
+    li   a2, 0x7
+    xnor a3, a1, a2
+    li   t6, 0x7ffffffffffffff8
+    beq  a3, t6, t897_ok
+    j    fail
+t897_ok:
+t898: # xnor 0x7fffffffffffffff, 0xffffffffffffffff
+    li   a0, 898
+    li   a1, 0x7fffffffffffffff
+    li   a2, 0xffffffffffffffff
+    xnor a3, a1, a2
+    li   t6, 0x7fffffffffffffff
+    beq  a3, t6, t898_ok
+    j    fail
+t898_ok:
+t899: # xnor 0x80000000, 0xffffffffffffffff
+    li   a0, 899
+    li   a1, 0x80000000
+    li   a2, 0xffffffffffffffff
+    xnor a3, a1, a2
+    li   t6, 0x80000000
+    beq  a3, t6, t899_ok
+    j    fail
+t899_ok:
+t900: # xnor 0x7fffffff, 0xffffffffffffffff
+    li   a0, 900
+    li   a1, 0x7fffffff
+    li   a2, 0xffffffffffffffff
+    xnor a3, a1, a2
+    li   t6, 0x7fffffff
+    beq  a3, t6, t900_ok
+    j    fail
+t900_ok:
+t901: # xnor 0xffffffff80000000, 0xffffffffffffffff
+    li   a0, 901
+    li   a1, 0xffffffff80000000
+    li   a2, 0xffffffffffffffff
+    xnor a3, a1, a2
+    li   t6, 0xffffffff80000000
+    beq  a3, t6, t901_ok
+    j    fail
+t901_ok:
+t902: # xnor 0x123456789abcdef0, 0xffffffffffffffff
+    li   a0, 902
+    li   a1, 0x123456789abcdef0
+    li   a2, 0xffffffffffffffff
+    xnor a3, a1, a2
+    li   t6, 0x123456789abcdef0
+    beq  a3, t6, t902_ok
+    j    fail
+t902_ok:
+t903: # xnor 0xfedcba9876543210, 0xffffffffffffffff
+    li   a0, 903
+    li   a1, 0xfedcba9876543210
+    li   a2, 0xffffffffffffffff
+    xnor a3, a1, a2
+    li   t6, 0xfedcba9876543210
+    beq  a3, t6, t903_ok
+    j    fail
+t903_ok:
+t904: # xnor 0x3f, 0x8000000000000000
+    li   a0, 904
+    li   a1, 0x3f
+    li   a2, 0x8000000000000000
+    xnor a3, a1, a2
+    li   t6, 0x7fffffffffffffc0
+    beq  a3, t6, t904_ok
+    j    fail
+t904_ok:
+t905: # xnor 0x40, 0x123456789abcdef0
+    li   a0, 905
+    li   a1, 0x40
+    li   a2, 0x123456789abcdef0
+    xnor a3, a1, a2
+    li   t6, 0xedcba9876543214f
+    beq  a3, t6, t905_ok
+    j    fail
+t905_ok:
+t906: # xnor 0x21, 0xfffffffffffffff9
+    li   a0, 906
+    li   a1, 0x21
+    li   a2, 0xfffffffffffffff9
+    xnor a3, a1, a2
+    li   t6, 0x27
+    beq  a3, t6, t906_ok
+    j    fail
+t906_ok:
+t907: # min 0x0, 0x0
+    li   a0, 907
+    li   a1, 0x0
+    li   a2, 0x0
+    min a3, a1, a2
+    li   t6, 0x0
+    beq  a3, t6, t907_ok
+    j    fail
+t907_ok:
+t908: # min 0x1, 0x1
+    li   a0, 908
+    li   a1, 0x1
+    li   a2, 0x1
+    min a3, a1, a2
+    li   t6, 0x1
+    beq  a3, t6, t908_ok
+    j    fail
+t908_ok:
+t909: # min 0xffffffffffffffff, 0xffffffffffffffff
+    li   a0, 909
+    li   a1, 0xffffffffffffffff
+    li   a2, 0xffffffffffffffff
+    min a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t909_ok
+    j    fail
+t909_ok:
+t910: # min 0x7, 0x7
+    li   a0, 910
+    li   a1, 0x7
+    li   a2, 0x7
+    min a3, a1, a2
+    li   t6, 0x7
+    beq  a3, t6, t910_ok
+    j    fail
+t910_ok:
+t911: # min 0xfffffffffffffff9, 0xfffffffffffffff9
+    li   a0, 911
+    li   a1, 0xfffffffffffffff9
+    li   a2, 0xfffffffffffffff9
+    min a3, a1, a2
+    li   t6, 0xfffffffffffffff9
+    beq  a3, t6, t911_ok
+    j    fail
+t911_ok:
+t912: # min 0x8000000000000000, 0x7
+    li   a0, 912
+    li   a1, 0x8000000000000000
+    li   a2, 0x7
+    min a3, a1, a2
+    li   t6, 0x8000000000000000
+    beq  a3, t6, t912_ok
+    j    fail
+t912_ok:
+t913: # min 0x7fffffffffffffff, 0xffffffffffffffff
+    li   a0, 913
+    li   a1, 0x7fffffffffffffff
+    li   a2, 0xffffffffffffffff
+    min a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t913_ok
+    j    fail
+t913_ok:
+t914: # min 0x80000000, 0xffffffffffffffff
+    li   a0, 914
+    li   a1, 0x80000000
+    li   a2, 0xffffffffffffffff
+    min a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t914_ok
+    j    fail
+t914_ok:
+t915: # min 0x7fffffff, 0xffffffffffffffff
+    li   a0, 915
+    li   a1, 0x7fffffff
+    li   a2, 0xffffffffffffffff
+    min a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t915_ok
+    j    fail
+t915_ok:
+t916: # min 0xffffffff80000000, 0xffffffffffffffff
+    li   a0, 916
+    li   a1, 0xffffffff80000000
+    li   a2, 0xffffffffffffffff
+    min a3, a1, a2
+    li   t6, 0xffffffff80000000
+    beq  a3, t6, t916_ok
+    j    fail
+t916_ok:
+t917: # min 0x123456789abcdef0, 0xffffffffffffffff
+    li   a0, 917
+    li   a1, 0x123456789abcdef0
+    li   a2, 0xffffffffffffffff
+    min a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t917_ok
+    j    fail
+t917_ok:
+t918: # min 0xfedcba9876543210, 0xffffffffffffffff
+    li   a0, 918
+    li   a1, 0xfedcba9876543210
+    li   a2, 0xffffffffffffffff
+    min a3, a1, a2
+    li   t6, 0xfedcba9876543210
+    beq  a3, t6, t918_ok
+    j    fail
+t918_ok:
+t919: # min 0x3f, 0x8000000000000000
+    li   a0, 919
+    li   a1, 0x3f
+    li   a2, 0x8000000000000000
+    min a3, a1, a2
+    li   t6, 0x8000000000000000
+    beq  a3, t6, t919_ok
+    j    fail
+t919_ok:
+t920: # min 0x40, 0x123456789abcdef0
+    li   a0, 920
+    li   a1, 0x40
+    li   a2, 0x123456789abcdef0
+    min a3, a1, a2
+    li   t6, 0x40
+    beq  a3, t6, t920_ok
+    j    fail
+t920_ok:
+t921: # min 0x21, 0xfffffffffffffff9
+    li   a0, 921
+    li   a1, 0x21
+    li   a2, 0xfffffffffffffff9
+    min a3, a1, a2
+    li   t6, 0xfffffffffffffff9
+    beq  a3, t6, t921_ok
+    j    fail
+t921_ok:
+t922: # minu 0x0, 0x0
+    li   a0, 922
+    li   a1, 0x0
+    li   a2, 0x0
+    minu a3, a1, a2
+    li   t6, 0x0
+    beq  a3, t6, t922_ok
+    j    fail
+t922_ok:
+t923: # minu 0x1, 0x1
+    li   a0, 923
+    li   a1, 0x1
+    li   a2, 0x1
+    minu a3, a1, a2
+    li   t6, 0x1
+    beq  a3, t6, t923_ok
+    j    fail
+t923_ok:
+t924: # minu 0xffffffffffffffff, 0xffffffffffffffff
+    li   a0, 924
+    li   a1, 0xffffffffffffffff
+    li   a2, 0xffffffffffffffff
+    minu a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t924_ok
+    j    fail
+t924_ok:
+t925: # minu 0x7, 0x7
+    li   a0, 925
+    li   a1, 0x7
+    li   a2, 0x7
+    minu a3, a1, a2
+    li   t6, 0x7
+    beq  a3, t6, t925_ok
+    j    fail
+t925_ok:
+t926: # minu 0xfffffffffffffff9, 0xfffffffffffffff9
+    li   a0, 926
+    li   a1, 0xfffffffffffffff9
+    li   a2, 0xfffffffffffffff9
+    minu a3, a1, a2
+    li   t6, 0xfffffffffffffff9
+    beq  a3, t6, t926_ok
+    j    fail
+t926_ok:
+t927: # minu 0x8000000000000000, 0x7
+    li   a0, 927
+    li   a1, 0x8000000000000000
+    li   a2, 0x7
+    minu a3, a1, a2
+    li   t6, 0x7
+    beq  a3, t6, t927_ok
+    j    fail
+t927_ok:
+t928: # minu 0x7fffffffffffffff, 0xffffffffffffffff
+    li   a0, 928
+    li   a1, 0x7fffffffffffffff
+    li   a2, 0xffffffffffffffff
+    minu a3, a1, a2
+    li   t6, 0x7fffffffffffffff
+    beq  a3, t6, t928_ok
+    j    fail
+t928_ok:
+t929: # minu 0x80000000, 0xffffffffffffffff
+    li   a0, 929
+    li   a1, 0x80000000
+    li   a2, 0xffffffffffffffff
+    minu a3, a1, a2
+    li   t6, 0x80000000
+    beq  a3, t6, t929_ok
+    j    fail
+t929_ok:
+t930: # minu 0x7fffffff, 0xffffffffffffffff
+    li   a0, 930
+    li   a1, 0x7fffffff
+    li   a2, 0xffffffffffffffff
+    minu a3, a1, a2
+    li   t6, 0x7fffffff
+    beq  a3, t6, t930_ok
+    j    fail
+t930_ok:
+t931: # minu 0xffffffff80000000, 0xffffffffffffffff
+    li   a0, 931
+    li   a1, 0xffffffff80000000
+    li   a2, 0xffffffffffffffff
+    minu a3, a1, a2
+    li   t6, 0xffffffff80000000
+    beq  a3, t6, t931_ok
+    j    fail
+t931_ok:
+t932: # minu 0x123456789abcdef0, 0xffffffffffffffff
+    li   a0, 932
+    li   a1, 0x123456789abcdef0
+    li   a2, 0xffffffffffffffff
+    minu a3, a1, a2
+    li   t6, 0x123456789abcdef0
+    beq  a3, t6, t932_ok
+    j    fail
+t932_ok:
+t933: # minu 0xfedcba9876543210, 0xffffffffffffffff
+    li   a0, 933
+    li   a1, 0xfedcba9876543210
+    li   a2, 0xffffffffffffffff
+    minu a3, a1, a2
+    li   t6, 0xfedcba9876543210
+    beq  a3, t6, t933_ok
+    j    fail
+t933_ok:
+t934: # minu 0x3f, 0x8000000000000000
+    li   a0, 934
+    li   a1, 0x3f
+    li   a2, 0x8000000000000000
+    minu a3, a1, a2
+    li   t6, 0x3f
+    beq  a3, t6, t934_ok
+    j    fail
+t934_ok:
+t935: # minu 0x40, 0x123456789abcdef0
+    li   a0, 935
+    li   a1, 0x40
+    li   a2, 0x123456789abcdef0
+    minu a3, a1, a2
+    li   t6, 0x40
+    beq  a3, t6, t935_ok
+    j    fail
+t935_ok:
+t936: # minu 0x21, 0xfffffffffffffff9
+    li   a0, 936
+    li   a1, 0x21
+    li   a2, 0xfffffffffffffff9
+    minu a3, a1, a2
+    li   t6, 0x21
+    beq  a3, t6, t936_ok
+    j    fail
+t936_ok:
+t937: # max 0x0, 0x0
+    li   a0, 937
+    li   a1, 0x0
+    li   a2, 0x0
+    max a3, a1, a2
+    li   t6, 0x0
+    beq  a3, t6, t937_ok
+    j    fail
+t937_ok:
+t938: # max 0x1, 0x1
+    li   a0, 938
+    li   a1, 0x1
+    li   a2, 0x1
+    max a3, a1, a2
+    li   t6, 0x1
+    beq  a3, t6, t938_ok
+    j    fail
+t938_ok:
+t939: # max 0xffffffffffffffff, 0xffffffffffffffff
+    li   a0, 939
+    li   a1, 0xffffffffffffffff
+    li   a2, 0xffffffffffffffff
+    max a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t939_ok
+    j    fail
+t939_ok:
+t940: # max 0x7, 0x7
+    li   a0, 940
+    li   a1, 0x7
+    li   a2, 0x7
+    max a3, a1, a2
+    li   t6, 0x7
+    beq  a3, t6, t940_ok
+    j    fail
+t940_ok:
+t941: # max 0xfffffffffffffff9, 0xfffffffffffffff9
+    li   a0, 941
+    li   a1, 0xfffffffffffffff9
+    li   a2, 0xfffffffffffffff9
+    max a3, a1, a2
+    li   t6, 0xfffffffffffffff9
+    beq  a3, t6, t941_ok
+    j    fail
+t941_ok:
+t942: # max 0x8000000000000000, 0x7
+    li   a0, 942
+    li   a1, 0x8000000000000000
+    li   a2, 0x7
+    max a3, a1, a2
+    li   t6, 0x7
+    beq  a3, t6, t942_ok
+    j    fail
+t942_ok:
+t943: # max 0x7fffffffffffffff, 0xffffffffffffffff
+    li   a0, 943
+    li   a1, 0x7fffffffffffffff
+    li   a2, 0xffffffffffffffff
+    max a3, a1, a2
+    li   t6, 0x7fffffffffffffff
+    beq  a3, t6, t943_ok
+    j    fail
+t943_ok:
+t944: # max 0x80000000, 0xffffffffffffffff
+    li   a0, 944
+    li   a1, 0x80000000
+    li   a2, 0xffffffffffffffff
+    max a3, a1, a2
+    li   t6, 0x80000000
+    beq  a3, t6, t944_ok
+    j    fail
+t944_ok:
+t945: # max 0x7fffffff, 0xffffffffffffffff
+    li   a0, 945
+    li   a1, 0x7fffffff
+    li   a2, 0xffffffffffffffff
+    max a3, a1, a2
+    li   t6, 0x7fffffff
+    beq  a3, t6, t945_ok
+    j    fail
+t945_ok:
+t946: # max 0xffffffff80000000, 0xffffffffffffffff
+    li   a0, 946
+    li   a1, 0xffffffff80000000
+    li   a2, 0xffffffffffffffff
+    max a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t946_ok
+    j    fail
+t946_ok:
+t947: # max 0x123456789abcdef0, 0xffffffffffffffff
+    li   a0, 947
+    li   a1, 0x123456789abcdef0
+    li   a2, 0xffffffffffffffff
+    max a3, a1, a2
+    li   t6, 0x123456789abcdef0
+    beq  a3, t6, t947_ok
+    j    fail
+t947_ok:
+t948: # max 0xfedcba9876543210, 0xffffffffffffffff
+    li   a0, 948
+    li   a1, 0xfedcba9876543210
+    li   a2, 0xffffffffffffffff
+    max a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t948_ok
+    j    fail
+t948_ok:
+t949: # max 0x3f, 0x8000000000000000
+    li   a0, 949
+    li   a1, 0x3f
+    li   a2, 0x8000000000000000
+    max a3, a1, a2
+    li   t6, 0x3f
+    beq  a3, t6, t949_ok
+    j    fail
+t949_ok:
+t950: # max 0x40, 0x123456789abcdef0
+    li   a0, 950
+    li   a1, 0x40
+    li   a2, 0x123456789abcdef0
+    max a3, a1, a2
+    li   t6, 0x123456789abcdef0
+    beq  a3, t6, t950_ok
+    j    fail
+t950_ok:
+t951: # max 0x21, 0xfffffffffffffff9
+    li   a0, 951
+    li   a1, 0x21
+    li   a2, 0xfffffffffffffff9
+    max a3, a1, a2
+    li   t6, 0x21
+    beq  a3, t6, t951_ok
+    j    fail
+t951_ok:
+t952: # maxu 0x0, 0x0
+    li   a0, 952
+    li   a1, 0x0
+    li   a2, 0x0
+    maxu a3, a1, a2
+    li   t6, 0x0
+    beq  a3, t6, t952_ok
+    j    fail
+t952_ok:
+t953: # maxu 0x1, 0x1
+    li   a0, 953
+    li   a1, 0x1
+    li   a2, 0x1
+    maxu a3, a1, a2
+    li   t6, 0x1
+    beq  a3, t6, t953_ok
+    j    fail
+t953_ok:
+t954: # maxu 0xffffffffffffffff, 0xffffffffffffffff
+    li   a0, 954
+    li   a1, 0xffffffffffffffff
+    li   a2, 0xffffffffffffffff
+    maxu a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t954_ok
+    j    fail
+t954_ok:
+t955: # maxu 0x7, 0x7
+    li   a0, 955
+    li   a1, 0x7
+    li   a2, 0x7
+    maxu a3, a1, a2
+    li   t6, 0x7
+    beq  a3, t6, t955_ok
+    j    fail
+t955_ok:
+t956: # maxu 0xfffffffffffffff9, 0xfffffffffffffff9
+    li   a0, 956
+    li   a1, 0xfffffffffffffff9
+    li   a2, 0xfffffffffffffff9
+    maxu a3, a1, a2
+    li   t6, 0xfffffffffffffff9
+    beq  a3, t6, t956_ok
+    j    fail
+t956_ok:
+t957: # maxu 0x8000000000000000, 0x7
+    li   a0, 957
+    li   a1, 0x8000000000000000
+    li   a2, 0x7
+    maxu a3, a1, a2
+    li   t6, 0x8000000000000000
+    beq  a3, t6, t957_ok
+    j    fail
+t957_ok:
+t958: # maxu 0x7fffffffffffffff, 0xffffffffffffffff
+    li   a0, 958
+    li   a1, 0x7fffffffffffffff
+    li   a2, 0xffffffffffffffff
+    maxu a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t958_ok
+    j    fail
+t958_ok:
+t959: # maxu 0x80000000, 0xffffffffffffffff
+    li   a0, 959
+    li   a1, 0x80000000
+    li   a2, 0xffffffffffffffff
+    maxu a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t959_ok
+    j    fail
+t959_ok:
+t960: # maxu 0x7fffffff, 0xffffffffffffffff
+    li   a0, 960
+    li   a1, 0x7fffffff
+    li   a2, 0xffffffffffffffff
+    maxu a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t960_ok
+    j    fail
+t960_ok:
+t961: # maxu 0xffffffff80000000, 0xffffffffffffffff
+    li   a0, 961
+    li   a1, 0xffffffff80000000
+    li   a2, 0xffffffffffffffff
+    maxu a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t961_ok
+    j    fail
+t961_ok:
+t962: # maxu 0x123456789abcdef0, 0xffffffffffffffff
+    li   a0, 962
+    li   a1, 0x123456789abcdef0
+    li   a2, 0xffffffffffffffff
+    maxu a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t962_ok
+    j    fail
+t962_ok:
+t963: # maxu 0xfedcba9876543210, 0xffffffffffffffff
+    li   a0, 963
+    li   a1, 0xfedcba9876543210
+    li   a2, 0xffffffffffffffff
+    maxu a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t963_ok
+    j    fail
+t963_ok:
+t964: # maxu 0x3f, 0x8000000000000000
+    li   a0, 964
+    li   a1, 0x3f
+    li   a2, 0x8000000000000000
+    maxu a3, a1, a2
+    li   t6, 0x8000000000000000
+    beq  a3, t6, t964_ok
+    j    fail
+t964_ok:
+t965: # maxu 0x40, 0x123456789abcdef0
+    li   a0, 965
+    li   a1, 0x40
+    li   a2, 0x123456789abcdef0
+    maxu a3, a1, a2
+    li   t6, 0x123456789abcdef0
+    beq  a3, t6, t965_ok
+    j    fail
+t965_ok:
+t966: # maxu 0x21, 0xfffffffffffffff9
+    li   a0, 966
+    li   a1, 0x21
+    li   a2, 0xfffffffffffffff9
+    maxu a3, a1, a2
+    li   t6, 0xfffffffffffffff9
+    beq  a3, t6, t966_ok
+    j    fail
+t966_ok:
+t967: # rol 0x0, 0x0
+    li   a0, 967
+    li   a1, 0x0
+    li   a2, 0x0
+    rol a3, a1, a2
+    li   t6, 0x0
+    beq  a3, t6, t967_ok
+    j    fail
+t967_ok:
+t968: # rol 0x1, 0x1
+    li   a0, 968
+    li   a1, 0x1
+    li   a2, 0x1
+    rol a3, a1, a2
+    li   t6, 0x2
+    beq  a3, t6, t968_ok
+    j    fail
+t968_ok:
+t969: # rol 0xffffffffffffffff, 0xffffffffffffffff
+    li   a0, 969
+    li   a1, 0xffffffffffffffff
+    li   a2, 0xffffffffffffffff
+    rol a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t969_ok
+    j    fail
+t969_ok:
+t970: # rol 0x7, 0x7
+    li   a0, 970
+    li   a1, 0x7
+    li   a2, 0x7
+    rol a3, a1, a2
+    li   t6, 0x380
+    beq  a3, t6, t970_ok
+    j    fail
+t970_ok:
+t971: # rol 0xfffffffffffffff9, 0xfffffffffffffff9
+    li   a0, 971
+    li   a1, 0xfffffffffffffff9
+    li   a2, 0xfffffffffffffff9
+    rol a3, a1, a2
+    li   t6, 0xf3ffffffffffffff
+    beq  a3, t6, t971_ok
+    j    fail
+t971_ok:
+t972: # rol 0x8000000000000000, 0x7
+    li   a0, 972
+    li   a1, 0x8000000000000000
+    li   a2, 0x7
+    rol a3, a1, a2
+    li   t6, 0x40
+    beq  a3, t6, t972_ok
+    j    fail
+t972_ok:
+t973: # rol 0x7fffffffffffffff, 0xffffffffffffffff
+    li   a0, 973
+    li   a1, 0x7fffffffffffffff
+    li   a2, 0xffffffffffffffff
+    rol a3, a1, a2
+    li   t6, 0xbfffffffffffffff
+    beq  a3, t6, t973_ok
+    j    fail
+t973_ok:
+t974: # rol 0x80000000, 0xffffffffffffffff
+    li   a0, 974
+    li   a1, 0x80000000
+    li   a2, 0xffffffffffffffff
+    rol a3, a1, a2
+    li   t6, 0x40000000
+    beq  a3, t6, t974_ok
+    j    fail
+t974_ok:
+t975: # rol 0x7fffffff, 0xffffffffffffffff
+    li   a0, 975
+    li   a1, 0x7fffffff
+    li   a2, 0xffffffffffffffff
+    rol a3, a1, a2
+    li   t6, 0x800000003fffffff
+    beq  a3, t6, t975_ok
+    j    fail
+t975_ok:
+t976: # rol 0xffffffff80000000, 0xffffffffffffffff
+    li   a0, 976
+    li   a1, 0xffffffff80000000
+    li   a2, 0xffffffffffffffff
+    rol a3, a1, a2
+    li   t6, 0x7fffffffc0000000
+    beq  a3, t6, t976_ok
+    j    fail
+t976_ok:
+t977: # rol 0x123456789abcdef0, 0xffffffffffffffff
+    li   a0, 977
+    li   a1, 0x123456789abcdef0
+    li   a2, 0xffffffffffffffff
+    rol a3, a1, a2
+    li   t6, 0x91a2b3c4d5e6f78
+    beq  a3, t6, t977_ok
+    j    fail
+t977_ok:
+t978: # rol 0xfedcba9876543210, 0xffffffffffffffff
+    li   a0, 978
+    li   a1, 0xfedcba9876543210
+    li   a2, 0xffffffffffffffff
+    rol a3, a1, a2
+    li   t6, 0x7f6e5d4c3b2a1908
+    beq  a3, t6, t978_ok
+    j    fail
+t978_ok:
+t979: # rol 0x3f, 0x8000000000000000
+    li   a0, 979
+    li   a1, 0x3f
+    li   a2, 0x8000000000000000
+    rol a3, a1, a2
+    li   t6, 0x3f
+    beq  a3, t6, t979_ok
+    j    fail
+t979_ok:
+t980: # rol 0x40, 0x123456789abcdef0
+    li   a0, 980
+    li   a1, 0x40
+    li   a2, 0x123456789abcdef0
+    rol a3, a1, a2
+    li   t6, 0x40000000000000
+    beq  a3, t6, t980_ok
+    j    fail
+t980_ok:
+t981: # rol 0x21, 0xfffffffffffffff9
+    li   a0, 981
+    li   a1, 0x21
+    li   a2, 0xfffffffffffffff9
+    rol a3, a1, a2
+    li   t6, 0x4200000000000000
+    beq  a3, t6, t981_ok
+    j    fail
+t981_ok:
+t982: # ror 0x0, 0x0
+    li   a0, 982
+    li   a1, 0x0
+    li   a2, 0x0
+    ror a3, a1, a2
+    li   t6, 0x0
+    beq  a3, t6, t982_ok
+    j    fail
+t982_ok:
+t983: # ror 0x1, 0x1
+    li   a0, 983
+    li   a1, 0x1
+    li   a2, 0x1
+    ror a3, a1, a2
+    li   t6, 0x8000000000000000
+    beq  a3, t6, t983_ok
+    j    fail
+t983_ok:
+t984: # ror 0xffffffffffffffff, 0xffffffffffffffff
+    li   a0, 984
+    li   a1, 0xffffffffffffffff
+    li   a2, 0xffffffffffffffff
+    ror a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t984_ok
+    j    fail
+t984_ok:
+t985: # ror 0x7, 0x7
+    li   a0, 985
+    li   a1, 0x7
+    li   a2, 0x7
+    ror a3, a1, a2
+    li   t6, 0xe00000000000000
+    beq  a3, t6, t985_ok
+    j    fail
+t985_ok:
+t986: # ror 0xfffffffffffffff9, 0xfffffffffffffff9
+    li   a0, 986
+    li   a1, 0xfffffffffffffff9
+    li   a2, 0xfffffffffffffff9
+    ror a3, a1, a2
+    li   t6, 0xfffffffffffffcff
+    beq  a3, t6, t986_ok
+    j    fail
+t986_ok:
+t987: # ror 0x8000000000000000, 0x7
+    li   a0, 987
+    li   a1, 0x8000000000000000
+    li   a2, 0x7
+    ror a3, a1, a2
+    li   t6, 0x100000000000000
+    beq  a3, t6, t987_ok
+    j    fail
+t987_ok:
+t988: # ror 0x7fffffffffffffff, 0xffffffffffffffff
+    li   a0, 988
+    li   a1, 0x7fffffffffffffff
+    li   a2, 0xffffffffffffffff
+    ror a3, a1, a2
+    li   t6, 0xfffffffffffffffe
+    beq  a3, t6, t988_ok
+    j    fail
+t988_ok:
+t989: # ror 0x80000000, 0xffffffffffffffff
+    li   a0, 989
+    li   a1, 0x80000000
+    li   a2, 0xffffffffffffffff
+    ror a3, a1, a2
+    li   t6, 0x100000000
+    beq  a3, t6, t989_ok
+    j    fail
+t989_ok:
+t990: # ror 0x7fffffff, 0xffffffffffffffff
+    li   a0, 990
+    li   a1, 0x7fffffff
+    li   a2, 0xffffffffffffffff
+    ror a3, a1, a2
+    li   t6, 0xfffffffe
+    beq  a3, t6, t990_ok
+    j    fail
+t990_ok:
+t991: # ror 0xffffffff80000000, 0xffffffffffffffff
+    li   a0, 991
+    li   a1, 0xffffffff80000000
+    li   a2, 0xffffffffffffffff
+    ror a3, a1, a2
+    li   t6, 0xffffffff00000001
+    beq  a3, t6, t991_ok
+    j    fail
+t991_ok:
+t992: # ror 0x123456789abcdef0, 0xffffffffffffffff
+    li   a0, 992
+    li   a1, 0x123456789abcdef0
+    li   a2, 0xffffffffffffffff
+    ror a3, a1, a2
+    li   t6, 0x2468acf13579bde0
+    beq  a3, t6, t992_ok
+    j    fail
+t992_ok:
+t993: # ror 0xfedcba9876543210, 0xffffffffffffffff
+    li   a0, 993
+    li   a1, 0xfedcba9876543210
+    li   a2, 0xffffffffffffffff
+    ror a3, a1, a2
+    li   t6, 0xfdb97530eca86421
+    beq  a3, t6, t993_ok
+    j    fail
+t993_ok:
+t994: # ror 0x3f, 0x8000000000000000
+    li   a0, 994
+    li   a1, 0x3f
+    li   a2, 0x8000000000000000
+    ror a3, a1, a2
+    li   t6, 0x3f
+    beq  a3, t6, t994_ok
+    j    fail
+t994_ok:
+t995: # ror 0x40, 0x123456789abcdef0
+    li   a0, 995
+    li   a1, 0x40
+    li   a2, 0x123456789abcdef0
+    ror a3, a1, a2
+    li   t6, 0x400000
+    beq  a3, t6, t995_ok
+    j    fail
+t995_ok:
+t996: # ror 0x21, 0xfffffffffffffff9
+    li   a0, 996
+    li   a1, 0x21
+    li   a2, 0xfffffffffffffff9
+    ror a3, a1, a2
+    li   t6, 0x1080
+    beq  a3, t6, t996_ok
+    j    fail
+t996_ok:
+t997: # rolw 0x0, 0x0
+    li   a0, 997
+    li   a1, 0x0
+    li   a2, 0x0
+    rolw a3, a1, a2
+    li   t6, 0x0
+    beq  a3, t6, t997_ok
+    j    fail
+t997_ok:
+t998: # rolw 0x1, 0x1
+    li   a0, 998
+    li   a1, 0x1
+    li   a2, 0x1
+    rolw a3, a1, a2
+    li   t6, 0x2
+    beq  a3, t6, t998_ok
+    j    fail
+t998_ok:
+t999: # rolw 0xffffffffffffffff, 0xffffffffffffffff
+    li   a0, 999
+    li   a1, 0xffffffffffffffff
+    li   a2, 0xffffffffffffffff
+    rolw a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t999_ok
+    j    fail
+t999_ok:
+t1000: # rolw 0x7, 0x7
+    li   a0, 1000
+    li   a1, 0x7
+    li   a2, 0x7
+    rolw a3, a1, a2
+    li   t6, 0x380
+    beq  a3, t6, t1000_ok
+    j    fail
+t1000_ok:
+t1001: # rolw 0xfffffffffffffff9, 0xfffffffffffffff9
+    li   a0, 1001
+    li   a1, 0xfffffffffffffff9
+    li   a2, 0xfffffffffffffff9
+    rolw a3, a1, a2
+    li   t6, 0xfffffffff3ffffff
+    beq  a3, t6, t1001_ok
+    j    fail
+t1001_ok:
+t1002: # rolw 0x8000000000000000, 0x7
+    li   a0, 1002
+    li   a1, 0x8000000000000000
+    li   a2, 0x7
+    rolw a3, a1, a2
+    li   t6, 0x0
+    beq  a3, t6, t1002_ok
+    j    fail
+t1002_ok:
+t1003: # rolw 0x7fffffffffffffff, 0xffffffffffffffff
+    li   a0, 1003
+    li   a1, 0x7fffffffffffffff
+    li   a2, 0xffffffffffffffff
+    rolw a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t1003_ok
+    j    fail
+t1003_ok:
+t1004: # rolw 0x80000000, 0xffffffffffffffff
+    li   a0, 1004
+    li   a1, 0x80000000
+    li   a2, 0xffffffffffffffff
+    rolw a3, a1, a2
+    li   t6, 0x40000000
+    beq  a3, t6, t1004_ok
+    j    fail
+t1004_ok:
+t1005: # rolw 0x7fffffff, 0xffffffffffffffff
+    li   a0, 1005
+    li   a1, 0x7fffffff
+    li   a2, 0xffffffffffffffff
+    rolw a3, a1, a2
+    li   t6, 0xffffffffbfffffff
+    beq  a3, t6, t1005_ok
+    j    fail
+t1005_ok:
+t1006: # rolw 0xffffffff80000000, 0xffffffffffffffff
+    li   a0, 1006
+    li   a1, 0xffffffff80000000
+    li   a2, 0xffffffffffffffff
+    rolw a3, a1, a2
+    li   t6, 0x40000000
+    beq  a3, t6, t1006_ok
+    j    fail
+t1006_ok:
+t1007: # rolw 0x123456789abcdef0, 0xffffffffffffffff
+    li   a0, 1007
+    li   a1, 0x123456789abcdef0
+    li   a2, 0xffffffffffffffff
+    rolw a3, a1, a2
+    li   t6, 0x4d5e6f78
+    beq  a3, t6, t1007_ok
+    j    fail
+t1007_ok:
+t1008: # rolw 0xfedcba9876543210, 0xffffffffffffffff
+    li   a0, 1008
+    li   a1, 0xfedcba9876543210
+    li   a2, 0xffffffffffffffff
+    rolw a3, a1, a2
+    li   t6, 0x3b2a1908
+    beq  a3, t6, t1008_ok
+    j    fail
+t1008_ok:
+t1009: # rolw 0x3f, 0x8000000000000000
+    li   a0, 1009
+    li   a1, 0x3f
+    li   a2, 0x8000000000000000
+    rolw a3, a1, a2
+    li   t6, 0x3f
+    beq  a3, t6, t1009_ok
+    j    fail
+t1009_ok:
+t1010: # rolw 0x40, 0x123456789abcdef0
+    li   a0, 1010
+    li   a1, 0x40
+    li   a2, 0x123456789abcdef0
+    rolw a3, a1, a2
+    li   t6, 0x400000
+    beq  a3, t6, t1010_ok
+    j    fail
+t1010_ok:
+t1011: # rolw 0x21, 0xfffffffffffffff9
+    li   a0, 1011
+    li   a1, 0x21
+    li   a2, 0xfffffffffffffff9
+    rolw a3, a1, a2
+    li   t6, 0x42000000
+    beq  a3, t6, t1011_ok
+    j    fail
+t1011_ok:
+t1012: # rorw 0x0, 0x0
+    li   a0, 1012
+    li   a1, 0x0
+    li   a2, 0x0
+    rorw a3, a1, a2
+    li   t6, 0x0
+    beq  a3, t6, t1012_ok
+    j    fail
+t1012_ok:
+t1013: # rorw 0x1, 0x1
+    li   a0, 1013
+    li   a1, 0x1
+    li   a2, 0x1
+    rorw a3, a1, a2
+    li   t6, 0xffffffff80000000
+    beq  a3, t6, t1013_ok
+    j    fail
+t1013_ok:
+t1014: # rorw 0xffffffffffffffff, 0xffffffffffffffff
+    li   a0, 1014
+    li   a1, 0xffffffffffffffff
+    li   a2, 0xffffffffffffffff
+    rorw a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t1014_ok
+    j    fail
+t1014_ok:
+t1015: # rorw 0x7, 0x7
+    li   a0, 1015
+    li   a1, 0x7
+    li   a2, 0x7
+    rorw a3, a1, a2
+    li   t6, 0xe000000
+    beq  a3, t6, t1015_ok
+    j    fail
+t1015_ok:
+t1016: # rorw 0xfffffffffffffff9, 0xfffffffffffffff9
+    li   a0, 1016
+    li   a1, 0xfffffffffffffff9
+    li   a2, 0xfffffffffffffff9
+    rorw a3, a1, a2
+    li   t6, 0xfffffffffffffcff
+    beq  a3, t6, t1016_ok
+    j    fail
+t1016_ok:
+t1017: # rorw 0x8000000000000000, 0x7
+    li   a0, 1017
+    li   a1, 0x8000000000000000
+    li   a2, 0x7
+    rorw a3, a1, a2
+    li   t6, 0x0
+    beq  a3, t6, t1017_ok
+    j    fail
+t1017_ok:
+t1018: # rorw 0x7fffffffffffffff, 0xffffffffffffffff
+    li   a0, 1018
+    li   a1, 0x7fffffffffffffff
+    li   a2, 0xffffffffffffffff
+    rorw a3, a1, a2
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t1018_ok
+    j    fail
+t1018_ok:
+t1019: # rorw 0x80000000, 0xffffffffffffffff
+    li   a0, 1019
+    li   a1, 0x80000000
+    li   a2, 0xffffffffffffffff
+    rorw a3, a1, a2
+    li   t6, 0x1
+    beq  a3, t6, t1019_ok
+    j    fail
+t1019_ok:
+t1020: # rorw 0x7fffffff, 0xffffffffffffffff
+    li   a0, 1020
+    li   a1, 0x7fffffff
+    li   a2, 0xffffffffffffffff
+    rorw a3, a1, a2
+    li   t6, 0xfffffffffffffffe
+    beq  a3, t6, t1020_ok
+    j    fail
+t1020_ok:
+t1021: # rorw 0xffffffff80000000, 0xffffffffffffffff
+    li   a0, 1021
+    li   a1, 0xffffffff80000000
+    li   a2, 0xffffffffffffffff
+    rorw a3, a1, a2
+    li   t6, 0x1
+    beq  a3, t6, t1021_ok
+    j    fail
+t1021_ok:
+t1022: # rorw 0x123456789abcdef0, 0xffffffffffffffff
+    li   a0, 1022
+    li   a1, 0x123456789abcdef0
+    li   a2, 0xffffffffffffffff
+    rorw a3, a1, a2
+    li   t6, 0x3579bde1
+    beq  a3, t6, t1022_ok
+    j    fail
+t1022_ok:
+t1023: # rorw 0xfedcba9876543210, 0xffffffffffffffff
+    li   a0, 1023
+    li   a1, 0xfedcba9876543210
+    li   a2, 0xffffffffffffffff
+    rorw a3, a1, a2
+    li   t6, 0xffffffffeca86420
+    beq  a3, t6, t1023_ok
+    j    fail
+t1023_ok:
+t1024: # rorw 0x3f, 0x8000000000000000
+    li   a0, 1024
+    li   a1, 0x3f
+    li   a2, 0x8000000000000000
+    rorw a3, a1, a2
+    li   t6, 0x3f
+    beq  a3, t6, t1024_ok
+    j    fail
+t1024_ok:
+t1025: # rorw 0x40, 0x123456789abcdef0
+    li   a0, 1025
+    li   a1, 0x40
+    li   a2, 0x123456789abcdef0
+    rorw a3, a1, a2
+    li   t6, 0x400000
+    beq  a3, t6, t1025_ok
+    j    fail
+t1025_ok:
+t1026: # rorw 0x21, 0xfffffffffffffff9
+    li   a0, 1026
+    li   a1, 0x21
+    li   a2, 0xfffffffffffffff9
+    rorw a3, a1, a2
+    li   t6, 0x1080
+    beq  a3, t6, t1026_ok
+    j    fail
+t1026_ok:
+t1027: # slli.uw 0x0, 0
+    li   a0, 1027
+    li   a1, 0x0
+    slli.uw a3, a1, 0
+    li   t6, 0x0
+    beq  a3, t6, t1027_ok
+    j    fail
+t1027_ok:
+t1028: # slli.uw 0x0, 1
+    li   a0, 1028
+    li   a1, 0x0
+    slli.uw a3, a1, 1
+    li   t6, 0x0
+    beq  a3, t6, t1028_ok
+    j    fail
+t1028_ok:
+t1029: # slli.uw 0x0, 13
+    li   a0, 1029
+    li   a1, 0x0
+    slli.uw a3, a1, 13
+    li   t6, 0x0
+    beq  a3, t6, t1029_ok
+    j    fail
+t1029_ok:
+t1030: # slli.uw 0x0, 32
+    li   a0, 1030
+    li   a1, 0x0
+    slli.uw a3, a1, 32
+    li   t6, 0x0
+    beq  a3, t6, t1030_ok
+    j    fail
+t1030_ok:
+t1031: # slli.uw 0x0, 63
+    li   a0, 1031
+    li   a1, 0x0
+    slli.uw a3, a1, 63
+    li   t6, 0x0
+    beq  a3, t6, t1031_ok
+    j    fail
+t1031_ok:
+t1032: # slli.uw 0x7, 0
+    li   a0, 1032
+    li   a1, 0x7
+    slli.uw a3, a1, 0
+    li   t6, 0x7
+    beq  a3, t6, t1032_ok
+    j    fail
+t1032_ok:
+t1033: # slli.uw 0x7, 1
+    li   a0, 1033
+    li   a1, 0x7
+    slli.uw a3, a1, 1
+    li   t6, 0xe
+    beq  a3, t6, t1033_ok
+    j    fail
+t1033_ok:
+t1034: # slli.uw 0x7, 13
+    li   a0, 1034
+    li   a1, 0x7
+    slli.uw a3, a1, 13
+    li   t6, 0xe000
+    beq  a3, t6, t1034_ok
+    j    fail
+t1034_ok:
+t1035: # slli.uw 0x7, 32
+    li   a0, 1035
+    li   a1, 0x7
+    slli.uw a3, a1, 32
+    li   t6, 0x700000000
+    beq  a3, t6, t1035_ok
+    j    fail
+t1035_ok:
+t1036: # slli.uw 0x7, 63
+    li   a0, 1036
+    li   a1, 0x7
+    slli.uw a3, a1, 63
+    li   t6, 0x8000000000000000
+    beq  a3, t6, t1036_ok
+    j    fail
+t1036_ok:
+t1037: # slli.uw 0x7fffffffffffffff, 0
+    li   a0, 1037
+    li   a1, 0x7fffffffffffffff
+    slli.uw a3, a1, 0
+    li   t6, 0xffffffff
+    beq  a3, t6, t1037_ok
+    j    fail
+t1037_ok:
+t1038: # slli.uw 0x7fffffffffffffff, 1
+    li   a0, 1038
+    li   a1, 0x7fffffffffffffff
+    slli.uw a3, a1, 1
+    li   t6, 0x1fffffffe
+    beq  a3, t6, t1038_ok
+    j    fail
+t1038_ok:
+t1039: # slli.uw 0x7fffffffffffffff, 13
+    li   a0, 1039
+    li   a1, 0x7fffffffffffffff
+    slli.uw a3, a1, 13
+    li   t6, 0x1fffffffe000
+    beq  a3, t6, t1039_ok
+    j    fail
+t1039_ok:
+t1040: # slli.uw 0x7fffffffffffffff, 32
+    li   a0, 1040
+    li   a1, 0x7fffffffffffffff
+    slli.uw a3, a1, 32
+    li   t6, 0xffffffff00000000
+    beq  a3, t6, t1040_ok
+    j    fail
+t1040_ok:
+t1041: # slli.uw 0x7fffffffffffffff, 63
+    li   a0, 1041
+    li   a1, 0x7fffffffffffffff
+    slli.uw a3, a1, 63
+    li   t6, 0x8000000000000000
+    beq  a3, t6, t1041_ok
+    j    fail
+t1041_ok:
+t1042: # slli.uw 0xffffffff80000000, 0
+    li   a0, 1042
+    li   a1, 0xffffffff80000000
+    slli.uw a3, a1, 0
+    li   t6, 0x80000000
+    beq  a3, t6, t1042_ok
+    j    fail
+t1042_ok:
+t1043: # slli.uw 0xffffffff80000000, 1
+    li   a0, 1043
+    li   a1, 0xffffffff80000000
+    slli.uw a3, a1, 1
+    li   t6, 0x100000000
+    beq  a3, t6, t1043_ok
+    j    fail
+t1043_ok:
+t1044: # slli.uw 0xffffffff80000000, 13
+    li   a0, 1044
+    li   a1, 0xffffffff80000000
+    slli.uw a3, a1, 13
+    li   t6, 0x100000000000
+    beq  a3, t6, t1044_ok
+    j    fail
+t1044_ok:
+t1045: # slli.uw 0xffffffff80000000, 32
+    li   a0, 1045
+    li   a1, 0xffffffff80000000
+    slli.uw a3, a1, 32
+    li   t6, 0x8000000000000000
+    beq  a3, t6, t1045_ok
+    j    fail
+t1045_ok:
+t1046: # slli.uw 0xffffffff80000000, 63
+    li   a0, 1046
+    li   a1, 0xffffffff80000000
+    slli.uw a3, a1, 63
+    li   t6, 0x0
+    beq  a3, t6, t1046_ok
+    j    fail
+t1046_ok:
+t1047: # slli.uw 0x3f, 0
+    li   a0, 1047
+    li   a1, 0x3f
+    slli.uw a3, a1, 0
+    li   t6, 0x3f
+    beq  a3, t6, t1047_ok
+    j    fail
+t1047_ok:
+t1048: # slli.uw 0x3f, 1
+    li   a0, 1048
+    li   a1, 0x3f
+    slli.uw a3, a1, 1
+    li   t6, 0x7e
+    beq  a3, t6, t1048_ok
+    j    fail
+t1048_ok:
+t1049: # slli.uw 0x3f, 13
+    li   a0, 1049
+    li   a1, 0x3f
+    slli.uw a3, a1, 13
+    li   t6, 0x7e000
+    beq  a3, t6, t1049_ok
+    j    fail
+t1049_ok:
+t1050: # slli.uw 0x3f, 32
+    li   a0, 1050
+    li   a1, 0x3f
+    slli.uw a3, a1, 32
+    li   t6, 0x3f00000000
+    beq  a3, t6, t1050_ok
+    j    fail
+t1050_ok:
+t1051: # slli.uw 0x3f, 63
+    li   a0, 1051
+    li   a1, 0x3f
+    slli.uw a3, a1, 63
+    li   t6, 0x8000000000000000
+    beq  a3, t6, t1051_ok
+    j    fail
+t1051_ok:
+t1052: # rori 0x0, 0
+    li   a0, 1052
+    li   a1, 0x0
+    rori a3, a1, 0
+    li   t6, 0x0
+    beq  a3, t6, t1052_ok
+    j    fail
+t1052_ok:
+t1053: # rori 0x0, 1
+    li   a0, 1053
+    li   a1, 0x0
+    rori a3, a1, 1
+    li   t6, 0x0
+    beq  a3, t6, t1053_ok
+    j    fail
+t1053_ok:
+t1054: # rori 0x0, 13
+    li   a0, 1054
+    li   a1, 0x0
+    rori a3, a1, 13
+    li   t6, 0x0
+    beq  a3, t6, t1054_ok
+    j    fail
+t1054_ok:
+t1055: # rori 0x0, 32
+    li   a0, 1055
+    li   a1, 0x0
+    rori a3, a1, 32
+    li   t6, 0x0
+    beq  a3, t6, t1055_ok
+    j    fail
+t1055_ok:
+t1056: # rori 0x0, 63
+    li   a0, 1056
+    li   a1, 0x0
+    rori a3, a1, 63
+    li   t6, 0x0
+    beq  a3, t6, t1056_ok
+    j    fail
+t1056_ok:
+t1057: # rori 0x7, 0
+    li   a0, 1057
+    li   a1, 0x7
+    rori a3, a1, 0
+    li   t6, 0x7
+    beq  a3, t6, t1057_ok
+    j    fail
+t1057_ok:
+t1058: # rori 0x7, 1
+    li   a0, 1058
+    li   a1, 0x7
+    rori a3, a1, 1
+    li   t6, 0x8000000000000003
+    beq  a3, t6, t1058_ok
+    j    fail
+t1058_ok:
+t1059: # rori 0x7, 13
+    li   a0, 1059
+    li   a1, 0x7
+    rori a3, a1, 13
+    li   t6, 0x38000000000000
+    beq  a3, t6, t1059_ok
+    j    fail
+t1059_ok:
+t1060: # rori 0x7, 32
+    li   a0, 1060
+    li   a1, 0x7
+    rori a3, a1, 32
+    li   t6, 0x700000000
+    beq  a3, t6, t1060_ok
+    j    fail
+t1060_ok:
+t1061: # rori 0x7, 63
+    li   a0, 1061
+    li   a1, 0x7
+    rori a3, a1, 63
+    li   t6, 0xe
+    beq  a3, t6, t1061_ok
+    j    fail
+t1061_ok:
+t1062: # rori 0x7fffffffffffffff, 0
+    li   a0, 1062
+    li   a1, 0x7fffffffffffffff
+    rori a3, a1, 0
+    li   t6, 0x7fffffffffffffff
+    beq  a3, t6, t1062_ok
+    j    fail
+t1062_ok:
+t1063: # rori 0x7fffffffffffffff, 1
+    li   a0, 1063
+    li   a1, 0x7fffffffffffffff
+    rori a3, a1, 1
+    li   t6, 0xbfffffffffffffff
+    beq  a3, t6, t1063_ok
+    j    fail
+t1063_ok:
+t1064: # rori 0x7fffffffffffffff, 13
+    li   a0, 1064
+    li   a1, 0x7fffffffffffffff
+    rori a3, a1, 13
+    li   t6, 0xfffbffffffffffff
+    beq  a3, t6, t1064_ok
+    j    fail
+t1064_ok:
+t1065: # rori 0x7fffffffffffffff, 32
+    li   a0, 1065
+    li   a1, 0x7fffffffffffffff
+    rori a3, a1, 32
+    li   t6, 0xffffffff7fffffff
+    beq  a3, t6, t1065_ok
+    j    fail
+t1065_ok:
+t1066: # rori 0x7fffffffffffffff, 63
+    li   a0, 1066
+    li   a1, 0x7fffffffffffffff
+    rori a3, a1, 63
+    li   t6, 0xfffffffffffffffe
+    beq  a3, t6, t1066_ok
+    j    fail
+t1066_ok:
+t1067: # rori 0xffffffff80000000, 0
+    li   a0, 1067
+    li   a1, 0xffffffff80000000
+    rori a3, a1, 0
+    li   t6, 0xffffffff80000000
+    beq  a3, t6, t1067_ok
+    j    fail
+t1067_ok:
+t1068: # rori 0xffffffff80000000, 1
+    li   a0, 1068
+    li   a1, 0xffffffff80000000
+    rori a3, a1, 1
+    li   t6, 0x7fffffffc0000000
+    beq  a3, t6, t1068_ok
+    j    fail
+t1068_ok:
+t1069: # rori 0xffffffff80000000, 13
+    li   a0, 1069
+    li   a1, 0xffffffff80000000
+    rori a3, a1, 13
+    li   t6, 0x7fffffffc0000
+    beq  a3, t6, t1069_ok
+    j    fail
+t1069_ok:
+t1070: # rori 0xffffffff80000000, 32
+    li   a0, 1070
+    li   a1, 0xffffffff80000000
+    rori a3, a1, 32
+    li   t6, 0x80000000ffffffff
+    beq  a3, t6, t1070_ok
+    j    fail
+t1070_ok:
+t1071: # rori 0xffffffff80000000, 63
+    li   a0, 1071
+    li   a1, 0xffffffff80000000
+    rori a3, a1, 63
+    li   t6, 0xffffffff00000001
+    beq  a3, t6, t1071_ok
+    j    fail
+t1071_ok:
+t1072: # rori 0x3f, 0
+    li   a0, 1072
+    li   a1, 0x3f
+    rori a3, a1, 0
+    li   t6, 0x3f
+    beq  a3, t6, t1072_ok
+    j    fail
+t1072_ok:
+t1073: # rori 0x3f, 1
+    li   a0, 1073
+    li   a1, 0x3f
+    rori a3, a1, 1
+    li   t6, 0x800000000000001f
+    beq  a3, t6, t1073_ok
+    j    fail
+t1073_ok:
+t1074: # rori 0x3f, 13
+    li   a0, 1074
+    li   a1, 0x3f
+    rori a3, a1, 13
+    li   t6, 0x1f8000000000000
+    beq  a3, t6, t1074_ok
+    j    fail
+t1074_ok:
+t1075: # rori 0x3f, 32
+    li   a0, 1075
+    li   a1, 0x3f
+    rori a3, a1, 32
+    li   t6, 0x3f00000000
+    beq  a3, t6, t1075_ok
+    j    fail
+t1075_ok:
+t1076: # rori 0x3f, 63
+    li   a0, 1076
+    li   a1, 0x3f
+    rori a3, a1, 63
+    li   t6, 0x7e
+    beq  a3, t6, t1076_ok
+    j    fail
+t1076_ok:
+t1077: # roriw 0x0, 0
+    li   a0, 1077
+    li   a1, 0x0
+    roriw a3, a1, 0
+    li   t6, 0x0
+    beq  a3, t6, t1077_ok
+    j    fail
+t1077_ok:
+t1078: # roriw 0x0, 1
+    li   a0, 1078
+    li   a1, 0x0
+    roriw a3, a1, 1
+    li   t6, 0x0
+    beq  a3, t6, t1078_ok
+    j    fail
+t1078_ok:
+t1079: # roriw 0x0, 13
+    li   a0, 1079
+    li   a1, 0x0
+    roriw a3, a1, 13
+    li   t6, 0x0
+    beq  a3, t6, t1079_ok
+    j    fail
+t1079_ok:
+t1080: # roriw 0x0, 31
+    li   a0, 1080
+    li   a1, 0x0
+    roriw a3, a1, 31
+    li   t6, 0x0
+    beq  a3, t6, t1080_ok
+    j    fail
+t1080_ok:
+t1081: # roriw 0x7, 0
+    li   a0, 1081
+    li   a1, 0x7
+    roriw a3, a1, 0
+    li   t6, 0x7
+    beq  a3, t6, t1081_ok
+    j    fail
+t1081_ok:
+t1082: # roriw 0x7, 1
+    li   a0, 1082
+    li   a1, 0x7
+    roriw a3, a1, 1
+    li   t6, 0xffffffff80000003
+    beq  a3, t6, t1082_ok
+    j    fail
+t1082_ok:
+t1083: # roriw 0x7, 13
+    li   a0, 1083
+    li   a1, 0x7
+    roriw a3, a1, 13
+    li   t6, 0x380000
+    beq  a3, t6, t1083_ok
+    j    fail
+t1083_ok:
+t1084: # roriw 0x7, 31
+    li   a0, 1084
+    li   a1, 0x7
+    roriw a3, a1, 31
+    li   t6, 0xe
+    beq  a3, t6, t1084_ok
+    j    fail
+t1084_ok:
+t1085: # roriw 0x7fffffffffffffff, 0
+    li   a0, 1085
+    li   a1, 0x7fffffffffffffff
+    roriw a3, a1, 0
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t1085_ok
+    j    fail
+t1085_ok:
+t1086: # roriw 0x7fffffffffffffff, 1
+    li   a0, 1086
+    li   a1, 0x7fffffffffffffff
+    roriw a3, a1, 1
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t1086_ok
+    j    fail
+t1086_ok:
+t1087: # roriw 0x7fffffffffffffff, 13
+    li   a0, 1087
+    li   a1, 0x7fffffffffffffff
+    roriw a3, a1, 13
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t1087_ok
+    j    fail
+t1087_ok:
+t1088: # roriw 0x7fffffffffffffff, 31
+    li   a0, 1088
+    li   a1, 0x7fffffffffffffff
+    roriw a3, a1, 31
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t1088_ok
+    j    fail
+t1088_ok:
+t1089: # roriw 0xffffffff80000000, 0
+    li   a0, 1089
+    li   a1, 0xffffffff80000000
+    roriw a3, a1, 0
+    li   t6, 0xffffffff80000000
+    beq  a3, t6, t1089_ok
+    j    fail
+t1089_ok:
+t1090: # roriw 0xffffffff80000000, 1
+    li   a0, 1090
+    li   a1, 0xffffffff80000000
+    roriw a3, a1, 1
+    li   t6, 0x40000000
+    beq  a3, t6, t1090_ok
+    j    fail
+t1090_ok:
+t1091: # roriw 0xffffffff80000000, 13
+    li   a0, 1091
+    li   a1, 0xffffffff80000000
+    roriw a3, a1, 13
+    li   t6, 0x40000
+    beq  a3, t6, t1091_ok
+    j    fail
+t1091_ok:
+t1092: # roriw 0xffffffff80000000, 31
+    li   a0, 1092
+    li   a1, 0xffffffff80000000
+    roriw a3, a1, 31
+    li   t6, 0x1
+    beq  a3, t6, t1092_ok
+    j    fail
+t1092_ok:
+t1093: # roriw 0x3f, 0
+    li   a0, 1093
+    li   a1, 0x3f
+    roriw a3, a1, 0
+    li   t6, 0x3f
+    beq  a3, t6, t1093_ok
+    j    fail
+t1093_ok:
+t1094: # roriw 0x3f, 1
+    li   a0, 1094
+    li   a1, 0x3f
+    roriw a3, a1, 1
+    li   t6, 0xffffffff8000001f
+    beq  a3, t6, t1094_ok
+    j    fail
+t1094_ok:
+t1095: # roriw 0x3f, 13
+    li   a0, 1095
+    li   a1, 0x3f
+    roriw a3, a1, 13
+    li   t6, 0x1f80000
+    beq  a3, t6, t1095_ok
+    j    fail
+t1095_ok:
+t1096: # roriw 0x3f, 31
+    li   a0, 1096
+    li   a1, 0x3f
+    roriw a3, a1, 31
+    li   t6, 0x7e
+    beq  a3, t6, t1096_ok
+    j    fail
+t1096_ok:
+t1097: # clz 0x0
+    li   a0, 1097
+    li   a1, 0x0
+    clz a3, a1
+    li   t6, 0x40
+    beq  a3, t6, t1097_ok
+    j    fail
+t1097_ok:
+t1098: # clz 0x1
+    li   a0, 1098
+    li   a1, 0x1
+    clz a3, a1
+    li   t6, 0x3f
+    beq  a3, t6, t1098_ok
+    j    fail
+t1098_ok:
+t1099: # clz 0xffffffffffffffff
+    li   a0, 1099
+    li   a1, 0xffffffffffffffff
+    clz a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1099_ok
+    j    fail
+t1099_ok:
+t1100: # clz 0x7
+    li   a0, 1100
+    li   a1, 0x7
+    clz a3, a1
+    li   t6, 0x3d
+    beq  a3, t6, t1100_ok
+    j    fail
+t1100_ok:
+t1101: # clz 0xfffffffffffffff9
+    li   a0, 1101
+    li   a1, 0xfffffffffffffff9
+    clz a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1101_ok
+    j    fail
+t1101_ok:
+t1102: # clz 0x8000000000000000
+    li   a0, 1102
+    li   a1, 0x8000000000000000
+    clz a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1102_ok
+    j    fail
+t1102_ok:
+t1103: # clz 0x7fffffffffffffff
+    li   a0, 1103
+    li   a1, 0x7fffffffffffffff
+    clz a3, a1
+    li   t6, 0x1
+    beq  a3, t6, t1103_ok
+    j    fail
+t1103_ok:
+t1104: # clz 0x80000000
+    li   a0, 1104
+    li   a1, 0x80000000
+    clz a3, a1
+    li   t6, 0x20
+    beq  a3, t6, t1104_ok
+    j    fail
+t1104_ok:
+t1105: # clz 0x7fffffff
+    li   a0, 1105
+    li   a1, 0x7fffffff
+    clz a3, a1
+    li   t6, 0x21
+    beq  a3, t6, t1105_ok
+    j    fail
+t1105_ok:
+t1106: # clz 0xffffffff80000000
+    li   a0, 1106
+    li   a1, 0xffffffff80000000
+    clz a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1106_ok
+    j    fail
+t1106_ok:
+t1107: # clz 0x123456789abcdef0
+    li   a0, 1107
+    li   a1, 0x123456789abcdef0
+    clz a3, a1
+    li   t6, 0x3
+    beq  a3, t6, t1107_ok
+    j    fail
+t1107_ok:
+t1108: # clz 0xfedcba9876543210
+    li   a0, 1108
+    li   a1, 0xfedcba9876543210
+    clz a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1108_ok
+    j    fail
+t1108_ok:
+t1109: # clz 0x3f
+    li   a0, 1109
+    li   a1, 0x3f
+    clz a3, a1
+    li   t6, 0x3a
+    beq  a3, t6, t1109_ok
+    j    fail
+t1109_ok:
+t1110: # clz 0x40
+    li   a0, 1110
+    li   a1, 0x40
+    clz a3, a1
+    li   t6, 0x39
+    beq  a3, t6, t1110_ok
+    j    fail
+t1110_ok:
+t1111: # clz 0x21
+    li   a0, 1111
+    li   a1, 0x21
+    clz a3, a1
+    li   t6, 0x3a
+    beq  a3, t6, t1111_ok
+    j    fail
+t1111_ok:
+t1112: # clz 0xff00ff00ff00ff
+    li   a0, 1112
+    li   a1, 0xff00ff00ff00ff
+    clz a3, a1
+    li   t6, 0x8
+    beq  a3, t6, t1112_ok
+    j    fail
+t1112_ok:
+t1113: # clz 0x100000000
+    li   a0, 1113
+    li   a1, 0x100000000
+    clz a3, a1
+    li   t6, 0x1f
+    beq  a3, t6, t1113_ok
+    j    fail
+t1113_ok:
+t1114: # clz 0x8000000000000001
+    li   a0, 1114
+    li   a1, 0x8000000000000001
+    clz a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1114_ok
+    j    fail
+t1114_ok:
+t1115: # clz 0xffff8000
+    li   a0, 1115
+    li   a1, 0xffff8000
+    clz a3, a1
+    li   t6, 0x20
+    beq  a3, t6, t1115_ok
+    j    fail
+t1115_ok:
+t1116: # clz 0x102030400000080
+    li   a0, 1116
+    li   a1, 0x102030400000080
+    clz a3, a1
+    li   t6, 0x7
+    beq  a3, t6, t1116_ok
+    j    fail
+t1116_ok:
+t1117: # ctz 0x0
+    li   a0, 1117
+    li   a1, 0x0
+    ctz a3, a1
+    li   t6, 0x40
+    beq  a3, t6, t1117_ok
+    j    fail
+t1117_ok:
+t1118: # ctz 0x1
+    li   a0, 1118
+    li   a1, 0x1
+    ctz a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1118_ok
+    j    fail
+t1118_ok:
+t1119: # ctz 0xffffffffffffffff
+    li   a0, 1119
+    li   a1, 0xffffffffffffffff
+    ctz a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1119_ok
+    j    fail
+t1119_ok:
+t1120: # ctz 0x7
+    li   a0, 1120
+    li   a1, 0x7
+    ctz a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1120_ok
+    j    fail
+t1120_ok:
+t1121: # ctz 0xfffffffffffffff9
+    li   a0, 1121
+    li   a1, 0xfffffffffffffff9
+    ctz a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1121_ok
+    j    fail
+t1121_ok:
+t1122: # ctz 0x8000000000000000
+    li   a0, 1122
+    li   a1, 0x8000000000000000
+    ctz a3, a1
+    li   t6, 0x3f
+    beq  a3, t6, t1122_ok
+    j    fail
+t1122_ok:
+t1123: # ctz 0x7fffffffffffffff
+    li   a0, 1123
+    li   a1, 0x7fffffffffffffff
+    ctz a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1123_ok
+    j    fail
+t1123_ok:
+t1124: # ctz 0x80000000
+    li   a0, 1124
+    li   a1, 0x80000000
+    ctz a3, a1
+    li   t6, 0x1f
+    beq  a3, t6, t1124_ok
+    j    fail
+t1124_ok:
+t1125: # ctz 0x7fffffff
+    li   a0, 1125
+    li   a1, 0x7fffffff
+    ctz a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1125_ok
+    j    fail
+t1125_ok:
+t1126: # ctz 0xffffffff80000000
+    li   a0, 1126
+    li   a1, 0xffffffff80000000
+    ctz a3, a1
+    li   t6, 0x1f
+    beq  a3, t6, t1126_ok
+    j    fail
+t1126_ok:
+t1127: # ctz 0x123456789abcdef0
+    li   a0, 1127
+    li   a1, 0x123456789abcdef0
+    ctz a3, a1
+    li   t6, 0x4
+    beq  a3, t6, t1127_ok
+    j    fail
+t1127_ok:
+t1128: # ctz 0xfedcba9876543210
+    li   a0, 1128
+    li   a1, 0xfedcba9876543210
+    ctz a3, a1
+    li   t6, 0x4
+    beq  a3, t6, t1128_ok
+    j    fail
+t1128_ok:
+t1129: # ctz 0x3f
+    li   a0, 1129
+    li   a1, 0x3f
+    ctz a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1129_ok
+    j    fail
+t1129_ok:
+t1130: # ctz 0x40
+    li   a0, 1130
+    li   a1, 0x40
+    ctz a3, a1
+    li   t6, 0x6
+    beq  a3, t6, t1130_ok
+    j    fail
+t1130_ok:
+t1131: # ctz 0x21
+    li   a0, 1131
+    li   a1, 0x21
+    ctz a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1131_ok
+    j    fail
+t1131_ok:
+t1132: # ctz 0xff00ff00ff00ff
+    li   a0, 1132
+    li   a1, 0xff00ff00ff00ff
+    ctz a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1132_ok
+    j    fail
+t1132_ok:
+t1133: # ctz 0x100000000
+    li   a0, 1133
+    li   a1, 0x100000000
+    ctz a3, a1
+    li   t6, 0x20
+    beq  a3, t6, t1133_ok
+    j    fail
+t1133_ok:
+t1134: # ctz 0x8000000000000001
+    li   a0, 1134
+    li   a1, 0x8000000000000001
+    ctz a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1134_ok
+    j    fail
+t1134_ok:
+t1135: # ctz 0xffff8000
+    li   a0, 1135
+    li   a1, 0xffff8000
+    ctz a3, a1
+    li   t6, 0xf
+    beq  a3, t6, t1135_ok
+    j    fail
+t1135_ok:
+t1136: # ctz 0x102030400000080
+    li   a0, 1136
+    li   a1, 0x102030400000080
+    ctz a3, a1
+    li   t6, 0x7
+    beq  a3, t6, t1136_ok
+    j    fail
+t1136_ok:
+t1137: # cpop 0x0
+    li   a0, 1137
+    li   a1, 0x0
+    cpop a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1137_ok
+    j    fail
+t1137_ok:
+t1138: # cpop 0x1
+    li   a0, 1138
+    li   a1, 0x1
+    cpop a3, a1
+    li   t6, 0x1
+    beq  a3, t6, t1138_ok
+    j    fail
+t1138_ok:
+t1139: # cpop 0xffffffffffffffff
+    li   a0, 1139
+    li   a1, 0xffffffffffffffff
+    cpop a3, a1
+    li   t6, 0x40
+    beq  a3, t6, t1139_ok
+    j    fail
+t1139_ok:
+t1140: # cpop 0x7
+    li   a0, 1140
+    li   a1, 0x7
+    cpop a3, a1
+    li   t6, 0x3
+    beq  a3, t6, t1140_ok
+    j    fail
+t1140_ok:
+t1141: # cpop 0xfffffffffffffff9
+    li   a0, 1141
+    li   a1, 0xfffffffffffffff9
+    cpop a3, a1
+    li   t6, 0x3e
+    beq  a3, t6, t1141_ok
+    j    fail
+t1141_ok:
+t1142: # cpop 0x8000000000000000
+    li   a0, 1142
+    li   a1, 0x8000000000000000
+    cpop a3, a1
+    li   t6, 0x1
+    beq  a3, t6, t1142_ok
+    j    fail
+t1142_ok:
+t1143: # cpop 0x7fffffffffffffff
+    li   a0, 1143
+    li   a1, 0x7fffffffffffffff
+    cpop a3, a1
+    li   t6, 0x3f
+    beq  a3, t6, t1143_ok
+    j    fail
+t1143_ok:
+t1144: # cpop 0x80000000
+    li   a0, 1144
+    li   a1, 0x80000000
+    cpop a3, a1
+    li   t6, 0x1
+    beq  a3, t6, t1144_ok
+    j    fail
+t1144_ok:
+t1145: # cpop 0x7fffffff
+    li   a0, 1145
+    li   a1, 0x7fffffff
+    cpop a3, a1
+    li   t6, 0x1f
+    beq  a3, t6, t1145_ok
+    j    fail
+t1145_ok:
+t1146: # cpop 0xffffffff80000000
+    li   a0, 1146
+    li   a1, 0xffffffff80000000
+    cpop a3, a1
+    li   t6, 0x21
+    beq  a3, t6, t1146_ok
+    j    fail
+t1146_ok:
+t1147: # cpop 0x123456789abcdef0
+    li   a0, 1147
+    li   a1, 0x123456789abcdef0
+    cpop a3, a1
+    li   t6, 0x20
+    beq  a3, t6, t1147_ok
+    j    fail
+t1147_ok:
+t1148: # cpop 0xfedcba9876543210
+    li   a0, 1148
+    li   a1, 0xfedcba9876543210
+    cpop a3, a1
+    li   t6, 0x20
+    beq  a3, t6, t1148_ok
+    j    fail
+t1148_ok:
+t1149: # cpop 0x3f
+    li   a0, 1149
+    li   a1, 0x3f
+    cpop a3, a1
+    li   t6, 0x6
+    beq  a3, t6, t1149_ok
+    j    fail
+t1149_ok:
+t1150: # cpop 0x40
+    li   a0, 1150
+    li   a1, 0x40
+    cpop a3, a1
+    li   t6, 0x1
+    beq  a3, t6, t1150_ok
+    j    fail
+t1150_ok:
+t1151: # cpop 0x21
+    li   a0, 1151
+    li   a1, 0x21
+    cpop a3, a1
+    li   t6, 0x2
+    beq  a3, t6, t1151_ok
+    j    fail
+t1151_ok:
+t1152: # cpop 0xff00ff00ff00ff
+    li   a0, 1152
+    li   a1, 0xff00ff00ff00ff
+    cpop a3, a1
+    li   t6, 0x20
+    beq  a3, t6, t1152_ok
+    j    fail
+t1152_ok:
+t1153: # cpop 0x100000000
+    li   a0, 1153
+    li   a1, 0x100000000
+    cpop a3, a1
+    li   t6, 0x1
+    beq  a3, t6, t1153_ok
+    j    fail
+t1153_ok:
+t1154: # cpop 0x8000000000000001
+    li   a0, 1154
+    li   a1, 0x8000000000000001
+    cpop a3, a1
+    li   t6, 0x2
+    beq  a3, t6, t1154_ok
+    j    fail
+t1154_ok:
+t1155: # cpop 0xffff8000
+    li   a0, 1155
+    li   a1, 0xffff8000
+    cpop a3, a1
+    li   t6, 0x11
+    beq  a3, t6, t1155_ok
+    j    fail
+t1155_ok:
+t1156: # cpop 0x102030400000080
+    li   a0, 1156
+    li   a1, 0x102030400000080
+    cpop a3, a1
+    li   t6, 0x6
+    beq  a3, t6, t1156_ok
+    j    fail
+t1156_ok:
+t1157: # clzw 0x0
+    li   a0, 1157
+    li   a1, 0x0
+    clzw a3, a1
+    li   t6, 0x20
+    beq  a3, t6, t1157_ok
+    j    fail
+t1157_ok:
+t1158: # clzw 0x1
+    li   a0, 1158
+    li   a1, 0x1
+    clzw a3, a1
+    li   t6, 0x1f
+    beq  a3, t6, t1158_ok
+    j    fail
+t1158_ok:
+t1159: # clzw 0xffffffffffffffff
+    li   a0, 1159
+    li   a1, 0xffffffffffffffff
+    clzw a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1159_ok
+    j    fail
+t1159_ok:
+t1160: # clzw 0x7
+    li   a0, 1160
+    li   a1, 0x7
+    clzw a3, a1
+    li   t6, 0x1d
+    beq  a3, t6, t1160_ok
+    j    fail
+t1160_ok:
+t1161: # clzw 0xfffffffffffffff9
+    li   a0, 1161
+    li   a1, 0xfffffffffffffff9
+    clzw a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1161_ok
+    j    fail
+t1161_ok:
+t1162: # clzw 0x8000000000000000
+    li   a0, 1162
+    li   a1, 0x8000000000000000
+    clzw a3, a1
+    li   t6, 0x20
+    beq  a3, t6, t1162_ok
+    j    fail
+t1162_ok:
+t1163: # clzw 0x7fffffffffffffff
+    li   a0, 1163
+    li   a1, 0x7fffffffffffffff
+    clzw a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1163_ok
+    j    fail
+t1163_ok:
+t1164: # clzw 0x80000000
+    li   a0, 1164
+    li   a1, 0x80000000
+    clzw a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1164_ok
+    j    fail
+t1164_ok:
+t1165: # clzw 0x7fffffff
+    li   a0, 1165
+    li   a1, 0x7fffffff
+    clzw a3, a1
+    li   t6, 0x1
+    beq  a3, t6, t1165_ok
+    j    fail
+t1165_ok:
+t1166: # clzw 0xffffffff80000000
+    li   a0, 1166
+    li   a1, 0xffffffff80000000
+    clzw a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1166_ok
+    j    fail
+t1166_ok:
+t1167: # clzw 0x123456789abcdef0
+    li   a0, 1167
+    li   a1, 0x123456789abcdef0
+    clzw a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1167_ok
+    j    fail
+t1167_ok:
+t1168: # clzw 0xfedcba9876543210
+    li   a0, 1168
+    li   a1, 0xfedcba9876543210
+    clzw a3, a1
+    li   t6, 0x1
+    beq  a3, t6, t1168_ok
+    j    fail
+t1168_ok:
+t1169: # clzw 0x3f
+    li   a0, 1169
+    li   a1, 0x3f
+    clzw a3, a1
+    li   t6, 0x1a
+    beq  a3, t6, t1169_ok
+    j    fail
+t1169_ok:
+t1170: # clzw 0x40
+    li   a0, 1170
+    li   a1, 0x40
+    clzw a3, a1
+    li   t6, 0x19
+    beq  a3, t6, t1170_ok
+    j    fail
+t1170_ok:
+t1171: # clzw 0x21
+    li   a0, 1171
+    li   a1, 0x21
+    clzw a3, a1
+    li   t6, 0x1a
+    beq  a3, t6, t1171_ok
+    j    fail
+t1171_ok:
+t1172: # clzw 0xff00ff00ff00ff
+    li   a0, 1172
+    li   a1, 0xff00ff00ff00ff
+    clzw a3, a1
+    li   t6, 0x8
+    beq  a3, t6, t1172_ok
+    j    fail
+t1172_ok:
+t1173: # clzw 0x100000000
+    li   a0, 1173
+    li   a1, 0x100000000
+    clzw a3, a1
+    li   t6, 0x20
+    beq  a3, t6, t1173_ok
+    j    fail
+t1173_ok:
+t1174: # clzw 0x8000000000000001
+    li   a0, 1174
+    li   a1, 0x8000000000000001
+    clzw a3, a1
+    li   t6, 0x1f
+    beq  a3, t6, t1174_ok
+    j    fail
+t1174_ok:
+t1175: # clzw 0xffff8000
+    li   a0, 1175
+    li   a1, 0xffff8000
+    clzw a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1175_ok
+    j    fail
+t1175_ok:
+t1176: # clzw 0x102030400000080
+    li   a0, 1176
+    li   a1, 0x102030400000080
+    clzw a3, a1
+    li   t6, 0x18
+    beq  a3, t6, t1176_ok
+    j    fail
+t1176_ok:
+t1177: # ctzw 0x0
+    li   a0, 1177
+    li   a1, 0x0
+    ctzw a3, a1
+    li   t6, 0x20
+    beq  a3, t6, t1177_ok
+    j    fail
+t1177_ok:
+t1178: # ctzw 0x1
+    li   a0, 1178
+    li   a1, 0x1
+    ctzw a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1178_ok
+    j    fail
+t1178_ok:
+t1179: # ctzw 0xffffffffffffffff
+    li   a0, 1179
+    li   a1, 0xffffffffffffffff
+    ctzw a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1179_ok
+    j    fail
+t1179_ok:
+t1180: # ctzw 0x7
+    li   a0, 1180
+    li   a1, 0x7
+    ctzw a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1180_ok
+    j    fail
+t1180_ok:
+t1181: # ctzw 0xfffffffffffffff9
+    li   a0, 1181
+    li   a1, 0xfffffffffffffff9
+    ctzw a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1181_ok
+    j    fail
+t1181_ok:
+t1182: # ctzw 0x8000000000000000
+    li   a0, 1182
+    li   a1, 0x8000000000000000
+    ctzw a3, a1
+    li   t6, 0x20
+    beq  a3, t6, t1182_ok
+    j    fail
+t1182_ok:
+t1183: # ctzw 0x7fffffffffffffff
+    li   a0, 1183
+    li   a1, 0x7fffffffffffffff
+    ctzw a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1183_ok
+    j    fail
+t1183_ok:
+t1184: # ctzw 0x80000000
+    li   a0, 1184
+    li   a1, 0x80000000
+    ctzw a3, a1
+    li   t6, 0x1f
+    beq  a3, t6, t1184_ok
+    j    fail
+t1184_ok:
+t1185: # ctzw 0x7fffffff
+    li   a0, 1185
+    li   a1, 0x7fffffff
+    ctzw a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1185_ok
+    j    fail
+t1185_ok:
+t1186: # ctzw 0xffffffff80000000
+    li   a0, 1186
+    li   a1, 0xffffffff80000000
+    ctzw a3, a1
+    li   t6, 0x1f
+    beq  a3, t6, t1186_ok
+    j    fail
+t1186_ok:
+t1187: # ctzw 0x123456789abcdef0
+    li   a0, 1187
+    li   a1, 0x123456789abcdef0
+    ctzw a3, a1
+    li   t6, 0x4
+    beq  a3, t6, t1187_ok
+    j    fail
+t1187_ok:
+t1188: # ctzw 0xfedcba9876543210
+    li   a0, 1188
+    li   a1, 0xfedcba9876543210
+    ctzw a3, a1
+    li   t6, 0x4
+    beq  a3, t6, t1188_ok
+    j    fail
+t1188_ok:
+t1189: # ctzw 0x3f
+    li   a0, 1189
+    li   a1, 0x3f
+    ctzw a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1189_ok
+    j    fail
+t1189_ok:
+t1190: # ctzw 0x40
+    li   a0, 1190
+    li   a1, 0x40
+    ctzw a3, a1
+    li   t6, 0x6
+    beq  a3, t6, t1190_ok
+    j    fail
+t1190_ok:
+t1191: # ctzw 0x21
+    li   a0, 1191
+    li   a1, 0x21
+    ctzw a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1191_ok
+    j    fail
+t1191_ok:
+t1192: # ctzw 0xff00ff00ff00ff
+    li   a0, 1192
+    li   a1, 0xff00ff00ff00ff
+    ctzw a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1192_ok
+    j    fail
+t1192_ok:
+t1193: # ctzw 0x100000000
+    li   a0, 1193
+    li   a1, 0x100000000
+    ctzw a3, a1
+    li   t6, 0x20
+    beq  a3, t6, t1193_ok
+    j    fail
+t1193_ok:
+t1194: # ctzw 0x8000000000000001
+    li   a0, 1194
+    li   a1, 0x8000000000000001
+    ctzw a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1194_ok
+    j    fail
+t1194_ok:
+t1195: # ctzw 0xffff8000
+    li   a0, 1195
+    li   a1, 0xffff8000
+    ctzw a3, a1
+    li   t6, 0xf
+    beq  a3, t6, t1195_ok
+    j    fail
+t1195_ok:
+t1196: # ctzw 0x102030400000080
+    li   a0, 1196
+    li   a1, 0x102030400000080
+    ctzw a3, a1
+    li   t6, 0x7
+    beq  a3, t6, t1196_ok
+    j    fail
+t1196_ok:
+t1197: # cpopw 0x0
+    li   a0, 1197
+    li   a1, 0x0
+    cpopw a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1197_ok
+    j    fail
+t1197_ok:
+t1198: # cpopw 0x1
+    li   a0, 1198
+    li   a1, 0x1
+    cpopw a3, a1
+    li   t6, 0x1
+    beq  a3, t6, t1198_ok
+    j    fail
+t1198_ok:
+t1199: # cpopw 0xffffffffffffffff
+    li   a0, 1199
+    li   a1, 0xffffffffffffffff
+    cpopw a3, a1
+    li   t6, 0x20
+    beq  a3, t6, t1199_ok
+    j    fail
+t1199_ok:
+t1200: # cpopw 0x7
+    li   a0, 1200
+    li   a1, 0x7
+    cpopw a3, a1
+    li   t6, 0x3
+    beq  a3, t6, t1200_ok
+    j    fail
+t1200_ok:
+t1201: # cpopw 0xfffffffffffffff9
+    li   a0, 1201
+    li   a1, 0xfffffffffffffff9
+    cpopw a3, a1
+    li   t6, 0x1e
+    beq  a3, t6, t1201_ok
+    j    fail
+t1201_ok:
+t1202: # cpopw 0x8000000000000000
+    li   a0, 1202
+    li   a1, 0x8000000000000000
+    cpopw a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1202_ok
+    j    fail
+t1202_ok:
+t1203: # cpopw 0x7fffffffffffffff
+    li   a0, 1203
+    li   a1, 0x7fffffffffffffff
+    cpopw a3, a1
+    li   t6, 0x20
+    beq  a3, t6, t1203_ok
+    j    fail
+t1203_ok:
+t1204: # cpopw 0x80000000
+    li   a0, 1204
+    li   a1, 0x80000000
+    cpopw a3, a1
+    li   t6, 0x1
+    beq  a3, t6, t1204_ok
+    j    fail
+t1204_ok:
+t1205: # cpopw 0x7fffffff
+    li   a0, 1205
+    li   a1, 0x7fffffff
+    cpopw a3, a1
+    li   t6, 0x1f
+    beq  a3, t6, t1205_ok
+    j    fail
+t1205_ok:
+t1206: # cpopw 0xffffffff80000000
+    li   a0, 1206
+    li   a1, 0xffffffff80000000
+    cpopw a3, a1
+    li   t6, 0x1
+    beq  a3, t6, t1206_ok
+    j    fail
+t1206_ok:
+t1207: # cpopw 0x123456789abcdef0
+    li   a0, 1207
+    li   a1, 0x123456789abcdef0
+    cpopw a3, a1
+    li   t6, 0x13
+    beq  a3, t6, t1207_ok
+    j    fail
+t1207_ok:
+t1208: # cpopw 0xfedcba9876543210
+    li   a0, 1208
+    li   a1, 0xfedcba9876543210
+    cpopw a3, a1
+    li   t6, 0xc
+    beq  a3, t6, t1208_ok
+    j    fail
+t1208_ok:
+t1209: # cpopw 0x3f
+    li   a0, 1209
+    li   a1, 0x3f
+    cpopw a3, a1
+    li   t6, 0x6
+    beq  a3, t6, t1209_ok
+    j    fail
+t1209_ok:
+t1210: # cpopw 0x40
+    li   a0, 1210
+    li   a1, 0x40
+    cpopw a3, a1
+    li   t6, 0x1
+    beq  a3, t6, t1210_ok
+    j    fail
+t1210_ok:
+t1211: # cpopw 0x21
+    li   a0, 1211
+    li   a1, 0x21
+    cpopw a3, a1
+    li   t6, 0x2
+    beq  a3, t6, t1211_ok
+    j    fail
+t1211_ok:
+t1212: # cpopw 0xff00ff00ff00ff
+    li   a0, 1212
+    li   a1, 0xff00ff00ff00ff
+    cpopw a3, a1
+    li   t6, 0x10
+    beq  a3, t6, t1212_ok
+    j    fail
+t1212_ok:
+t1213: # cpopw 0x100000000
+    li   a0, 1213
+    li   a1, 0x100000000
+    cpopw a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1213_ok
+    j    fail
+t1213_ok:
+t1214: # cpopw 0x8000000000000001
+    li   a0, 1214
+    li   a1, 0x8000000000000001
+    cpopw a3, a1
+    li   t6, 0x1
+    beq  a3, t6, t1214_ok
+    j    fail
+t1214_ok:
+t1215: # cpopw 0xffff8000
+    li   a0, 1215
+    li   a1, 0xffff8000
+    cpopw a3, a1
+    li   t6, 0x11
+    beq  a3, t6, t1215_ok
+    j    fail
+t1215_ok:
+t1216: # cpopw 0x102030400000080
+    li   a0, 1216
+    li   a1, 0x102030400000080
+    cpopw a3, a1
+    li   t6, 0x1
+    beq  a3, t6, t1216_ok
+    j    fail
+t1216_ok:
+t1217: # sext.b 0x0
+    li   a0, 1217
+    li   a1, 0x0
+    sext.b a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1217_ok
+    j    fail
+t1217_ok:
+t1218: # sext.b 0x1
+    li   a0, 1218
+    li   a1, 0x1
+    sext.b a3, a1
+    li   t6, 0x1
+    beq  a3, t6, t1218_ok
+    j    fail
+t1218_ok:
+t1219: # sext.b 0xffffffffffffffff
+    li   a0, 1219
+    li   a1, 0xffffffffffffffff
+    sext.b a3, a1
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t1219_ok
+    j    fail
+t1219_ok:
+t1220: # sext.b 0x7
+    li   a0, 1220
+    li   a1, 0x7
+    sext.b a3, a1
+    li   t6, 0x7
+    beq  a3, t6, t1220_ok
+    j    fail
+t1220_ok:
+t1221: # sext.b 0xfffffffffffffff9
+    li   a0, 1221
+    li   a1, 0xfffffffffffffff9
+    sext.b a3, a1
+    li   t6, 0xfffffffffffffff9
+    beq  a3, t6, t1221_ok
+    j    fail
+t1221_ok:
+t1222: # sext.b 0x8000000000000000
+    li   a0, 1222
+    li   a1, 0x8000000000000000
+    sext.b a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1222_ok
+    j    fail
+t1222_ok:
+t1223: # sext.b 0x7fffffffffffffff
+    li   a0, 1223
+    li   a1, 0x7fffffffffffffff
+    sext.b a3, a1
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t1223_ok
+    j    fail
+t1223_ok:
+t1224: # sext.b 0x80000000
+    li   a0, 1224
+    li   a1, 0x80000000
+    sext.b a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1224_ok
+    j    fail
+t1224_ok:
+t1225: # sext.b 0x7fffffff
+    li   a0, 1225
+    li   a1, 0x7fffffff
+    sext.b a3, a1
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t1225_ok
+    j    fail
+t1225_ok:
+t1226: # sext.b 0xffffffff80000000
+    li   a0, 1226
+    li   a1, 0xffffffff80000000
+    sext.b a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1226_ok
+    j    fail
+t1226_ok:
+t1227: # sext.b 0x123456789abcdef0
+    li   a0, 1227
+    li   a1, 0x123456789abcdef0
+    sext.b a3, a1
+    li   t6, 0xfffffffffffffff0
+    beq  a3, t6, t1227_ok
+    j    fail
+t1227_ok:
+t1228: # sext.b 0xfedcba9876543210
+    li   a0, 1228
+    li   a1, 0xfedcba9876543210
+    sext.b a3, a1
+    li   t6, 0x10
+    beq  a3, t6, t1228_ok
+    j    fail
+t1228_ok:
+t1229: # sext.b 0x3f
+    li   a0, 1229
+    li   a1, 0x3f
+    sext.b a3, a1
+    li   t6, 0x3f
+    beq  a3, t6, t1229_ok
+    j    fail
+t1229_ok:
+t1230: # sext.b 0x40
+    li   a0, 1230
+    li   a1, 0x40
+    sext.b a3, a1
+    li   t6, 0x40
+    beq  a3, t6, t1230_ok
+    j    fail
+t1230_ok:
+t1231: # sext.b 0x21
+    li   a0, 1231
+    li   a1, 0x21
+    sext.b a3, a1
+    li   t6, 0x21
+    beq  a3, t6, t1231_ok
+    j    fail
+t1231_ok:
+t1232: # sext.b 0xff00ff00ff00ff
+    li   a0, 1232
+    li   a1, 0xff00ff00ff00ff
+    sext.b a3, a1
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t1232_ok
+    j    fail
+t1232_ok:
+t1233: # sext.b 0x100000000
+    li   a0, 1233
+    li   a1, 0x100000000
+    sext.b a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1233_ok
+    j    fail
+t1233_ok:
+t1234: # sext.b 0x8000000000000001
+    li   a0, 1234
+    li   a1, 0x8000000000000001
+    sext.b a3, a1
+    li   t6, 0x1
+    beq  a3, t6, t1234_ok
+    j    fail
+t1234_ok:
+t1235: # sext.b 0xffff8000
+    li   a0, 1235
+    li   a1, 0xffff8000
+    sext.b a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1235_ok
+    j    fail
+t1235_ok:
+t1236: # sext.b 0x102030400000080
+    li   a0, 1236
+    li   a1, 0x102030400000080
+    sext.b a3, a1
+    li   t6, 0xffffffffffffff80
+    beq  a3, t6, t1236_ok
+    j    fail
+t1236_ok:
+t1237: # sext.h 0x0
+    li   a0, 1237
+    li   a1, 0x0
+    sext.h a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1237_ok
+    j    fail
+t1237_ok:
+t1238: # sext.h 0x1
+    li   a0, 1238
+    li   a1, 0x1
+    sext.h a3, a1
+    li   t6, 0x1
+    beq  a3, t6, t1238_ok
+    j    fail
+t1238_ok:
+t1239: # sext.h 0xffffffffffffffff
+    li   a0, 1239
+    li   a1, 0xffffffffffffffff
+    sext.h a3, a1
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t1239_ok
+    j    fail
+t1239_ok:
+t1240: # sext.h 0x7
+    li   a0, 1240
+    li   a1, 0x7
+    sext.h a3, a1
+    li   t6, 0x7
+    beq  a3, t6, t1240_ok
+    j    fail
+t1240_ok:
+t1241: # sext.h 0xfffffffffffffff9
+    li   a0, 1241
+    li   a1, 0xfffffffffffffff9
+    sext.h a3, a1
+    li   t6, 0xfffffffffffffff9
+    beq  a3, t6, t1241_ok
+    j    fail
+t1241_ok:
+t1242: # sext.h 0x8000000000000000
+    li   a0, 1242
+    li   a1, 0x8000000000000000
+    sext.h a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1242_ok
+    j    fail
+t1242_ok:
+t1243: # sext.h 0x7fffffffffffffff
+    li   a0, 1243
+    li   a1, 0x7fffffffffffffff
+    sext.h a3, a1
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t1243_ok
+    j    fail
+t1243_ok:
+t1244: # sext.h 0x80000000
+    li   a0, 1244
+    li   a1, 0x80000000
+    sext.h a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1244_ok
+    j    fail
+t1244_ok:
+t1245: # sext.h 0x7fffffff
+    li   a0, 1245
+    li   a1, 0x7fffffff
+    sext.h a3, a1
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t1245_ok
+    j    fail
+t1245_ok:
+t1246: # sext.h 0xffffffff80000000
+    li   a0, 1246
+    li   a1, 0xffffffff80000000
+    sext.h a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1246_ok
+    j    fail
+t1246_ok:
+t1247: # sext.h 0x123456789abcdef0
+    li   a0, 1247
+    li   a1, 0x123456789abcdef0
+    sext.h a3, a1
+    li   t6, 0xffffffffffffdef0
+    beq  a3, t6, t1247_ok
+    j    fail
+t1247_ok:
+t1248: # sext.h 0xfedcba9876543210
+    li   a0, 1248
+    li   a1, 0xfedcba9876543210
+    sext.h a3, a1
+    li   t6, 0x3210
+    beq  a3, t6, t1248_ok
+    j    fail
+t1248_ok:
+t1249: # sext.h 0x3f
+    li   a0, 1249
+    li   a1, 0x3f
+    sext.h a3, a1
+    li   t6, 0x3f
+    beq  a3, t6, t1249_ok
+    j    fail
+t1249_ok:
+t1250: # sext.h 0x40
+    li   a0, 1250
+    li   a1, 0x40
+    sext.h a3, a1
+    li   t6, 0x40
+    beq  a3, t6, t1250_ok
+    j    fail
+t1250_ok:
+t1251: # sext.h 0x21
+    li   a0, 1251
+    li   a1, 0x21
+    sext.h a3, a1
+    li   t6, 0x21
+    beq  a3, t6, t1251_ok
+    j    fail
+t1251_ok:
+t1252: # sext.h 0xff00ff00ff00ff
+    li   a0, 1252
+    li   a1, 0xff00ff00ff00ff
+    sext.h a3, a1
+    li   t6, 0xff
+    beq  a3, t6, t1252_ok
+    j    fail
+t1252_ok:
+t1253: # sext.h 0x100000000
+    li   a0, 1253
+    li   a1, 0x100000000
+    sext.h a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1253_ok
+    j    fail
+t1253_ok:
+t1254: # sext.h 0x8000000000000001
+    li   a0, 1254
+    li   a1, 0x8000000000000001
+    sext.h a3, a1
+    li   t6, 0x1
+    beq  a3, t6, t1254_ok
+    j    fail
+t1254_ok:
+t1255: # sext.h 0xffff8000
+    li   a0, 1255
+    li   a1, 0xffff8000
+    sext.h a3, a1
+    li   t6, 0xffffffffffff8000
+    beq  a3, t6, t1255_ok
+    j    fail
+t1255_ok:
+t1256: # sext.h 0x102030400000080
+    li   a0, 1256
+    li   a1, 0x102030400000080
+    sext.h a3, a1
+    li   t6, 0x80
+    beq  a3, t6, t1256_ok
+    j    fail
+t1256_ok:
+t1257: # zext.h 0x0
+    li   a0, 1257
+    li   a1, 0x0
+    zext.h a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1257_ok
+    j    fail
+t1257_ok:
+t1258: # zext.h 0x1
+    li   a0, 1258
+    li   a1, 0x1
+    zext.h a3, a1
+    li   t6, 0x1
+    beq  a3, t6, t1258_ok
+    j    fail
+t1258_ok:
+t1259: # zext.h 0xffffffffffffffff
+    li   a0, 1259
+    li   a1, 0xffffffffffffffff
+    zext.h a3, a1
+    li   t6, 0xffff
+    beq  a3, t6, t1259_ok
+    j    fail
+t1259_ok:
+t1260: # zext.h 0x7
+    li   a0, 1260
+    li   a1, 0x7
+    zext.h a3, a1
+    li   t6, 0x7
+    beq  a3, t6, t1260_ok
+    j    fail
+t1260_ok:
+t1261: # zext.h 0xfffffffffffffff9
+    li   a0, 1261
+    li   a1, 0xfffffffffffffff9
+    zext.h a3, a1
+    li   t6, 0xfff9
+    beq  a3, t6, t1261_ok
+    j    fail
+t1261_ok:
+t1262: # zext.h 0x8000000000000000
+    li   a0, 1262
+    li   a1, 0x8000000000000000
+    zext.h a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1262_ok
+    j    fail
+t1262_ok:
+t1263: # zext.h 0x7fffffffffffffff
+    li   a0, 1263
+    li   a1, 0x7fffffffffffffff
+    zext.h a3, a1
+    li   t6, 0xffff
+    beq  a3, t6, t1263_ok
+    j    fail
+t1263_ok:
+t1264: # zext.h 0x80000000
+    li   a0, 1264
+    li   a1, 0x80000000
+    zext.h a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1264_ok
+    j    fail
+t1264_ok:
+t1265: # zext.h 0x7fffffff
+    li   a0, 1265
+    li   a1, 0x7fffffff
+    zext.h a3, a1
+    li   t6, 0xffff
+    beq  a3, t6, t1265_ok
+    j    fail
+t1265_ok:
+t1266: # zext.h 0xffffffff80000000
+    li   a0, 1266
+    li   a1, 0xffffffff80000000
+    zext.h a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1266_ok
+    j    fail
+t1266_ok:
+t1267: # zext.h 0x123456789abcdef0
+    li   a0, 1267
+    li   a1, 0x123456789abcdef0
+    zext.h a3, a1
+    li   t6, 0xdef0
+    beq  a3, t6, t1267_ok
+    j    fail
+t1267_ok:
+t1268: # zext.h 0xfedcba9876543210
+    li   a0, 1268
+    li   a1, 0xfedcba9876543210
+    zext.h a3, a1
+    li   t6, 0x3210
+    beq  a3, t6, t1268_ok
+    j    fail
+t1268_ok:
+t1269: # zext.h 0x3f
+    li   a0, 1269
+    li   a1, 0x3f
+    zext.h a3, a1
+    li   t6, 0x3f
+    beq  a3, t6, t1269_ok
+    j    fail
+t1269_ok:
+t1270: # zext.h 0x40
+    li   a0, 1270
+    li   a1, 0x40
+    zext.h a3, a1
+    li   t6, 0x40
+    beq  a3, t6, t1270_ok
+    j    fail
+t1270_ok:
+t1271: # zext.h 0x21
+    li   a0, 1271
+    li   a1, 0x21
+    zext.h a3, a1
+    li   t6, 0x21
+    beq  a3, t6, t1271_ok
+    j    fail
+t1271_ok:
+t1272: # zext.h 0xff00ff00ff00ff
+    li   a0, 1272
+    li   a1, 0xff00ff00ff00ff
+    zext.h a3, a1
+    li   t6, 0xff
+    beq  a3, t6, t1272_ok
+    j    fail
+t1272_ok:
+t1273: # zext.h 0x100000000
+    li   a0, 1273
+    li   a1, 0x100000000
+    zext.h a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1273_ok
+    j    fail
+t1273_ok:
+t1274: # zext.h 0x8000000000000001
+    li   a0, 1274
+    li   a1, 0x8000000000000001
+    zext.h a3, a1
+    li   t6, 0x1
+    beq  a3, t6, t1274_ok
+    j    fail
+t1274_ok:
+t1275: # zext.h 0xffff8000
+    li   a0, 1275
+    li   a1, 0xffff8000
+    zext.h a3, a1
+    li   t6, 0x8000
+    beq  a3, t6, t1275_ok
+    j    fail
+t1275_ok:
+t1276: # zext.h 0x102030400000080
+    li   a0, 1276
+    li   a1, 0x102030400000080
+    zext.h a3, a1
+    li   t6, 0x80
+    beq  a3, t6, t1276_ok
+    j    fail
+t1276_ok:
+t1277: # rev8 0x0
+    li   a0, 1277
+    li   a1, 0x0
+    rev8 a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1277_ok
+    j    fail
+t1277_ok:
+t1278: # rev8 0x1
+    li   a0, 1278
+    li   a1, 0x1
+    rev8 a3, a1
+    li   t6, 0x100000000000000
+    beq  a3, t6, t1278_ok
+    j    fail
+t1278_ok:
+t1279: # rev8 0xffffffffffffffff
+    li   a0, 1279
+    li   a1, 0xffffffffffffffff
+    rev8 a3, a1
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t1279_ok
+    j    fail
+t1279_ok:
+t1280: # rev8 0x7
+    li   a0, 1280
+    li   a1, 0x7
+    rev8 a3, a1
+    li   t6, 0x700000000000000
+    beq  a3, t6, t1280_ok
+    j    fail
+t1280_ok:
+t1281: # rev8 0xfffffffffffffff9
+    li   a0, 1281
+    li   a1, 0xfffffffffffffff9
+    rev8 a3, a1
+    li   t6, 0xf9ffffffffffffff
+    beq  a3, t6, t1281_ok
+    j    fail
+t1281_ok:
+t1282: # rev8 0x8000000000000000
+    li   a0, 1282
+    li   a1, 0x8000000000000000
+    rev8 a3, a1
+    li   t6, 0x80
+    beq  a3, t6, t1282_ok
+    j    fail
+t1282_ok:
+t1283: # rev8 0x7fffffffffffffff
+    li   a0, 1283
+    li   a1, 0x7fffffffffffffff
+    rev8 a3, a1
+    li   t6, 0xffffffffffffff7f
+    beq  a3, t6, t1283_ok
+    j    fail
+t1283_ok:
+t1284: # rev8 0x80000000
+    li   a0, 1284
+    li   a1, 0x80000000
+    rev8 a3, a1
+    li   t6, 0x8000000000
+    beq  a3, t6, t1284_ok
+    j    fail
+t1284_ok:
+t1285: # rev8 0x7fffffff
+    li   a0, 1285
+    li   a1, 0x7fffffff
+    rev8 a3, a1
+    li   t6, 0xffffff7f00000000
+    beq  a3, t6, t1285_ok
+    j    fail
+t1285_ok:
+t1286: # rev8 0xffffffff80000000
+    li   a0, 1286
+    li   a1, 0xffffffff80000000
+    rev8 a3, a1
+    li   t6, 0x80ffffffff
+    beq  a3, t6, t1286_ok
+    j    fail
+t1286_ok:
+t1287: # rev8 0x123456789abcdef0
+    li   a0, 1287
+    li   a1, 0x123456789abcdef0
+    rev8 a3, a1
+    li   t6, 0xf0debc9a78563412
+    beq  a3, t6, t1287_ok
+    j    fail
+t1287_ok:
+t1288: # rev8 0xfedcba9876543210
+    li   a0, 1288
+    li   a1, 0xfedcba9876543210
+    rev8 a3, a1
+    li   t6, 0x1032547698badcfe
+    beq  a3, t6, t1288_ok
+    j    fail
+t1288_ok:
+t1289: # rev8 0x3f
+    li   a0, 1289
+    li   a1, 0x3f
+    rev8 a3, a1
+    li   t6, 0x3f00000000000000
+    beq  a3, t6, t1289_ok
+    j    fail
+t1289_ok:
+t1290: # rev8 0x40
+    li   a0, 1290
+    li   a1, 0x40
+    rev8 a3, a1
+    li   t6, 0x4000000000000000
+    beq  a3, t6, t1290_ok
+    j    fail
+t1290_ok:
+t1291: # rev8 0x21
+    li   a0, 1291
+    li   a1, 0x21
+    rev8 a3, a1
+    li   t6, 0x2100000000000000
+    beq  a3, t6, t1291_ok
+    j    fail
+t1291_ok:
+t1292: # rev8 0xff00ff00ff00ff
+    li   a0, 1292
+    li   a1, 0xff00ff00ff00ff
+    rev8 a3, a1
+    li   t6, 0xff00ff00ff00ff00
+    beq  a3, t6, t1292_ok
+    j    fail
+t1292_ok:
+t1293: # rev8 0x100000000
+    li   a0, 1293
+    li   a1, 0x100000000
+    rev8 a3, a1
+    li   t6, 0x1000000
+    beq  a3, t6, t1293_ok
+    j    fail
+t1293_ok:
+t1294: # rev8 0x8000000000000001
+    li   a0, 1294
+    li   a1, 0x8000000000000001
+    rev8 a3, a1
+    li   t6, 0x100000000000080
+    beq  a3, t6, t1294_ok
+    j    fail
+t1294_ok:
+t1295: # rev8 0xffff8000
+    li   a0, 1295
+    li   a1, 0xffff8000
+    rev8 a3, a1
+    li   t6, 0x80ffff00000000
+    beq  a3, t6, t1295_ok
+    j    fail
+t1295_ok:
+t1296: # rev8 0x102030400000080
+    li   a0, 1296
+    li   a1, 0x102030400000080
+    rev8 a3, a1
+    li   t6, 0x8000000004030201
+    beq  a3, t6, t1296_ok
+    j    fail
+t1296_ok:
+t1297: # orc.b 0x0
+    li   a0, 1297
+    li   a1, 0x0
+    orc.b a3, a1
+    li   t6, 0x0
+    beq  a3, t6, t1297_ok
+    j    fail
+t1297_ok:
+t1298: # orc.b 0x1
+    li   a0, 1298
+    li   a1, 0x1
+    orc.b a3, a1
+    li   t6, 0xff
+    beq  a3, t6, t1298_ok
+    j    fail
+t1298_ok:
+t1299: # orc.b 0xffffffffffffffff
+    li   a0, 1299
+    li   a1, 0xffffffffffffffff
+    orc.b a3, a1
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t1299_ok
+    j    fail
+t1299_ok:
+t1300: # orc.b 0x7
+    li   a0, 1300
+    li   a1, 0x7
+    orc.b a3, a1
+    li   t6, 0xff
+    beq  a3, t6, t1300_ok
+    j    fail
+t1300_ok:
+t1301: # orc.b 0xfffffffffffffff9
+    li   a0, 1301
+    li   a1, 0xfffffffffffffff9
+    orc.b a3, a1
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t1301_ok
+    j    fail
+t1301_ok:
+t1302: # orc.b 0x8000000000000000
+    li   a0, 1302
+    li   a1, 0x8000000000000000
+    orc.b a3, a1
+    li   t6, 0xff00000000000000
+    beq  a3, t6, t1302_ok
+    j    fail
+t1302_ok:
+t1303: # orc.b 0x7fffffffffffffff
+    li   a0, 1303
+    li   a1, 0x7fffffffffffffff
+    orc.b a3, a1
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t1303_ok
+    j    fail
+t1303_ok:
+t1304: # orc.b 0x80000000
+    li   a0, 1304
+    li   a1, 0x80000000
+    orc.b a3, a1
+    li   t6, 0xff000000
+    beq  a3, t6, t1304_ok
+    j    fail
+t1304_ok:
+t1305: # orc.b 0x7fffffff
+    li   a0, 1305
+    li   a1, 0x7fffffff
+    orc.b a3, a1
+    li   t6, 0xffffffff
+    beq  a3, t6, t1305_ok
+    j    fail
+t1305_ok:
+t1306: # orc.b 0xffffffff80000000
+    li   a0, 1306
+    li   a1, 0xffffffff80000000
+    orc.b a3, a1
+    li   t6, 0xffffffffff000000
+    beq  a3, t6, t1306_ok
+    j    fail
+t1306_ok:
+t1307: # orc.b 0x123456789abcdef0
+    li   a0, 1307
+    li   a1, 0x123456789abcdef0
+    orc.b a3, a1
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t1307_ok
+    j    fail
+t1307_ok:
+t1308: # orc.b 0xfedcba9876543210
+    li   a0, 1308
+    li   a1, 0xfedcba9876543210
+    orc.b a3, a1
+    li   t6, 0xffffffffffffffff
+    beq  a3, t6, t1308_ok
+    j    fail
+t1308_ok:
+t1309: # orc.b 0x3f
+    li   a0, 1309
+    li   a1, 0x3f
+    orc.b a3, a1
+    li   t6, 0xff
+    beq  a3, t6, t1309_ok
+    j    fail
+t1309_ok:
+t1310: # orc.b 0x40
+    li   a0, 1310
+    li   a1, 0x40
+    orc.b a3, a1
+    li   t6, 0xff
+    beq  a3, t6, t1310_ok
+    j    fail
+t1310_ok:
+t1311: # orc.b 0x21
+    li   a0, 1311
+    li   a1, 0x21
+    orc.b a3, a1
+    li   t6, 0xff
+    beq  a3, t6, t1311_ok
+    j    fail
+t1311_ok:
+t1312: # orc.b 0xff00ff00ff00ff
+    li   a0, 1312
+    li   a1, 0xff00ff00ff00ff
+    orc.b a3, a1
+    li   t6, 0xff00ff00ff00ff
+    beq  a3, t6, t1312_ok
+    j    fail
+t1312_ok:
+t1313: # orc.b 0x100000000
+    li   a0, 1313
+    li   a1, 0x100000000
+    orc.b a3, a1
+    li   t6, 0xff00000000
+    beq  a3, t6, t1313_ok
+    j    fail
+t1313_ok:
+t1314: # orc.b 0x8000000000000001
+    li   a0, 1314
+    li   a1, 0x8000000000000001
+    orc.b a3, a1
+    li   t6, 0xff000000000000ff
+    beq  a3, t6, t1314_ok
+    j    fail
+t1314_ok:
+t1315: # orc.b 0xffff8000
+    li   a0, 1315
+    li   a1, 0xffff8000
+    orc.b a3, a1
+    li   t6, 0xffffff00
+    beq  a3, t6, t1315_ok
+    j    fail
+t1315_ok:
+t1316: # orc.b 0x102030400000080
+    li   a0, 1316
+    li   a1, 0x102030400000080
+    orc.b a3, a1
+    li   t6, 0xffffffff000000ff
+    beq  a3, t6, t1316_ok
+    j    fail
+t1316_ok:
+t1317: # sh3add indexes an array of doublewords (forwarded both ways)
+    li   a0, 1317
+    la   s0, scratch
+    li   t0, 3
+    li   t1, 0x77
+    sd   t1, 24(s0)
+    sh3add t2, t0, s0
+    ld   a3, 0(t2)
+    li   t6, 0x77
+    beq  a3, t6, t1317_ok
+    j    fail
+t1317_ok:
+t1318: # max result used right away (2-cycle latency: one stall, then forwarded from MEMORY)
+    li   a0, 1318
+    li   t0, -5
+    li   t1, 7
+    max  t2, t0, t1
+    sub  a3, t2, t1
+    li   t6, 0x0
+    beq  a3, t6, t1318_ok
+    j    fail
+t1318_ok:
+t1319: # performance counters are readable and count forward
+    li   a0, 1319
+    csrr t0, hpmcounter4
+    nop
+    csrr t1, hpmcounter4
+    sltu a3, t1, t0
+    li   t6, 0x0
+    beq  a3, t6, t1319_ok
+    j    fail
+t1319_ok:
+t1320: # cpop result forwarded to the next instruction
+    li   a0, 1320
+    li   t0, 0xff
+    cpop t1, t0
+    addi a3, t1, 1
+    li   t6, 0x9
+    beq  a3, t6, t1320_ok
+    j    fail
+t1320_ok:
+t1321: # beq 0x0, 0x0
+    li   a0, 1321
+    li   a1, 0x0
+    li   a2, 0x0
+    li   a3, 0
+    beq a1, a2, t1321_taken
+    j    t1321_chk
+t1321_taken:
+    li   a3, 1
+t1321_chk:
+    li   t6, 0x1
+    beq  a3, t6, t1321_ok
+    j    fail
+t1321_ok:
+t1322: # beq 0xffffffffffffffff, 0x1
+    li   a0, 1322
+    li   a1, 0xffffffffffffffff
+    li   a2, 0x1
+    li   a3, 0
+    beq a1, a2, t1322_taken
+    j    t1322_chk
+t1322_taken:
+    li   a3, 1
+t1322_chk:
+    li   t6, 0x0
+    beq  a3, t6, t1322_ok
+    j    fail
+t1322_ok:
+t1323: # beq 0xfffffffffffffff9, 0x1
+    li   a0, 1323
+    li   a1, 0xfffffffffffffff9
+    li   a2, 0x1
+    li   a3, 0
+    beq a1, a2, t1323_taken
+    j    t1323_chk
+t1323_taken:
+    li   a3, 1
+t1323_chk:
+    li   t6, 0x0
+    beq  a3, t6, t1323_ok
+    j    fail
+t1323_ok:
+t1324: # beq 0x8000000000000000, 0x21
+    li   a0, 1324
+    li   a1, 0x8000000000000000
+    li   a2, 0x21
+    li   a3, 0
+    beq a1, a2, t1324_taken
+    j    t1324_chk
+t1324_taken:
+    li   a3, 1
+t1324_chk:
+    li   t6, 0x0
+    beq  a3, t6, t1324_ok
+    j    fail
+t1324_ok:
+t1325: # beq 0x80000000, 0x80000000
+    li   a0, 1325
+    li   a1, 0x80000000
+    li   a2, 0x80000000
+    li   a3, 0
+    beq a1, a2, t1325_taken
+    j    t1325_chk
+t1325_taken:
+    li   a3, 1
+t1325_chk:
+    li   t6, 0x1
+    beq  a3, t6, t1325_ok
+    j    fail
+t1325_ok:
+t1326: # beq 0xffffffff80000000, 0xffffffffffffffff
+    li   a0, 1326
+    li   a1, 0xffffffff80000000
+    li   a2, 0xffffffffffffffff
+    li   a3, 0
+    beq a1, a2, t1326_taken
+    j    t1326_chk
+t1326_taken:
+    li   a3, 1
+t1326_chk:
+    li   t6, 0x0
+    beq  a3, t6, t1326_ok
+    j    fail
+t1326_ok:
+t1327: # beq 0xfedcba9876543210, 0x1
+    li   a0, 1327
+    li   a1, 0xfedcba9876543210
+    li   a2, 0x1
+    li   a3, 0
+    beq a1, a2, t1327_taken
+    j    t1327_chk
+t1327_taken:
+    li   a3, 1
+t1327_chk:
+    li   t6, 0x0
+    beq  a3, t6, t1327_ok
+    j    fail
+t1327_ok:
+t1328: # beq 0x40, 0x1
+    li   a0, 1328
+    li   a1, 0x40
+    li   a2, 0x1
+    li   a3, 0
+    beq a1, a2, t1328_taken
+    j    t1328_chk
+t1328_taken:
+    li   a3, 1
+t1328_chk:
+    li   t6, 0x0
+    beq  a3, t6, t1328_ok
+    j    fail
+t1328_ok:
+t1329: # bne 0x0, 0x0
+    li   a0, 1329
+    li   a1, 0x0
+    li   a2, 0x0
+    li   a3, 0
+    bne a1, a2, t1329_taken
+    j    t1329_chk
+t1329_taken:
+    li   a3, 1
+t1329_chk:
+    li   t6, 0x0
+    beq  a3, t6, t1329_ok
+    j    fail
+t1329_ok:
+t1330: # bne 0xffffffffffffffff, 0x1
+    li   a0, 1330
+    li   a1, 0xffffffffffffffff
+    li   a2, 0x1
+    li   a3, 0
+    bne a1, a2, t1330_taken
+    j    t1330_chk
+t1330_taken:
+    li   a3, 1
+t1330_chk:
+    li   t6, 0x1
+    beq  a3, t6, t1330_ok
+    j    fail
+t1330_ok:
+t1331: # bne 0xfffffffffffffff9, 0x1
+    li   a0, 1331
+    li   a1, 0xfffffffffffffff9
+    li   a2, 0x1
+    li   a3, 0
+    bne a1, a2, t1331_taken
+    j    t1331_chk
+t1331_taken:
+    li   a3, 1
+t1331_chk:
+    li   t6, 0x1
+    beq  a3, t6, t1331_ok
+    j    fail
+t1331_ok:
+t1332: # bne 0x8000000000000000, 0x21
+    li   a0, 1332
+    li   a1, 0x8000000000000000
+    li   a2, 0x21
+    li   a3, 0
+    bne a1, a2, t1332_taken
+    j    t1332_chk
+t1332_taken:
+    li   a3, 1
+t1332_chk:
+    li   t6, 0x1
+    beq  a3, t6, t1332_ok
+    j    fail
+t1332_ok:
+t1333: # bne 0x80000000, 0x80000000
+    li   a0, 1333
+    li   a1, 0x80000000
+    li   a2, 0x80000000
+    li   a3, 0
+    bne a1, a2, t1333_taken
+    j    t1333_chk
+t1333_taken:
+    li   a3, 1
+t1333_chk:
+    li   t6, 0x0
+    beq  a3, t6, t1333_ok
+    j    fail
+t1333_ok:
+t1334: # bne 0xffffffff80000000, 0xffffffffffffffff
+    li   a0, 1334
+    li   a1, 0xffffffff80000000
+    li   a2, 0xffffffffffffffff
+    li   a3, 0
+    bne a1, a2, t1334_taken
+    j    t1334_chk
+t1334_taken:
+    li   a3, 1
+t1334_chk:
+    li   t6, 0x1
+    beq  a3, t6, t1334_ok
+    j    fail
+t1334_ok:
+t1335: # bne 0xfedcba9876543210, 0x1
+    li   a0, 1335
+    li   a1, 0xfedcba9876543210
+    li   a2, 0x1
+    li   a3, 0
+    bne a1, a2, t1335_taken
+    j    t1335_chk
+t1335_taken:
+    li   a3, 1
+t1335_chk:
+    li   t6, 0x1
+    beq  a3, t6, t1335_ok
+    j    fail
+t1335_ok:
+t1336: # bne 0x40, 0x1
+    li   a0, 1336
+    li   a1, 0x40
+    li   a2, 0x1
+    li   a3, 0
+    bne a1, a2, t1336_taken
+    j    t1336_chk
+t1336_taken:
+    li   a3, 1
+t1336_chk:
+    li   t6, 0x1
+    beq  a3, t6, t1336_ok
+    j    fail
+t1336_ok:
+t1337: # blt 0x0, 0x0
+    li   a0, 1337
+    li   a1, 0x0
+    li   a2, 0x0
+    li   a3, 0
+    blt a1, a2, t1337_taken
+    j    t1337_chk
+t1337_taken:
+    li   a3, 1
+t1337_chk:
+    li   t6, 0x0
+    beq  a3, t6, t1337_ok
+    j    fail
+t1337_ok:
+t1338: # blt 0xffffffffffffffff, 0x1
+    li   a0, 1338
+    li   a1, 0xffffffffffffffff
+    li   a2, 0x1
+    li   a3, 0
+    blt a1, a2, t1338_taken
+    j    t1338_chk
+t1338_taken:
+    li   a3, 1
+t1338_chk:
+    li   t6, 0x1
+    beq  a3, t6, t1338_ok
+    j    fail
+t1338_ok:
+t1339: # blt 0xfffffffffffffff9, 0x1
+    li   a0, 1339
+    li   a1, 0xfffffffffffffff9
+    li   a2, 0x1
+    li   a3, 0
+    blt a1, a2, t1339_taken
+    j    t1339_chk
+t1339_taken:
+    li   a3, 1
+t1339_chk:
+    li   t6, 0x1
+    beq  a3, t6, t1339_ok
+    j    fail
+t1339_ok:
+t1340: # blt 0x8000000000000000, 0x21
+    li   a0, 1340
+    li   a1, 0x8000000000000000
+    li   a2, 0x21
+    li   a3, 0
+    blt a1, a2, t1340_taken
+    j    t1340_chk
+t1340_taken:
+    li   a3, 1
+t1340_chk:
+    li   t6, 0x1
+    beq  a3, t6, t1340_ok
+    j    fail
+t1340_ok:
+t1341: # blt 0x80000000, 0x80000000
+    li   a0, 1341
+    li   a1, 0x80000000
+    li   a2, 0x80000000
+    li   a3, 0
+    blt a1, a2, t1341_taken
+    j    t1341_chk
+t1341_taken:
+    li   a3, 1
+t1341_chk:
+    li   t6, 0x0
+    beq  a3, t6, t1341_ok
+    j    fail
+t1341_ok:
+t1342: # blt 0xffffffff80000000, 0xffffffffffffffff
+    li   a0, 1342
+    li   a1, 0xffffffff80000000
+    li   a2, 0xffffffffffffffff
+    li   a3, 0
+    blt a1, a2, t1342_taken
+    j    t1342_chk
+t1342_taken:
+    li   a3, 1
+t1342_chk:
+    li   t6, 0x1
+    beq  a3, t6, t1342_ok
+    j    fail
+t1342_ok:
+t1343: # blt 0xfedcba9876543210, 0x1
+    li   a0, 1343
+    li   a1, 0xfedcba9876543210
+    li   a2, 0x1
+    li   a3, 0
+    blt a1, a2, t1343_taken
+    j    t1343_chk
+t1343_taken:
+    li   a3, 1
+t1343_chk:
+    li   t6, 0x1
+    beq  a3, t6, t1343_ok
+    j    fail
+t1343_ok:
+t1344: # blt 0x40, 0x1
+    li   a0, 1344
+    li   a1, 0x40
+    li   a2, 0x1
+    li   a3, 0
+    blt a1, a2, t1344_taken
+    j    t1344_chk
+t1344_taken:
+    li   a3, 1
+t1344_chk:
+    li   t6, 0x0
+    beq  a3, t6, t1344_ok
+    j    fail
+t1344_ok:
+t1345: # bge 0x0, 0x0
+    li   a0, 1345
+    li   a1, 0x0
+    li   a2, 0x0
+    li   a3, 0
+    bge a1, a2, t1345_taken
+    j    t1345_chk
+t1345_taken:
+    li   a3, 1
+t1345_chk:
+    li   t6, 0x1
+    beq  a3, t6, t1345_ok
+    j    fail
+t1345_ok:
+t1346: # bge 0xffffffffffffffff, 0x1
+    li   a0, 1346
+    li   a1, 0xffffffffffffffff
+    li   a2, 0x1
+    li   a3, 0
+    bge a1, a2, t1346_taken
+    j    t1346_chk
+t1346_taken:
+    li   a3, 1
+t1346_chk:
+    li   t6, 0x0
+    beq  a3, t6, t1346_ok
+    j    fail
+t1346_ok:
+t1347: # bge 0xfffffffffffffff9, 0x1
+    li   a0, 1347
+    li   a1, 0xfffffffffffffff9
+    li   a2, 0x1
+    li   a3, 0
+    bge a1, a2, t1347_taken
+    j    t1347_chk
+t1347_taken:
+    li   a3, 1
+t1347_chk:
+    li   t6, 0x0
+    beq  a3, t6, t1347_ok
+    j    fail
+t1347_ok:
+t1348: # bge 0x8000000000000000, 0x21
+    li   a0, 1348
+    li   a1, 0x8000000000000000
+    li   a2, 0x21
+    li   a3, 0
+    bge a1, a2, t1348_taken
+    j    t1348_chk
+t1348_taken:
+    li   a3, 1
+t1348_chk:
+    li   t6, 0x0
+    beq  a3, t6, t1348_ok
+    j    fail
+t1348_ok:
+t1349: # bge 0x80000000, 0x80000000
+    li   a0, 1349
+    li   a1, 0x80000000
+    li   a2, 0x80000000
+    li   a3, 0
+    bge a1, a2, t1349_taken
+    j    t1349_chk
+t1349_taken:
+    li   a3, 1
+t1349_chk:
+    li   t6, 0x1
+    beq  a3, t6, t1349_ok
+    j    fail
+t1349_ok:
+t1350: # bge 0xffffffff80000000, 0xffffffffffffffff
+    li   a0, 1350
+    li   a1, 0xffffffff80000000
+    li   a2, 0xffffffffffffffff
+    li   a3, 0
+    bge a1, a2, t1350_taken
+    j    t1350_chk
+t1350_taken:
+    li   a3, 1
+t1350_chk:
+    li   t6, 0x0
+    beq  a3, t6, t1350_ok
+    j    fail
+t1350_ok:
+t1351: # bge 0xfedcba9876543210, 0x1
+    li   a0, 1351
+    li   a1, 0xfedcba9876543210
+    li   a2, 0x1
+    li   a3, 0
+    bge a1, a2, t1351_taken
+    j    t1351_chk
+t1351_taken:
+    li   a3, 1
+t1351_chk:
+    li   t6, 0x0
+    beq  a3, t6, t1351_ok
+    j    fail
+t1351_ok:
+t1352: # bge 0x40, 0x1
+    li   a0, 1352
+    li   a1, 0x40
+    li   a2, 0x1
+    li   a3, 0
+    bge a1, a2, t1352_taken
+    j    t1352_chk
+t1352_taken:
+    li   a3, 1
+t1352_chk:
+    li   t6, 0x1
+    beq  a3, t6, t1352_ok
+    j    fail
+t1352_ok:
+t1353: # bltu 0x0, 0x0
+    li   a0, 1353
+    li   a1, 0x0
+    li   a2, 0x0
+    li   a3, 0
+    bltu a1, a2, t1353_taken
+    j    t1353_chk
+t1353_taken:
+    li   a3, 1
+t1353_chk:
+    li   t6, 0x0
+    beq  a3, t6, t1353_ok
+    j    fail
+t1353_ok:
+t1354: # bltu 0xffffffffffffffff, 0x1
+    li   a0, 1354
+    li   a1, 0xffffffffffffffff
+    li   a2, 0x1
+    li   a3, 0
+    bltu a1, a2, t1354_taken
+    j    t1354_chk
+t1354_taken:
+    li   a3, 1
+t1354_chk:
+    li   t6, 0x0
+    beq  a3, t6, t1354_ok
+    j    fail
+t1354_ok:
+t1355: # bltu 0xfffffffffffffff9, 0x1
+    li   a0, 1355
+    li   a1, 0xfffffffffffffff9
+    li   a2, 0x1
+    li   a3, 0
+    bltu a1, a2, t1355_taken
+    j    t1355_chk
+t1355_taken:
+    li   a3, 1
+t1355_chk:
+    li   t6, 0x0
+    beq  a3, t6, t1355_ok
+    j    fail
+t1355_ok:
+t1356: # bltu 0x8000000000000000, 0x21
+    li   a0, 1356
+    li   a1, 0x8000000000000000
+    li   a2, 0x21
+    li   a3, 0
+    bltu a1, a2, t1356_taken
+    j    t1356_chk
+t1356_taken:
+    li   a3, 1
+t1356_chk:
+    li   t6, 0x0
+    beq  a3, t6, t1356_ok
+    j    fail
+t1356_ok:
+t1357: # bltu 0x80000000, 0x80000000
+    li   a0, 1357
+    li   a1, 0x80000000
+    li   a2, 0x80000000
+    li   a3, 0
+    bltu a1, a2, t1357_taken
+    j    t1357_chk
+t1357_taken:
+    li   a3, 1
+t1357_chk:
+    li   t6, 0x0
+    beq  a3, t6, t1357_ok
+    j    fail
+t1357_ok:
+t1358: # bltu 0xffffffff80000000, 0xffffffffffffffff
+    li   a0, 1358
+    li   a1, 0xffffffff80000000
+    li   a2, 0xffffffffffffffff
+    li   a3, 0
+    bltu a1, a2, t1358_taken
+    j    t1358_chk
+t1358_taken:
+    li   a3, 1
+t1358_chk:
+    li   t6, 0x1
+    beq  a3, t6, t1358_ok
+    j    fail
+t1358_ok:
+t1359: # bltu 0xfedcba9876543210, 0x1
+    li   a0, 1359
+    li   a1, 0xfedcba9876543210
+    li   a2, 0x1
+    li   a3, 0
+    bltu a1, a2, t1359_taken
+    j    t1359_chk
+t1359_taken:
+    li   a3, 1
+t1359_chk:
+    li   t6, 0x0
+    beq  a3, t6, t1359_ok
+    j    fail
+t1359_ok:
+t1360: # bltu 0x40, 0x1
+    li   a0, 1360
+    li   a1, 0x40
+    li   a2, 0x1
+    li   a3, 0
+    bltu a1, a2, t1360_taken
+    j    t1360_chk
+t1360_taken:
+    li   a3, 1
+t1360_chk:
+    li   t6, 0x0
+    beq  a3, t6, t1360_ok
+    j    fail
+t1360_ok:
+t1361: # bgeu 0x0, 0x0
+    li   a0, 1361
+    li   a1, 0x0
+    li   a2, 0x0
+    li   a3, 0
+    bgeu a1, a2, t1361_taken
+    j    t1361_chk
+t1361_taken:
+    li   a3, 1
+t1361_chk:
+    li   t6, 0x1
+    beq  a3, t6, t1361_ok
+    j    fail
+t1361_ok:
+t1362: # bgeu 0xffffffffffffffff, 0x1
+    li   a0, 1362
+    li   a1, 0xffffffffffffffff
+    li   a2, 0x1
+    li   a3, 0
+    bgeu a1, a2, t1362_taken
+    j    t1362_chk
+t1362_taken:
+    li   a3, 1
+t1362_chk:
+    li   t6, 0x1
+    beq  a3, t6, t1362_ok
+    j    fail
+t1362_ok:
+t1363: # bgeu 0xfffffffffffffff9, 0x1
+    li   a0, 1363
+    li   a1, 0xfffffffffffffff9
+    li   a2, 0x1
+    li   a3, 0
+    bgeu a1, a2, t1363_taken
+    j    t1363_chk
+t1363_taken:
+    li   a3, 1
+t1363_chk:
+    li   t6, 0x1
+    beq  a3, t6, t1363_ok
+    j    fail
+t1363_ok:
+t1364: # bgeu 0x8000000000000000, 0x21
+    li   a0, 1364
+    li   a1, 0x8000000000000000
+    li   a2, 0x21
+    li   a3, 0
+    bgeu a1, a2, t1364_taken
+    j    t1364_chk
+t1364_taken:
+    li   a3, 1
+t1364_chk:
+    li   t6, 0x1
+    beq  a3, t6, t1364_ok
+    j    fail
+t1364_ok:
+t1365: # bgeu 0x80000000, 0x80000000
+    li   a0, 1365
+    li   a1, 0x80000000
+    li   a2, 0x80000000
+    li   a3, 0
+    bgeu a1, a2, t1365_taken
+    j    t1365_chk
+t1365_taken:
+    li   a3, 1
+t1365_chk:
+    li   t6, 0x1
+    beq  a3, t6, t1365_ok
+    j    fail
+t1365_ok:
+t1366: # bgeu 0xffffffff80000000, 0xffffffffffffffff
+    li   a0, 1366
+    li   a1, 0xffffffff80000000
+    li   a2, 0xffffffffffffffff
+    li   a3, 0
+    bgeu a1, a2, t1366_taken
+    j    t1366_chk
+t1366_taken:
+    li   a3, 1
+t1366_chk:
+    li   t6, 0x0
+    beq  a3, t6, t1366_ok
+    j    fail
+t1366_ok:
+t1367: # bgeu 0xfedcba9876543210, 0x1
+    li   a0, 1367
+    li   a1, 0xfedcba9876543210
+    li   a2, 0x1
+    li   a3, 0
+    bgeu a1, a2, t1367_taken
+    j    t1367_chk
+t1367_taken:
+    li   a3, 1
+t1367_chk:
+    li   t6, 0x1
+    beq  a3, t6, t1367_ok
+    j    fail
+t1367_ok:
+t1368: # bgeu 0x40, 0x1
+    li   a0, 1368
+    li   a1, 0x40
+    li   a2, 0x1
+    li   a3, 0
+    bgeu a1, a2, t1368_taken
+    j    t1368_chk
+t1368_taken:
+    li   a3, 1
+t1368_chk:
+    li   t6, 0x1
+    beq  a3, t6, t1368_ok
+    j    fail
+t1368_ok:
+t1369: # lui 0x0
+    li   a0, 1369
+    lui  a3, 0x0
+    li   t6, 0x0
+    beq  a3, t6, t1369_ok
+    j    fail
+t1369_ok:
+t1370: # auipc 0x0
+    li   a0, 1370
+t1370_pc:
+    auipc a3, 0x0
+    la   t5, t1370_pc
+    li   t6, 0x0
+    add  t5, t5, t6
+    beq  a3, t5, t1370_ok
+    j    fail
+t1370_ok:
+t1371: # lui 0x1
+    li   a0, 1371
+    lui  a3, 0x1
+    li   t6, 0x1000
+    beq  a3, t6, t1371_ok
+    j    fail
+t1371_ok:
+t1372: # auipc 0x1
+    li   a0, 1372
+t1372_pc:
+    auipc a3, 0x1
+    la   t5, t1372_pc
+    li   t6, 0x1000
+    add  t5, t5, t6
+    beq  a3, t5, t1372_ok
+    j    fail
+t1372_ok:
+t1373: # lui 0x7ffff
+    li   a0, 1373
+    lui  a3, 0x7ffff
+    li   t6, 0x7ffff000
+    beq  a3, t6, t1373_ok
+    j    fail
+t1373_ok:
+t1374: # auipc 0x7ffff
+    li   a0, 1374
+t1374_pc:
+    auipc a3, 0x7ffff
+    la   t5, t1374_pc
+    li   t6, 0x7ffff000
+    add  t5, t5, t6
+    beq  a3, t5, t1374_ok
+    j    fail
+t1374_ok:
+t1375: # lui 0x80000
+    li   a0, 1375
+    lui  a3, 0x80000
+    li   t6, 0xffffffff80000000
+    beq  a3, t6, t1375_ok
+    j    fail
+t1375_ok:
+t1376: # auipc 0x80000
+    li   a0, 1376
+t1376_pc:
+    auipc a3, 0x80000
+    la   t5, t1376_pc
+    li   t6, 0xffffffff80000000
+    add  t5, t5, t6
+    beq  a3, t5, t1376_ok
+    j    fail
+t1376_ok:
+t1377: # lui 0xfffff
+    li   a0, 1377
+    lui  a3, 0xfffff
+    li   t6, 0xfffffffffffff000
+    beq  a3, t6, t1377_ok
+    j    fail
+t1377_ok:
+t1378: # auipc 0xfffff
+    li   a0, 1378
+t1378_pc:
+    auipc a3, 0xfffff
+    la   t5, t1378_pc
+    li   t6, 0xfffffffffffff000
+    add  t5, t5, t6
+    beq  a3, t5, t1378_ok
+    j    fail
+t1378_ok:
+t1379: # lui 0x12345
+    li   a0, 1379
+    lui  a3, 0x12345
+    li   t6, 0x12345000
+    beq  a3, t6, t1379_ok
+    j    fail
+t1379_ok:
+t1380: # auipc 0x12345
+    li   a0, 1380
+t1380_pc:
+    auipc a3, 0x12345
+    la   t5, t1380_pc
+    li   t6, 0x12345000
+    add  t5, t5, t6
+    beq  a3, t5, t1380_ok
+    j    fail
+t1380_ok:
+t1381: # jal link + target
+    li   a0, 1381
+    jal  ra, t1381_tgt
+t1381_ret:
+    j    fail
+t1381_tgt:
+    la   t6, t1381_ret
+    beq  ra, t6, t1381_ok
+    j    fail
+t1381_ok:
+t1382: # jalr clears bit 0 of the target
+    li   a0, 1382
+    la   t0, t1382_tgt
+    jalr ra, 1(t0)
+t1382_ret:
+    j    fail
+t1382_tgt:
+    la   t6, t1382_ret
+    beq  ra, t6, t1382_ok
+    j    fail
+t1382_ok:
+t1383: # jal x0 (no link) and rd=x0 writes are dropped
+    li   a0, 1383
+    jal  zero, t1383_tgt
+    j    fail
+t1383_tgt:
+    addi zero, zero, 5
+    beqz zero, t1383_ok
+    j    fail
+t1383_ok:
+t1384: # sd then every load width
+    li   a0, 1384
+    la   s0, scratch
+    li   t0, 0x8182838485868788
+    sd   t0, 0(s0)
+t1385: # lb 0
+    li   a0, 1385
+    lb   a3, 0(s0)
+    li   t6, 0xffffffffffffff88
+    beq  a3, t6, t1385_ok
+    j    fail
+t1385_ok:
+t1386: # lb 1
+    li   a0, 1386
+    lb   a3, 1(s0)
+    li   t6, 0xffffffffffffff87
+    beq  a3, t6, t1386_ok
+    j    fail
+t1386_ok:
+t1387: # lb 2
+    li   a0, 1387
+    lb   a3, 2(s0)
+    li   t6, 0xffffffffffffff86
+    beq  a3, t6, t1387_ok
+    j    fail
+t1387_ok:
+t1388: # lb 4
+    li   a0, 1388
+    lb   a3, 4(s0)
+    li   t6, 0xffffffffffffff84
+    beq  a3, t6, t1388_ok
+    j    fail
+t1388_ok:
+t1389: # lbu 0
+    li   a0, 1389
+    lbu   a3, 0(s0)
+    li   t6, 0x88
+    beq  a3, t6, t1389_ok
+    j    fail
+t1389_ok:
+t1390: # lbu 1
+    li   a0, 1390
+    lbu   a3, 1(s0)
+    li   t6, 0x87
+    beq  a3, t6, t1390_ok
+    j    fail
+t1390_ok:
+t1391: # lbu 2
+    li   a0, 1391
+    lbu   a3, 2(s0)
+    li   t6, 0x86
+    beq  a3, t6, t1391_ok
+    j    fail
+t1391_ok:
+t1392: # lbu 4
+    li   a0, 1392
+    lbu   a3, 4(s0)
+    li   t6, 0x84
+    beq  a3, t6, t1392_ok
+    j    fail
+t1392_ok:
+t1393: # lh 0
+    li   a0, 1393
+    lh   a3, 0(s0)
+    li   t6, 0xffffffffffff8788
+    beq  a3, t6, t1393_ok
+    j    fail
+t1393_ok:
+t1394: # lh 2
+    li   a0, 1394
+    lh   a3, 2(s0)
+    li   t6, 0xffffffffffff8586
+    beq  a3, t6, t1394_ok
+    j    fail
+t1394_ok:
+t1395: # lh 4
+    li   a0, 1395
+    lh   a3, 4(s0)
+    li   t6, 0xffffffffffff8384
+    beq  a3, t6, t1395_ok
+    j    fail
+t1395_ok:
+t1396: # lhu 0
+    li   a0, 1396
+    lhu   a3, 0(s0)
+    li   t6, 0x8788
+    beq  a3, t6, t1396_ok
+    j    fail
+t1396_ok:
+t1397: # lhu 2
+    li   a0, 1397
+    lhu   a3, 2(s0)
+    li   t6, 0x8586
+    beq  a3, t6, t1397_ok
+    j    fail
+t1397_ok:
+t1398: # lhu 4
+    li   a0, 1398
+    lhu   a3, 4(s0)
+    li   t6, 0x8384
+    beq  a3, t6, t1398_ok
+    j    fail
+t1398_ok:
+t1399: # lw 0
+    li   a0, 1399
+    lw   a3, 0(s0)
+    li   t6, 0xffffffff85868788
+    beq  a3, t6, t1399_ok
+    j    fail
+t1399_ok:
+t1400: # lw 4
+    li   a0, 1400
+    lw   a3, 4(s0)
+    li   t6, 0xffffffff81828384
+    beq  a3, t6, t1400_ok
+    j    fail
+t1400_ok:
+t1401: # lwu 0
+    li   a0, 1401
+    lwu   a3, 0(s0)
+    li   t6, 0x85868788
+    beq  a3, t6, t1401_ok
+    j    fail
+t1401_ok:
+t1402: # lwu 4
+    li   a0, 1402
+    lwu   a3, 4(s0)
+    li   t6, 0x81828384
+    beq  a3, t6, t1402_ok
+    j    fail
+t1402_ok:
+t1403: # ld 0
+    li   a0, 1403
+    ld   a3, 0(s0)
+    li   t6, 0x8182838485868788
+    beq  a3, t6, t1403_ok
+    j    fail
+t1403_ok:
+t1404: # sb then ld
+    li   a0, 1404
     li   t0, 0x8182838485868788
     sd   t0, 8(s0)
     li   t1, 0x102030405061619
     sb   t1, 8(s0)
     ld   a3, 8(s0)
     li   t6, 0x8182838485868719
-    beq  a3, t6, t840_ok
+    beq  a3, t6, t1404_ok
     j    fail
-t840_ok:
-t841: # sh then ld
-    li   a0, 841
+t1404_ok:
+t1405: # sh then ld
+    li   a0, 1405
     li   t0, 0x8182838485868788
     sd   t0, 8(s0)
     li   t1, 0x10203040506252a
     sh   t1, 8(s0)
     ld   a3, 8(s0)
     li   t6, 0x818283848586252a
-    beq  a3, t6, t841_ok
+    beq  a3, t6, t1405_ok
     j    fail
-t841_ok:
-t842: # sw then ld
-    li   a0, 842
+t1405_ok:
+t1406: # sw then ld
+    li   a0, 1406
     li   t0, 0x8182838485868788
     sd   t0, 8(s0)
     li   t1, 0x10203040506434c
     sw   t1, 8(s0)
     ld   a3, 8(s0)
     li   t6, 0x818283840506434c
-    beq  a3, t6, t842_ok
+    beq  a3, t6, t1406_ok
     j    fail
-t842_ok:
-t843: # sd then ld
-    li   a0, 843
+t1406_ok:
+t1407: # sd then ld
+    li   a0, 1407
     li   t0, 0x8182838485868788
     sd   t0, 8(s0)
     li   t1, 0x102030405068f80
     sd   t1, 8(s0)
     ld   a3, 8(s0)
     li   t6, 0x102030405068f80
-    beq  a3, t6, t843_ok
+    beq  a3, t6, t1407_ok
     j    fail
-t843_ok:
-t844: # negative offset
-    li   a0, 844
+t1407_ok:
+t1408: # negative offset
+    li   a0, 1408
     addi s1, s0, 16
     ld   a3, -16(s1)
     li   t6, 0x8182838485868788
-    beq  a3, t6, t844_ok
+    beq  a3, t6, t1408_ok
     j    fail
-t844_ok:
-t845: # fence is a no-op
-    li   a0, 845
+t1408_ok:
+t1409: # fence is a no-op
+    li   a0, 1409
     li   a3, 9
     fence
     addi a3, a3, 1
     li   t6, 0xa
-    beq  a3, t6, t845_ok
+    beq  a3, t6, t1409_ok
     j    fail
-t845_ok:
-t846: # csrrw returns old value
-    li   a0, 846
+t1409_ok:
+t1410: # csrrw returns old value
+    li   a0, 1410
     li   t0, 0x5a
     csrw status, t0
     li   t1, 0x33
     csrrw a3, status, t1
     li   t6, 0x5a
-    beq  a3, t6, t846_ok
+    beq  a3, t6, t1410_ok
     j    fail
-t846_ok:
-t847: # csrrw wrote new value
-    li   a0, 847
+t1410_ok:
+t1411: # csrrw wrote new value
+    li   a0, 1411
     csrr a3, status
     li   t6, 0x33
-    beq  a3, t6, t847_ok
+    beq  a3, t6, t1411_ok
     j    fail
-t847_ok:
-t848: # csrrs sets bits
-    li   a0, 848
+t1411_ok:
+t1412: # csrrs sets bits
+    li   a0, 1412
     li   t0, 0x0c
     csrrs a3, status, t0
     csrr a3, status
     li   t6, 0x3f
-    beq  a3, t6, t848_ok
+    beq  a3, t6, t1412_ok
     j    fail
-t848_ok:
-t849: # csrrc clears bits
-    li   a0, 849
+t1412_ok:
+t1413: # csrrc clears bits
+    li   a0, 1413
     li   t0, 0x0f
     csrrc a3, status, t0
     csrr a3, status
     li   t6, 0x30
-    beq  a3, t6, t849_ok
+    beq  a3, t6, t1413_ok
     j    fail
-t849_ok:
-t850: # csrrs with x0 does not write
-    li   a0, 850
+t1413_ok:
+t1414: # csrrs with x0 does not write
+    li   a0, 1414
     csrrs a3, status, x0
     csrr a4, status
     sub  a3, a3, a4
     li   t6, 0x0
-    beq  a3, t6, t850_ok
+    beq  a3, t6, t1414_ok
     j    fail
-t850_ok:
-t851: # csrrwi
-    li   a0, 851
+t1414_ok:
+t1415: # csrrwi
+    li   a0, 1415
     csrrwi a3, status, 17
     csrr a3, status
     li   t6, 0x11
-    beq  a3, t6, t851_ok
+    beq  a3, t6, t1415_ok
     j    fail
-t851_ok:
-t852: # csrrsi
-    li   a0, 852
+t1415_ok:
+t1416: # csrrsi
+    li   a0, 1416
     csrrsi a3, status, 8
     csrr a3, status
     li   t6, 0x19
-    beq  a3, t6, t852_ok
+    beq  a3, t6, t1416_ok
     j    fail
-t852_ok:
-t853: # csrrci
-    li   a0, 853
+t1416_ok:
+t1417: # csrrci
+    li   a0, 1417
     csrrci a3, status, 1
     csrr a3, status
     li   t6, 0x18
-    beq  a3, t6, t853_ok
+    beq  a3, t6, t1417_ok
     j    fail
-t853_ok:
-t854: # csr read then forward to next instruction
-    li   a0, 854
+t1417_ok:
+t1418: # csr read then forward to next instruction
+    li   a0, 1418
     csrwi status, 5
     csrr t0, status
     addi a3, t0, 1
     li   t6, 0x6
-    beq  a3, t6, t854_ok
+    beq  a3, t6, t1418_ok
     j    fail
-t854_ok:
-t855: # hartid reads 0
-    li   a0, 855
+t1418_ok:
+t1419: # hartid reads 0
+    li   a0, 1419
     csrr a3, hartid
     li   t6, 0x0
-    beq  a3, t6, t855_ok
+    beq  a3, t6, t1419_ok
     j    fail
-t855_ok:
-t856: # mhartid reads 0
-    li   a0, 856
+t1419_ok:
+t1420: # mhartid reads 0
+    li   a0, 1420
     csrr a3, mhartid
     li   t6, 0x0
-    beq  a3, t6, t856_ok
+    beq  a3, t6, t1420_ok
     j    fail
-t856_ok:
-t857: # ecall traps to mtvec and mret returns (the handler counts in a5)
-    li   a0, 857
+t1420_ok:
+t1421: # ecall traps to mtvec and mret returns (the handler counts in a5)
+    li   a0, 1421
     la   t0, trap_handler
     csrw mtvec, t0
     li   a5, 0
@@ -7622,59 +12413,61 @@ t857: # ecall traps to mtvec and mret returns (the handler counts in a5)
     ecall
     mv   a3, a5
     li   t6, 0x2
-    beq  a3, t6, t857_ok
+    beq  a3, t6, t1421_ok
     j    fail
-t857_ok:
-t858: # mcause = 11 after ecall
-    li   a0, 858
+t1421_ok:
+t1422: # mcause = 11 after ecall
+    li   a0, 1422
     ecall
     csrr a3, mcause
     li   t6, 0xb
-    beq  a3, t6, t858_ok
+    beq  a3, t6, t1422_ok
     j    fail
-t858_ok:
-t859: # mcause = 3 after ebreak
-    li   a0, 859
+t1422_ok:
+t1423: # mcause = 3 after ebreak
+    li   a0, 1423
     ebreak
     csrr a3, mcause
     li   t6, 0x3
-    beq  a3, t6, t859_ok
+    beq  a3, t6, t1423_ok
     j    fail
-t859_ok:
-t860: # mepc = address of the ecall (the handler added 4)
-    li   a0, 860
+t1423_ok:
+t1424: # mepc = address of the ecall (the handler added 4)
+    li   a0, 1424
 trap_site:
     ecall
     csrr a3, mepc
     la   t1, trap_site
     sub  a3, a3, t1
     li   t6, 0x4
-    beq  a3, t6, t860_ok
+    beq  a3, t6, t1424_ok
     j    fail
-t860_ok:
-t861: # mret restores MIE from MPIE
-    li   a0, 861
+t1424_ok:
+t1425: # mret restores MIE from MPIE
+    li   a0, 1425
     csrsi mstatus, 8
     ecall
     csrr a3, mstatus
     andi a3, a3, 0x88
     li   t6, 0x88
-    beq  a3, t6, t861_ok
+    beq  a3, t6, t1425_ok
     j    fail
-t861_ok:
-t862: # cycle counter moves forward
-    li   a0, 862
+t1425_ok:
+t1426: # cycle counter moves forward
+    li   a0, 1426
     rdcycle t0
     nop
     nop
     rdcycle t1
     sltu a3, t0, t1
     li   t6, 0x1
-    beq  a3, t6, t862_ok
+    beq  a3, t6, t1426_ok
     j    fail
-t862_ok:
-t863: # instret counts 3 retired instructions between reads (3 nops first so no earlier bubble is still draining)
-    li   a0, 863
+t1426_ok:
+t1427: # instret counts 3 retired instructions between reads (second pass: warm instruction cache; 3 nops first so no earlier bubble is still draining)
+    li   a0, 1427
+    li   t2, 2
+t1427_pass:
     nop
     nop
     nop
@@ -7682,21 +12475,23 @@ t863: # instret counts 3 retired instructions between reads (3 nops first so no 
     nop
     nop
     rdinstret t1
+    addi t2, t2, -1
+    bnez t2, t1427_pass
     sub  a3, t1, t0
     li   t6, 0x3
-    beq  a3, t6, t863_ok
+    beq  a3, t6, t1427_ok
     j    fail
-t863_ok:
-t864: # cycle counter is read-only
-    li   a0, 864
+t1427_ok:
+t1428: # cycle counter is read-only
+    li   a0, 1428
     rdcycle t0
     csrw cycle, zero
     rdcycle t1
     sltu a3, t0, t1
     li   t6, 0x1
-    beq  a3, t6, t864_ok
+    beq  a3, t6, t1428_ok
     j    fail
-t864_ok:
+t1428_ok:
 pass:
     li   a0, 0
     halt               # tohost = 1: PASS
