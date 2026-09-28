@@ -16,7 +16,7 @@ introduction read the [learning path](learn/README.md) first.
 | branch prediction | tournament: `TournamentChooser` (128-entry per-branch history table + 128-entry chooser) with `GSharePredictor` (2^`GSHARE_HISTORY_BITS` counters, default 6 bits = 64), speculative global history with checkpoint repair; a 16-entry `BranchTargetBuffer` in FETCH1; an 8-entry `ReturnAddressStack` in FETCH2 |
 | branch penalties | taken branch or JAL found in the BTB: 0 bubbles; otherwise a FETCH2 redirect: 1; predicted return: 1; wrong guess or unpredicted JALR: 3 (flush) |
 | multiply / divide | `IterativeMultiplyDivideUnit`: 64 x 16-bit Wallace-tree steps into a carry-save accumulator ([`Carry_Save_Multiplier.sv`](../src/Carry_Save_Multiplier.sv)), a leading-zero-counter skip for divides, a registered result: multiply 8 cycles, divide 5 + significant bits of the dividend (baseline build: single cycle) |
-| clock (logic only) | sky130 130 nm: 3.77 ns, about 265 MHz; ASAP7 7 nm: 0.52 ns, about 1.92 GHz; see [PERFORMANCE.md](PERFORMANCE.md) |
+| clock (logic only) | sky130 130 nm: 4.28 ns, about 234 MHz; ASAP7 7 nm: 0.52 ns, about 1.91 GHz; see [PERFORMANCE.md](PERFORMANCE.md) |
 | builds | performance (default) and baseline (`-DBASELINE`, the plain pipeline); `make test` checks both |
 | memory | performance build: `InstructionCache` (4 KiB, 2-way set-associative with LRU replacement, 32-byte lines, next-line prefetch) and `DataCache` (4 KiB, 2-way LRU, next-line prefetch, write-through, no store allocation) in front of a 64 KiB main memory with a 10-cycle line refill; baseline: single-cycle 64 KiB `ScratchpadMemory` |
 | reset PC | `0x2000` (`PC_RESET` in [`src/const_pkg.sv`](../src/const_pkg.sv)) |
@@ -34,13 +34,15 @@ introduction read the [learning path](learn/README.md) first.
 | [`const_pkg.sv`](../src/const_pkg.sv) | `const_pkg` | | reset PC, memory size, MMIO and CSR addresses |
 | [`GShare_Branch_Predictor.sv`](../src/GShare_Branch_Predictor.sv) | `GSharePredictor` | FETCH1 (read), FETCH2 (history), EXECUTE (train/repair) | branch direction prediction |
 | [`Control_Unit.sv`](../src/Control_Unit.sv) | `ControlUnit` | DECODE | all control signals from the instruction bits |
-| [`ALUdec.sv`](../src/ALUdec.sv) | `ALUdec` | DECODE | opcode + funct3 + funct7 bits to `alu_op_t` |
+| [`ALUdec.sv`](../src/ALUdec.sv) | `ALUdec` | DECODE | opcode + funct3 + funct7 / funct12 to `alu_op_t`, plus the Zba/Zbb operand preparation (shift, zero-extend, invert) |
 | [`Immediate_Generator.sv`](../src/Immediate_Generator.sv) | `ImmediateGenerator` | DECODE | builds and sign-extends immediates to 64 bits |
 | [`Register_File.sv`](../src/Register_File.sv) | `RegisterFile` | DECODE (read), WRITEBACK (write) | x1..x31, 2 asynchronous reads, 1 synchronous write |
-| [`ALU.sv`](../src/ALU.sv) | `ALU` | EXECUTE | shared 65-bit adder, logic, shifts, 32-bit W variants |
+| [`ALU.sv`](../src/ALU.sv) | `ALU` | EXECUTE | shared 65-bit adder, logic, shifts and rotates, 32-bit W variants, Zbb counters and byte operations; a fast output (forwarded) and a full one (2-cycle results) |
 | [`Multiply_Divide_Unit.sv`](../src/Multiply_Divide_Unit.sv) | `MultiplyDivideUnit` | EXECUTE | M extension, single cycle (baseline build) |
 | [`Iterative_Multiply_Divide_Unit.sv`](../src/Iterative_Multiply_Divide_Unit.sv) | `IterativeMultiplyDivideUnit` | EXECUTE | M extension, one short step per cycle (performance build) |
 | [`Carry_Save_Multiplier.sv`](../src/Carry_Save_Multiplier.sv) | `CarrySaveMultiplyStep` | EXECUTE | one 64 x 16-bit multiply step: a Wallace tree of full adders, no carry propagation |
+| [`Leading_Zero_Counter.sv`](../src/Leading_Zero_Counter.sv) | `LeadingZeroCounter` | EXECUTE | 64-bit leading-zero count as a 6-level tree (clz, ctz, the divider's skip) |
+| [`Population_Count.sv`](../src/Population_Count.sv) | `PopulationCount` | EXECUTE | 64-bit count of 1 bits as a tree of small adders (cpop) |
 | [`Parallel_Prefix_Adder.sv`](../src/Parallel_Prefix_Adder.sv) | `ParallelPrefixAdder` | EXECUTE, FETCH2 | Kogge-Stone adder: carries in log2(n) levels |
 | [`Prefix_Negate.sv`](../src/Prefix_Negate.sv) | `PrefixNegate` | EXECUTE | -x without a carry chain |
 | [`Branch_Target_Buffer.sv`](../src/Branch_Target_Buffer.sv) | `BranchTargetBuffer` | FETCH1 (read), EXECUTE (write) | zero-bubble taken branches and jumps |
@@ -97,16 +99,33 @@ read at `[19:15]` and `[24:20]`. Each operand then passes the forwarding chain
 x0 > EXECUTE (non-load) > MEMORY > WRITEBACK > register file. The chosen values are what EXECUTE
 receives, so EXECUTE has no forwarding muxes on its inputs.
 
-`LOAD_STALL = DECODE_VALID && EXECUTE_VALID && EXECUTE_MEMORY_READ_ENABLE && rd != 0 && (rd == rs1 field || rd == rs2 field)`.
+`LOAD_STALL = DECODE_VALID && EXECUTE_VALID && (EXECUTE_MEMORY_READ_ENABLE || EXECUTE_LATE_RESULT) && rd != 0 && (rd == rs1 || rd == rs2)`,
+where the performance build only counts a register the instruction really reads (`USES_REGISTER1/2`).
+
+The ALU operands are chosen and prepared here too (`DECODE_ALU_INPUT_A/B`): rs1 or the PC, rs2 or the
+immediate, and for Zba/Zbb rs1 shifted left by 1 to 3, the low 32 bits of rs1 zero-extended, or rs2
+inverted. Every source except EXECUTE is ready early in the cycle and is prepared then; the value
+forwarded from EXECUTE (the ALU output of this same cycle) takes a separate short path and a final 2:1
+picks it. See the figure in the README ("Operands and the ALU").
 
 ### EXECUTE
+![operands and ALU](img/diagrams/operands_and_alu.svg)
+
 The ALU operands arrive straight from registers: DECODE already chose rs1 or the PC
 (`EXECUTE_ALU_INPUT_A`) and rs2 or the immediate (`EXECUTE_ALU_INPUT_B`), and decoded the adder's
 subtract control (`EXECUTE_ALU_SUBTRACT`), so nothing but the adder sits in front of the result
 (PERFORMANCE.md, second round). M instructions use the `IterativeMultiplyDivideUnit` (the
 `MultiplyDivideUnit` in the baseline build). The operand registers only hold during a cache miss or
 a multiply/divide; a flush does not touch them, because every side effect is gated by
-`EXECUTE_VALID`. `BranchComparator` evaluates the condition and `BranchControl` decides:
+`EXECUTE_VALID`.
+
+The ALU computes every operation in parallel (adder, logic, shifter/rotator, two leading-zero counter
+trees, byte operations, population count) and has two outputs: `ALUOutFast`, forwarded to DECODE in the
+same cycle, where the adder enters the multiplexer last; and `ALUOut` for the MEMORY stage, which adds
+the two results too deep for that loop (`cpop`/`cpopw` and `min`/`minu`/`max`/`maxu`,
+`EXECUTE_LATE_RESULT`). Those are forwarded from MEMORY instead, exactly like a load.
+
+![multiply/divide unit](img/diagrams/multiply_divide.svg) `BranchComparator` evaluates the condition and `BranchControl` decides:
 
 | instruction | `FLUSH` | `ADJUST_NEXT_PC` | predictor |
 |---|---|---|---|
@@ -128,6 +147,8 @@ and extends. `WriteControl` selects the result by `WRITEBACK_SELECT`; that value
 `MEMORY_FORWARD_DATA` (forwarded to DECODE) and becomes `WRITEBACK_DATA` at the edge.
 
 ### WRITEBACK
+![performance counters](img/diagrams/performance_counters.svg)
+
 The register file is written at the clock edge and the `instret` counter increments. If this
 instruction wrote a nonzero `tohost`, `HALT_NOW` freezes everything else and the testbench prints the
 result: `tohost = 1` is PASS, `(n << 1) | 1` is FAIL in test n (the riscv-tests convention).
@@ -149,13 +170,14 @@ result: `tohost = 1` is PASS, `(n << 1) | 1` is FAIL in test n (the riscv-tests 
 | CSR `0x340` `mscratch` | scratch register for the handler |
 | CSR `0x341` `mepc` | address of the instruction that trapped |
 | CSR `0x342` `mcause` | 3 = breakpoint, 11 = environment call |
+| CSR `0xC03`..`0xC08` `hpmcounter3..8` | performance counters (read-only): load-stall cycles (L), flushes (F), FETCH2 redirects (R), multiply/divide busy cycles (K), instruction-cache miss cycles (I), data-cache miss cycles (D) |
 
 ## Timing rules (exact)
 
 | event | bubbles |
 |---|---:|
 | pipeline fill at reset | 5 |
-| `LOAD_STALL` | 1 |
+| `LOAD_STALL` (a load, or a 2-cycle Zbb result: `cpop`, `cpopw`, `min`, `minu`, `max`, `maxu`, needed right away) | 1 |
 | FETCH2 redirect (predicted-taken branch or JAL not in the BTB, predicted return) | 1 (0 if a flush squashes the redirecting instruction) |
 | taken branch or JAL found in the BTB | 0 |
 | flush (wrong branch guess, JALR not predicted or predicted wrong, `ecall`, `ebreak`, `mret`) | 3 |

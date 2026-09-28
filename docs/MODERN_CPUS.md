@@ -15,6 +15,10 @@ what could come next. Numbers in brackets refer to [REFERENCES.md](REFERENCES.md
 | **TAGE** | tagged tables with geometric history lengths; the longest match wins [7][36] | AMD Zen 2 onward, Intel, ARM [35][37] | model only (arena) |
 | **Indirect branch predictor** | predict targets of `jalr` that are not returns [38] | Intel, AMD (indirect target array) | no: such a `jalr` flushes |
 | **Traps** | `ecall`, exceptions, `mret`: how an OS takes control [31] | every CPU | machine mode |
+| **Bit-manipulation instructions** | count zeros and ones, rotate, byte-swap, min/max, scaled-index address adds in one instruction [49] | x86 `LZCNT`/`POPCNT`/`BSWAP`, ARM `CLZ`/`REV`, RISC-V Zba + Zbb (required by the RVA22/RVA23 profiles [50]) | **Zba + Zbb** (32 instructions) |
+| **Hardware performance counters** | count stalls, misses and mispredictions so software can see where cycles go [51] | every CPU (Intel "top-down" analysis, Linux `perf`) | 6 counters: exactly the terms of the cycle equation |
+| **Multi-cycle functional units with forwarding** | long operations take 2+ cycles; the hazard logic waits only when a result is needed at once | every pipelined CPU | `cpop`, `min`/`max` (2 cycles), multiply 8, divide 5 + bits |
+| **Wallace / Dadda multiplier trees** | add partial products in columns with full adders; one carry-propagate add at the end [44][45] | every hardware multiplier | 64 x 16 per cycle, carry-save accumulator |
 | **Macro-op fusion** | decode two adjacent instructions as one (e.g. compare + branch) [39] | Intel Core, AMD Zen | idea: `lui` + `addi`, `auipc` + `jalr` |
 | **Micro-op cache / loop buffer** | keep already-decoded instructions to skip decoding [39] | Intel (since Sandy Bridge), AMD Zen | no |
 | **Superscalar** | fetch, decode and execute several instructions per cycle | all desktop cores (4-8 wide) | no: 1 per cycle |

@@ -195,3 +195,14 @@ leading-zero counter tree in `src/Iterative_Multiply_Divide_Unit.sv`.
 **[48]** M. S. Hrishikesh, N. P. Jouppi, K. I. Farkas, D. Burger, S. W. Keckler, P. Shivakumar, "The
 Optimal Logic Depth per Pipeline Stage is 6 to 8 FO4 Inverter Delays," *ISCA*, 2002. Why fast clocks
 need deep pipelines.
+
+**[49]** RISC-V International, *RISC-V Bit-Manipulation ISA-extensions*, version 1.0.0, 2021,
+https://github.com/riscv/riscv-bitmanip/releases . The Zba, Zbb, Zbc and Zbs extensions: every encoding
+used in `model/isa.js`.
+
+**[50]** RISC-V International, *RVA23 Profile*, 2024, https://github.com/riscv/riscv-profiles . The set of
+extensions an application-class RISC-V processor is expected to have (includes Zba and Zbb).
+
+**[51]** A. Yasin, "A Top-Down Method for Performance Analysis and Counters Architecture," *IEEE
+International Symposium on Performance Analysis of Systems and Software (ISPASS)*, 2014. How Intel
+cores break cycles down into categories from hardware counters (the idea behind hpmcounter3..8 here).

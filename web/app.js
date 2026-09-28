@@ -205,6 +205,7 @@ function renderStats() {
     ['cycles', s.cycles, true], ['instructions retired', s.retired], ['CPI', s.retired ? (s.cycles / s.retired).toFixed(3) : '-', true],
     ['load stalls (false)', `${s.loadStalls} (${s.falseLoadStalls})`], ['flushes: wrong guess / JALR', `${s.mispredicts} / ${s.jalrFlushes}`],
     ['FETCH2 redirects / BTB hits', `${s.redirects} / ${s.btbRedirects}`], ['multiply/divide busy cycles', s.multiplyDivideBusy], ['cache misses: instruction / data', `${s.icacheMisses} / ${s.dcacheMisses}`], ['branch accuracy', s.branches ? (100 * (1 - s.mispredicts / s.branches)).toFixed(1) + '%' : '-'], ['operands forwarded', s.forwards],
+    ['hardware counters hpm3..8 (L F R K I D)', core.hpm ? ['stall', 'flush', 'redirect', 'busy', 'imiss', 'dmiss'].map(k => String(core.hpm[k])).join(' · ') : '-'],
   ];
   if (core.halted) {
     const pred = s.retired + 5 + s.loadStalls + 3 * s.flushes + b.redirect + b.muldiv + b.imiss + b.dmiss;

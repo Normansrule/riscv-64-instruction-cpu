@@ -24,7 +24,7 @@ formats sits in the same instruction bit (e.g. imm[10:5] is always bits 30:25 an
 always bit 31). That makes the immediate generator in `src/Immediate_Generator.sv` a set of simple wires,
 not a big multiplexer. Branch/jump offsets are always even, so bit 0 is not stored at all.
 
-## All 72 instructions
+## All 104 instructions
 
 Letters in the pattern are the variable fields: `d` rd, `s` rs1, `t` rs2, `i` immediate,
 `h` shift amount, `c` CSR address, `z` CSR immediate.
@@ -190,4 +190,46 @@ Letters in the pattern are the variable fields: `d` rd, `s` rs1, `t` rs2, `i` im
 | [`divuw`](RV64M/divuw.md) | R | `0000001 ttttt sssss 101 ddddd 0111011` | `rd = sext(rs1[31:0] /u rs2[31:0])` |
 | [`remw`](RV64M/remw.md) | R | `0000001 ttttt sssss 110 ddddd 0111011` | `rd = sext(rs1[31:0] %s rs2[31:0])` |
 | [`remuw`](RV64M/remuw.md) | R | `0000001 ttttt sssss 111 ddddd 0111011` | `rd = sext(rs1[31:0] %u rs2[31:0])` |
+
+### Address generation
+
+| instruction | format | 32-bit pattern (bit 31 … bit 0) | meaning |
+|---|---|---|---|
+| [`sh1add`](Zba/sh1add.md) | R | `0010000 ttttt sssss 010 ddddd 0110011` | `rd = rs2 + (rs1 << 1)` |
+| [`sh2add`](Zba/sh2add.md) | R | `0010000 ttttt sssss 100 ddddd 0110011` | `rd = rs2 + (rs1 << 2)` |
+| [`sh3add`](Zba/sh3add.md) | R | `0010000 ttttt sssss 110 ddddd 0110011` | `rd = rs2 + (rs1 << 3)` |
+| [`add.uw`](Zba/add.uw.md) | R | `0000100 ttttt sssss 000 ddddd 0111011` | `rd = rs2 + zext(rs1[31:0])` |
+| [`sh1add.uw`](Zba/sh1add.uw.md) | R | `0010000 ttttt sssss 010 ddddd 0111011` | `rd = rs2 + (zext(rs1[31:0]) << 1)` |
+| [`sh2add.uw`](Zba/sh2add.uw.md) | R | `0010000 ttttt sssss 100 ddddd 0111011` | `rd = rs2 + (zext(rs1[31:0]) << 2)` |
+| [`sh3add.uw`](Zba/sh3add.uw.md) | R | `0010000 ttttt sssss 110 ddddd 0111011` | `rd = rs2 + (zext(rs1[31:0]) << 3)` |
+| [`slli.uw`](Zba/slli.uw.md) | I-sh64 | `000010h hhhhh sssss 001 ddddd 0011011` | `rd = zext(rs1[31:0]) << shamt[5:0]` |
+
+### Bit manipulation
+
+| instruction | format | 32-bit pattern (bit 31 … bit 0) | meaning |
+|---|---|---|---|
+| [`andn`](Zbb/andn.md) | R | `0100000 ttttt sssss 111 ddddd 0110011` | `rd = rs1 & ~rs2` |
+| [`orn`](Zbb/orn.md) | R | `0100000 ttttt sssss 110 ddddd 0110011` | `rd = rs1 \| ~rs2` |
+| [`xnor`](Zbb/xnor.md) | R | `0100000 ttttt sssss 100 ddddd 0110011` | `rd = ~(rs1 ^ rs2)` |
+| [`min`](Zbb/min.md) | R | `0000101 ttttt sssss 100 ddddd 0110011` | `rd = (rs1 <s rs2) ? rs1 : rs2` |
+| [`minu`](Zbb/minu.md) | R | `0000101 ttttt sssss 101 ddddd 0110011` | `rd = (rs1 <u rs2) ? rs1 : rs2` |
+| [`max`](Zbb/max.md) | R | `0000101 ttttt sssss 110 ddddd 0110011` | `rd = (rs1 <s rs2) ? rs2 : rs1` |
+| [`maxu`](Zbb/maxu.md) | R | `0000101 ttttt sssss 111 ddddd 0110011` | `rd = (rs1 <u rs2) ? rs2 : rs1` |
+| [`rol`](Zbb/rol.md) | R | `0110000 ttttt sssss 001 ddddd 0110011` | `rd = (rs1 << rs2[5:0]) \| (rs1 >>u (64 - rs2[5:0]))` |
+| [`ror`](Zbb/ror.md) | R | `0110000 ttttt sssss 101 ddddd 0110011` | `rd = (rs1 >>u rs2[5:0]) \| (rs1 << (64 - rs2[5:0]))` |
+| [`rori`](Zbb/rori.md) | I-sh64 | `011000h hhhhh sssss 101 ddddd 0010011` | `rd = (rs1 >>u shamt) \| (rs1 << (64 - shamt))` |
+| [`rolw`](Zbb/rolw.md) | R | `0110000 ttttt sssss 001 ddddd 0111011` | `rd = sext(rotate_left(rs1[31:0], rs2[4:0]))` |
+| [`rorw`](Zbb/rorw.md) | R | `0110000 ttttt sssss 101 ddddd 0111011` | `rd = sext(rotate_right(rs1[31:0], rs2[4:0]))` |
+| [`roriw`](Zbb/roriw.md) | I-sh32 | `0110000 hhhhh sssss 101 ddddd 0011011` | `rd = sext(rotate_right(rs1[31:0], shamt[4:0]))` |
+| [`clz`](Zbb/clz.md) | I-unary | `0110000 00000 sssss 001 ddddd 0010011` | `rd = number of 0 bits above the highest 1 (64 if rs1 = 0)` |
+| [`ctz`](Zbb/ctz.md) | I-unary | `0110000 00001 sssss 001 ddddd 0010011` | `rd = number of 0 bits below the lowest 1 (64 if rs1 = 0)` |
+| [`cpop`](Zbb/cpop.md) | I-unary | `0110000 00010 sssss 001 ddddd 0010011` | `rd = number of 1 bits in rs1` |
+| [`clzw`](Zbb/clzw.md) | I-unary | `0110000 00000 sssss 001 ddddd 0011011` | `rd = leading zeros of rs1[31:0] (32 if zero)` |
+| [`ctzw`](Zbb/ctzw.md) | I-unary | `0110000 00001 sssss 001 ddddd 0011011` | `rd = trailing zeros of rs1[31:0] (32 if zero)` |
+| [`cpopw`](Zbb/cpopw.md) | I-unary | `0110000 00010 sssss 001 ddddd 0011011` | `rd = number of 1 bits in rs1[31:0]` |
+| [`sext.b`](Zbb/sext.b.md) | I-unary | `0110000 00100 sssss 001 ddddd 0010011` | `rd = sext(rs1[7:0])` |
+| [`sext.h`](Zbb/sext.h.md) | I-unary | `0110000 00101 sssss 001 ddddd 0010011` | `rd = sext(rs1[15:0])` |
+| [`zext.h`](Zbb/zext.h.md) | I-unary | `0000100 00000 sssss 100 ddddd 0111011` | `rd = zext(rs1[15:0])` |
+| [`rev8`](Zbb/rev8.md) | I-unary | `0110101 11000 sssss 101 ddddd 0010011` | `rd = the 8 bytes of rs1 in reverse order (endianness swap)` |
+| [`orc.b`](Zbb/orc.b.md) | I-unary | `0010100 00111 sssss 101 ddddd 0010011` | `rd byte i = (rs1 byte i != 0) ? 0xFF : 0x00 (finds the 0 byte ending a string)` |
 

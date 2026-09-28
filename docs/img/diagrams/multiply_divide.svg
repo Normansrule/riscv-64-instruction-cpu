@@ -1,0 +1,162 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 990" width="1600" height="990">
+<defs><marker id="m-data" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2B3A31"/></marker><marker id="m-pred" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#00796B"/></marker><marker id="m-flush" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C2185B"/></marker><marker id="m-F1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2E86C1"/></marker><marker id="m-F2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#17A2B8"/></marker><marker id="m-D" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6A5ACD"/></marker><marker id="m-E" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#E08E0B"/></marker><marker id="m-M" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#27AE60"/></marker><marker id="m-tag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C9982E"/></marker><marker id="m-idx" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#17A2B8"/></marker><marker id="m-off" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6A5ACD"/></marker><marker id="m-hit" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1E8449"/></marker><marker id="m-miss" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C0392B"/></marker><marker id="m-sub" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4A5A50"/></marker></defs>
+<rect width="100%" height="100%" rx="12" fill="#FBFCF8" stroke="#D5DBD0"/>
+<text x="24" y="34" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="20" font-weight="700" fill="#17251D" text-anchor="start">The multiply/divide unit: short steps, no carry chains, a registered result</text>
+<text x="24" y="56" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="400" fill="#4A5A50" text-anchor="start">src/Iterative_Multiply_Divide_Unit.sv + src/Carry_Save_Multiplier.sv + src/Leading_Zero_Counter.sv. EXECUTE holds the M instruction (MULTIPLY_DIVIDE_STALL) until DONE.</text>
+<circle cx="90" cy="190" r="58" fill="#4A5A50" fill-opacity="0.12" stroke="#4A5A50" stroke-width="2.4"/>
+<text x="90" y="182" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="15" font-weight="800" fill="#4A5A50" text-anchor="middle">IDLE</text>
+<text x="90" y="202" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">capture |A|, |B|</text>
+<text x="90" y="216" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">(signs: DECODE)</text>
+<path d="M150,190 L268,190" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<circle cx="330" cy="190" r="58" fill="#2E86C1" fill-opacity="0.12" stroke="#2E86C1" stroke-width="2.4"/>
+<text x="330" y="182" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="15" font-weight="800" fill="#2E86C1" text-anchor="middle">PREPARE</text>
+<text x="330" y="202" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">count leading zeros</text>
+<text x="330" y="216" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">load step registers</text>
+<path d="M390,190 L508,190" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<circle cx="570" cy="190" r="58" fill="#6A5ACD" fill-opacity="0.12" stroke="#6A5ACD" stroke-width="2.4"/>
+<text x="570" y="182" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="15" font-weight="800" fill="#6A5ACD" text-anchor="middle">ALIGN</text>
+<text x="570" y="202" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">divide only:</text>
+<text x="570" y="216" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">dividend &lt;&lt; zeros</text>
+<path d="M630,190 L768,190" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<circle cx="830" cy="190" r="58" fill="#E08E0B" fill-opacity="0.12" stroke="#E08E0B" stroke-width="2.4"/>
+<text x="830" y="182" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="15" font-weight="800" fill="#E08E0B" text-anchor="middle">BUSY</text>
+<text x="830" y="202" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">multiply: 4 steps</text>
+<text x="830" y="216" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">divide: 1 bit / step</text>
+<path d="M890,190 L1028,190" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<circle cx="1090" cy="190" r="58" fill="#27AE60" fill-opacity="0.12" stroke="#27AE60" stroke-width="2.4"/>
+<text x="1090" y="182" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="15" font-weight="800" fill="#27AE60" text-anchor="middle">SIGN</text>
+<text x="1090" y="202" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">sum carry-save pair,</text>
+<text x="1090" y="216" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">negate, pick result</text>
+<path d="M1150,190 L1288,190" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<circle cx="1350" cy="190" r="58" fill="#C0392B" fill-opacity="0.12" stroke="#C0392B" stroke-width="2.4"/>
+<text x="1350" y="182" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="15" font-weight="800" fill="#C0392B" text-anchor="middle">DONE</text>
+<text x="1350" y="202" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">READY = 1</text>
+<text x="1350" y="216" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">registered result</text>
+<path d="M800,138 C760,70 900,70 860,138" fill="none" stroke="#E08E0B" stroke-width="2" marker-end="url(#m-E)"/>
+<text x="830" y="86" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#E08E0B" text-anchor="middle">repeat N times</text>
+<path d="M370,234 C400,278 760,278 790,234" fill="none" stroke="#2E86C1" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#m-F1)"/>
+<text x="580" y="254" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#2E86C1" text-anchor="middle">multiply skips ALIGN</text>
+<path d="M1350,248 C1300,308 140,308 90,248" fill="none" stroke="#4A5A50" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#m-sub)"/>
+<text x="720" y="314" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="middle">the instruction leaves EXECUTE; the unit waits for the next one</text>
+<rect x="1430" y="160" width="150" height="19" rx="9.5" fill="#E08E0B" fill-opacity="0.13" stroke="#E08E0B"/>
+<text x="1505" y="173" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#E08E0B" text-anchor="middle">multiply: 8 cycles</text>
+<rect x="1430" y="192" width="150" height="19" rx="9.5" fill="#6A5ACD" fill-opacity="0.13" stroke="#6A5ACD"/>
+<text x="1505" y="205" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#6A5ACD" text-anchor="middle">divide: 5 + bits</text>
+<text x="1430" y="234" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#8A968E" text-anchor="start">bits = significant</text>
+<text x="1430" y="248" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#8A968E" text-anchor="start">bits of |A|</text>
+<rect x="20" y="340" width="760" height="360" rx="10" fill="#FFF" stroke="#D5DBD0" stroke-width="1.5"/>
+<text x="36" y="366" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#17251D" text-anchor="start">Multiply: 4 steps of 64 x 16 bits, the product kept as TWO numbers (carry-save)</text>
+<rect x="40" y="390" width="160" height="56" rx="6" fill="#FFFFFF" stroke="#2B3A31" stroke-width="1.5"/>
+<text x="120" y="409" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#17251D" text-anchor="middle">MULTIPLICAND</text>
+<text x="120" y="424" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">|A|, 64 bits</text>
+<rect x="360" y="392" width="380" height="30" rx="4" fill="#FFF" stroke="#E08E0B" stroke-width="1.6"/>
+<rect x="360" y="392" width="200" height="30" rx="4" fill="#E08E0B" stroke="none" stroke-width="1.5" fill-opacity="0.12"/>
+<text x="460" y="412" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="middle">high part [133:64], 70 bits</text>
+<text x="650" y="412" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="middle">low [63:0]</text>
+<text x="352" y="412" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="700" fill="#E08E0B" text-anchor="end">PRODUCT_SUM</text>
+<rect x="360" y="432" width="380" height="30" rx="4" fill="#FFF" stroke="#E08E0B" stroke-width="1.6"/>
+<rect x="360" y="432" width="200" height="30" rx="4" fill="#E08E0B" stroke="none" stroke-width="1.5" fill-opacity="0.12"/>
+<text x="460" y="452" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="middle">high part [133:64], 70 bits</text>
+<text x="650" y="452" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="middle">low [63:0]</text>
+<text x="352" y="452" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="700" fill="#E08E0B" text-anchor="end">PRODUCT_CARRY</text>
+<text x="380" y="490" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">low 16 bits of PRODUCT_SUM =</text>
+<text x="380" y="504" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">the next multiplier bits</text>
+<rect x="120" y="520" width="540" height="110" rx="10" fill="#FFF4E0" stroke="#E08E0B" stroke-width="2"/>
+<text x="390" y="544" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#E08E0B" text-anchor="middle">CarrySaveMultiplyStep (a Wallace tree)</text>
+<text x="390" y="564" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="middle">16 partial products (A &lt;&lt; j if bit j) + sum + carry = 18 numbers</text>
+<rect x="160" y="578" width="50" height="36" rx="6" fill="#E08E0B" stroke="none" stroke-width="1.5" fill-opacity="0.15"/>
+<text x="185" y="601" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#17251D" text-anchor="middle">18</text>
+<path d="M210,596 L230,596" fill="none" stroke="#E08E0B" stroke-width="1.4" stroke-linejoin="round" marker-end="url(#m-E)"/>
+<rect x="230" y="578" width="50" height="36" rx="6" fill="#E08E0B" stroke="none" stroke-width="1.5" fill-opacity="0.25"/>
+<text x="255" y="601" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#17251D" text-anchor="middle">12</text>
+<path d="M280,596 L300,596" fill="none" stroke="#E08E0B" stroke-width="1.4" stroke-linejoin="round" marker-end="url(#m-E)"/>
+<rect x="300" y="578" width="50" height="36" rx="6" fill="#E08E0B" stroke="none" stroke-width="1.5" fill-opacity="0.35"/>
+<text x="325" y="601" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#17251D" text-anchor="middle">8</text>
+<path d="M350,596 L370,596" fill="none" stroke="#E08E0B" stroke-width="1.4" stroke-linejoin="round" marker-end="url(#m-E)"/>
+<rect x="370" y="578" width="50" height="36" rx="6" fill="#E08E0B" stroke="none" stroke-width="1.5" fill-opacity="0.45000000000000007"/>
+<text x="395" y="601" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#17251D" text-anchor="middle">6</text>
+<path d="M420,596 L440,596" fill="none" stroke="#E08E0B" stroke-width="1.4" stroke-linejoin="round" marker-end="url(#m-E)"/>
+<rect x="440" y="578" width="50" height="36" rx="6" fill="#E08E0B" stroke="none" stroke-width="1.5" fill-opacity="0.55"/>
+<text x="465" y="601" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#17251D" text-anchor="middle">4</text>
+<path d="M490,596 L510,596" fill="none" stroke="#E08E0B" stroke-width="1.4" stroke-linejoin="round" marker-end="url(#m-E)"/>
+<rect x="510" y="578" width="50" height="36" rx="6" fill="#E08E0B" stroke="none" stroke-width="1.5" fill-opacity="0.65"/>
+<text x="535" y="601" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#17251D" text-anchor="middle">3</text>
+<path d="M560,596 L580,596" fill="none" stroke="#E08E0B" stroke-width="1.4" stroke-linejoin="round" marker-end="url(#m-E)"/>
+<rect x="580" y="578" width="50" height="36" rx="6" fill="#E08E0B" stroke="none" stroke-width="1.5" fill-opacity="0.7500000000000001"/>
+<text x="605" y="601" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#17251D" text-anchor="middle">2</text>
+<text x="390" y="626" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">6 levels of full adders, no carry propagation at all</text>
+<path d="M120,446 L120,520" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<path d="M560,462 L560,520" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<path d="M640,575 L700,575 L700,407 L742,407" fill="none" stroke="#E08E0B" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-E)"/>
+<text x="690" y="650" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#E08E0B" text-anchor="end">each step: {sum, carry} go back in, shifted right by 16</text>
+<path d="M660,630 L720,630 L720,447 L742,447" fill="none" stroke="#E08E0B" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-E)"/>
+<text x="40" y="674" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">Why carry-save: adding the two numbers every step would put an 80-bit carry chain in the loop. They are added only once, in SIGN.</text>
+<text x="40" y="688" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="600" fill="#4A5A50" text-anchor="start">Measured: 747 ps (16 rows of ripple adders) -&gt; 597 ps (tree) -&gt; off the critical path (carry-save + SIGN).</text>
+<rect x="800" y="340" width="780" height="360" rx="10" fill="#FFF" stroke="#D5DBD0" stroke-width="1.5"/>
+<text x="816" y="366" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#17251D" text-anchor="start">Divide: skip the leading zeros, then one quotient bit per cycle</text>
+<rect x="820" y="390" width="210" height="70" rx="6" fill="#FFFFFF" stroke="#2E86C1" stroke-width="1.5"/>
+<text x="925" y="409" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#17251D" text-anchor="middle">LeadingZeroCounter</text>
+<text x="925" y="424" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">tree: 64 -&gt; 32 -&gt; ... -&gt; 1 block</text>
+<text x="925" y="437.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">6 levels (Oklobdzija)</text>
+<rect x="1060" y="390" width="150" height="70" rx="6" fill="#FFFFFF" stroke="#6A5ACD" stroke-width="1.5"/>
+<text x="1135" y="409" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#17251D" text-anchor="middle">ALIGN cycle</text>
+<text x="1135" y="424" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">|A| &lt;&lt; zeros</text>
+<text x="1135" y="437.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">(registered count)</text>
+<rect x="1240" y="390" width="320" height="70" rx="6" fill="#FFFFFF" stroke="#2B3A31" stroke-width="1.5"/>
+<text x="1400" y="409" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#17251D" text-anchor="middle">steps = 64 - zeros</text>
+<text x="1400" y="424" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">1234 / 10 needs 11 steps, not 64</text>
+<text x="1400" y="437.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">(printing decimals divides small numbers)</text>
+<path d="M1030,425 L1060,425" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<path d="M1210,425 L1240,425" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<rect x="820" y="490" width="740" height="150" rx="10" fill="#F3F0FF" stroke="#6A5ACD" stroke-width="1.8"/>
+<text x="1190" y="514" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#6A5ACD" text-anchor="middle">One BUSY step (restoring division)</text>
+<rect x="840" y="530" width="200" height="60" rx="6" fill="#FFFFFF" stroke="#2B3A31" stroke-width="1.5"/>
+<text x="940" y="549" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#17251D" text-anchor="middle">bring down a bit</text>
+<text x="940" y="564" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">{remainder, next bit}</text>
+<rect x="1070" y="530" width="220" height="60" rx="6" fill="#FFFFFF" stroke="#2B3A31" stroke-width="1.5"/>
+<text x="1180" y="549" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#17251D" text-anchor="middle">subtract |B|</text>
+<text x="1180" y="564" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">65-bit Kogge-Stone</text>
+<rect x="1320" y="530" width="220" height="60" rx="6" fill="#FFFFFF" stroke="#2B3A31" stroke-width="1.5"/>
+<text x="1430" y="549" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#17251D" text-anchor="middle">no borrow?</text>
+<text x="1430" y="564" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">quotient bit = 1, keep it</text>
+<path d="M1040,560 L1070,560" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<path d="M1290,560 L1320,560" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<path d="M1430,590 L1430,622 L940,622 L940,590" fill="none" stroke="#6A5ACD" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#m-D)"/>
+<text x="1190" y="636" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#6A5ACD" text-anchor="middle">next cycle</text>
+<text x="816" y="670" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">Measured: the old "is the top half zero? then shift" chain was 599 ps; the counter tree + a separate ALIGN</text>
+<text x="816" y="688" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">cycle took it off the critical path (one extra cycle per divide).</text>
+<rect x="20" y="720" width="1560" height="250" rx="10" fill="#FFF" stroke="#D5DBD0" stroke-width="1.5"/>
+<text x="36" y="746" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#17251D" text-anchor="start">SIGN: one 128-bit adder sums the carry-save pair AND negates it, then the result is registered</text>
+<rect x="40" y="770" width="190" height="60" rx="6" fill="#FFFFFF" stroke="#2B3A31" stroke-width="1.5"/>
+<text x="135" y="789" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="700" fill="#17251D" text-anchor="middle">PRODUCT_SUM [127:0]</text>
+<rect x="40" y="844" width="190" height="60" rx="6" fill="#FFFFFF" stroke="#2B3A31" stroke-width="1.5"/>
+<text x="135" y="863" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="700" fill="#17251D" text-anchor="middle">PRODUCT_CARRY [127:0]</text>
+<rect x="260" y="806" width="190" height="64" rx="6" fill="#FFFFFF" stroke="#27AE60" stroke-width="1.5"/>
+<text x="355" y="825" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="700" fill="#17251D" text-anchor="middle">3:2 row of full adders</text>
+<text x="355" y="840" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">third input: NEG ? all ones : 0</text>
+<rect x="480" y="806" width="190" height="64" rx="6" fill="#FFFFFF" stroke="#27AE60" stroke-width="1.5"/>
+<text x="575" y="825" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="700" fill="#17251D" text-anchor="middle">128-bit Kogge-Stone</text>
+<text x="575" y="840" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">one carry-propagate add</text>
+<rect x="700" y="806" width="160" height="64" rx="6" fill="#FFFFFF" stroke="#27AE60" stroke-width="1.5"/>
+<text x="780" y="825" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="700" fill="#17251D" text-anchor="middle">XOR with NEG</text>
+<text x="780" y="840" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">-(x + y) = ~(x + y - 1)</text>
+<rect x="890" y="806" width="200" height="64" rx="6" fill="#FFFFFF" stroke="#2B3A31" stroke-width="1.5"/>
+<text x="990" y="825" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="700" fill="#17251D" text-anchor="middle">pick the result</text>
+<text x="990" y="840" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">low / high half, word, quotient,</text>
+<text x="990" y="853.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">remainder, x/0, MIN/-1 cases</text>
+<rect x="1120" y="806" width="200" height="64" rx="6" fill="#FFFFFF" stroke="#C0392B" stroke-width="1.5"/>
+<text x="1220" y="825" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="700" fill="#17251D" text-anchor="middle">RESULT_REGISTER</text>
+<text x="1220" y="840" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">read in DONE: nothing slow</text>
+<text x="1220" y="853.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">in front of forwarding</text>
+<path d="M230,800 L245,800 L245,830 L260,830" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<path d="M230,874 L245,874 L245,846 L260,846" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<path d="M450,838 L480,838" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<path d="M670,838 L700,838" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<path d="M860,838 L890,838" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<path d="M1090,838 L1120,838" fill="none" stroke="#2B3A31" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<text x="1350" y="810" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">Signs: the unit works on |A| and |B|;</text>
+<text x="1350" y="826" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">the product is negated when</text>
+<text x="1350" y="842" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">exactly one input was negative.</text>
+<text x="36" y="934" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4A5A50" text-anchor="start">Why this works: -(x + y) = ~(x + y) + 1 = ~(x + y + (-1)). Adding "all ones" as a third number costs one row of full adders, not a second adder.</text>
+<text x="36" y="954" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4A5A50" text-anchor="start">Quotient and remainder use a prefix negation (src/Prefix_Negate.sv) in the same cycle. The registered result costs one cycle per M instruction and removed the M unit from the critical path.</text>
+</svg>

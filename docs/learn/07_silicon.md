@@ -59,7 +59,7 @@ for 3.7x the area.
 ## Same RTL, smaller transistors
 
 `make timing` also maps the design onto **ASAP7**, a 7 nm-class research library: the same RTL whose
-longest path is 3.77 ns on sky130 (130 nm) has a 0.52 ns path there, about 1.92 GHz. The process node
+longest path is 4.28 ns on sky130 (130 nm) has a 0.52 ns path there, about 1.91 GHz. The process node
 is a property of the factory, not of the Verilog; see [PERFORMANCE.md](../PERFORMANCE.md). That is the everyday trade-off of hardware design.
 
 Next: [8. Using the CPU](08_using_the_cpu.md)

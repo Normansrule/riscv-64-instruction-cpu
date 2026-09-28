@@ -1,20 +1,87 @@
 {
   "rows": [
-    ["baseline, single-cycle M unit, 130 nm", 133000, "base", "64 subtract steps in one cycle"],
-    ["performance, SkyWater 130 nm", 3770, "measured", "limit: quotient negation in the SIGN cycle"],
-    ["performance, ASAP7 7 nm, before", 729, "measured", "limit: a second PC + 4 adder in FETCH2"],
-    ["performance, ASAP7 7 nm, now", 522, "best", "limit: ALU -> forwarding loop"],
-    ["target: 2.5 GHz", 400, "target", "needs 1.3x less logic per stage"],
-    ["target: 5 GHz", 200, "target", "needs 2.6x less logic per stage"]
+    [
+      "baseline, single-cycle M unit, 130 nm",
+      133000,
+      "base",
+      "64 subtract steps in one cycle"
+    ],
+    [
+      "performance, SkyWater 130 nm",
+      4276,
+      "measured",
+      "limit: the cpop tree (a 2-cycle Zbb result)"
+    ],
+    [
+      "performance, ASAP7 7 nm, first",
+      729,
+      "measured",
+      "limit: a second PC + 4 adder in FETCH2"
+    ],
+    [
+      "performance, ASAP7 7 nm, now",
+      523,
+      "best",
+      "limit: ALU -> forwarding loop (with Zba + Zbb)"
+    ],
+    [
+      "target: 2.5 GHz",
+      400,
+      "target",
+      "needs 1.3x less logic per stage"
+    ],
+    [
+      "target: 5 GHz",
+      200,
+      "target",
+      "needs 2.6x less logic per stage"
+    ]
   ],
   "steps": [
-    ["Prefix (Kogge-Stone) adders everywhere", "ALU, branch compare, FETCH2 target, PC incrementers: log2(64) = 6 levels instead of 64", "done"],
-    ["Iterative multiply/divide, split counters", "a 64-step divide spread over many cycles instead of one 133 ns cycle", "done"],
-    ["Wallace-tree multiply with carry-save accumulator", "18 numbers -> 2 in 6 full-adder levels; one adder at the end sums and negates", "done"],
-    ["Leading-zero counter tree, registered M result", "a tree instead of six chained tests; nothing slow in front of forwarding", "done"],
-    ["Decide early, keep FLUSH off register enables", "ALU/M controls and ALU operands chosen in DECODE; data registers ignore flushes", "done"],
-    ["Split EXECUTE in two (8 stages)", "add in EX1, select and forward from EX2: one more bubble per dependence and mispredict", "next"],
-    ["3-stage front end, pipelined caches", "BTB, direction, I-cache in separate stages like real cores", "next"],
-    ["15 to 20 stages + out-of-order core", "what 4 to 6 GHz desktop cores do: 12 to 20 gate delays per stage, custom circuits", "next"]
+    [
+      "Prefix (Kogge-Stone) adders everywhere",
+      "ALU, branch compare, FETCH2 target, PC incrementers: log2(64) = 6 levels instead of 64",
+      "done"
+    ],
+    [
+      "Iterative multiply/divide, split counters",
+      "a 64-step divide spread over many cycles instead of one 133 ns cycle",
+      "done"
+    ],
+    [
+      "Wallace-tree multiply with carry-save accumulator",
+      "18 numbers -> 2 in 6 full-adder levels; one adder at the end sums and negates",
+      "done"
+    ],
+    [
+      "Leading-zero counter tree, registered M result",
+      "a tree instead of six chained tests; nothing slow in front of forwarding",
+      "done"
+    ],
+    [
+      "Decide early, keep FLUSH off register enables",
+      "ALU/M controls and ALU operands chosen in DECODE; data registers ignore flushes",
+      "done"
+    ],
+    [
+      "Zba + Zbb without slowing the loop",
+      "early/late operand paths, adder enters the result mux last, cpop/min/max take 2 cycles",
+      "done"
+    ],
+    [
+      "Split EXECUTE in two (8 stages)",
+      "add in EX1, select and forward from EX2: one more bubble per dependence and mispredict",
+      "next"
+    ],
+    [
+      "3-stage front end, pipelined caches",
+      "BTB, direction, I-cache in separate stages like real cores",
+      "next"
+    ],
+    [
+      "15 to 20 stages + out-of-order core",
+      "what 4 to 6 GHz desktop cores do: 12 to 20 gate delays per stage, custom circuits",
+      "next"
+    ]
   ]
 }

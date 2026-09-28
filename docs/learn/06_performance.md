@@ -42,7 +42,6 @@ A subtle point that real hardware shares: the counters are **read** in EXECUTE b
 **counts** in WRITEBACK, so instructions still in flight around the reads land inside the window.
 That is why benchmarks time long loops.
 
-Next: [7. From RTL to silicon](07_silicon.md)
 
 ## Caches: fast copies of slow memory
 
@@ -60,3 +59,15 @@ three arrays **thrash**: every load evicts the line needed next. Watch it happen
 make run PROG=16_cache_conflicts     # a0 = cycles with 2 arrays, a1 = with 3
 ```
 
+## Counters for every kind of bubble
+
+Sixfold also has six **performance counters**, one per term of the cycle equation:
+`hpmcounter3` load stalls (L), `hpmcounter4` flushes (F), `hpmcounter5` redirects (R), `hpmcounter6`
+multiply/divide busy cycles (K), `hpmcounter7` and `hpmcounter8` instruction- and data-cache miss cycles
+(I and D). [`19_performance_counters.s`](../../programs/19_performance_counters.s) reads them all and adds
+them up; the result lands within a few cycles of `rdcycle` (the rest is still in flight). This is how
+performance engineers work on real chips: Intel calls it "top-down analysis".
+
+![performance counters](../img/diagrams/performance_counters.svg)
+
+Next: [7. From RTL to silicon](07_silicon.md)

@@ -28,7 +28,7 @@ export const C = {
 function canvas(W, H, title, subtitle) {
   const out = [];
   const add = s => out.push(s);
-  const kinds = ['data', 'pred', 'flush', 'F1', 'F2', 'E', 'M', 'tag', 'idx', 'off', 'hit', 'miss', 'sub'];
+  const kinds = ['data', 'pred', 'flush', 'F1', 'F2', 'D', 'E', 'M', 'tag', 'idx', 'off', 'hit', 'miss', 'sub'];
   add(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`);
   add(`<defs>${kinds.map(k => `<marker id="m-${k}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${C[k]}"/></marker>`).join('')}</defs>`);
   add(`<rect width="100%" height="100%" rx="12" fill="${C.paper}" stroke="${C.line}"/>`);
@@ -505,11 +505,254 @@ export function clockRoadmap(data) {
   return g.done();
 }
 
+// =============================================================================
+// The multiply/divide unit: state machine, Wallace step, divider, SIGN cycle
+// =============================================================================
+export function multiplyDivideUnit() {
+  const W = 1600, H = 990;
+  const g = canvas(W, H, 'The multiply/divide unit: short steps, no carry chains, a registered result',
+    'src/Iterative_Multiply_Divide_Unit.sv + src/Carry_Save_Multiplier.sv + src/Leading_Zero_Counter.sv. EXECUTE holds the M instruction (MULTIPLY_DIVIDE_STALL) until DONE.');
+  const { add, text, rect, box, wire, circle, pill } = g;
+  // ---- state machine
+  const sy = 190;
+  const states = [['IDLE', 90, 'capture |A|, |B|', '(signs: DECODE)', C.sub], ['PREPARE', 330, 'count leading zeros', 'load step registers', C.F1],
+    ['ALIGN', 570, 'divide only:', 'dividend << zeros', C.D], ['BUSY', 830, 'multiply: 4 steps', 'divide: 1 bit / step', C.E], ['SIGN', 1090, 'sum carry-save pair,', 'negate, pick result', C.M], ['DONE', 1350, 'READY = 1', 'registered result', C.W]];
+  states.forEach(([n, x, l1, l2, col], i) => {
+    add(`<circle cx="${x}" cy="${sy}" r="58" fill="${col}" fill-opacity="0.12" stroke="${col}" stroke-width="2.4"/>`);
+    text(x, sy - 8, n, { size: 15, weight: 800, anchor: 'middle', fill: col });
+    text(x, sy + 12, l1, { size: 10.5, anchor: 'middle', fill: C.sub });
+    text(x, sy + 26, l2, { size: 10.5, anchor: 'middle', fill: C.sub });
+    if (i < states.length - 1) wire([[x + 60, sy], [states[i + 1][1] - 62, sy]], 'data', { width: 2 });
+  });
+  add(`<path d="M${830 - 30},${sy - 52} C${830 - 70},${sy - 120} ${830 + 70},${sy - 120} ${830 + 30},${sy - 52}" fill="none" stroke="${C.E}" stroke-width="2" marker-end="url(#m-E)"/>`);
+  text(830, sy - 104, 'repeat N times', { size: 11, anchor: 'middle', fill: C.E, weight: 700 });
+  add(`<path d="M${330 + 40},${sy + 44} C${400},${sy + 88} ${760},${sy + 88} ${830 - 40},${sy + 44}" fill="none" stroke="${C.F1}" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#m-F1)"/>`);
+  text(580, sy + 64, 'multiply skips ALIGN', { size: 11, anchor: 'middle', fill: C.F1 });
+  add(`<path d="M1350,${sy + 58} C1300,${sy + 118} 140,${sy + 118} 90,${sy + 58}" fill="none" stroke="${C.sub}" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#m-sub)"/>`);
+  text(720, sy + 124, 'the instruction leaves EXECUTE; the unit waits for the next one', { size: 11, anchor: 'middle', fill: C.sub });
+  pill(1430, sy - 30, 'multiply: 8 cycles', C.E, { size: 11, w: 150 }); pill(1430, sy + 2, 'divide: 5 + bits', C.D, { size: 11, w: 150 }); text(1430, sy + 44, 'bits = significant', { size: 10, fill: C.faint }); text(1430, sy + 58, 'bits of |A|', { size: 10, fill: C.faint });
+
+  // ---- multiply datapath
+  const my = 340;
+  rect(20, my, 760, 360, { fill: '#FFF', stroke: C.line, rx: 10 });
+  text(36, my + 26, 'Multiply: 4 steps of 64 x 16 bits, the product kept as TWO numbers (carry-save)', { size: 14, weight: 700 });
+  box(40, my + 50, 160, 56, 'MULTIPLICAND', ['|A|, 64 bits'], { tsize: 12 });
+  // product registers as bars
+  const bar = (x, y, name, col) => {
+    rect(x, y, 380, 30, { fill: '#FFF', stroke: col, sw: 1.6, rx: 4 });
+    rect(x, y, 200, 30, { fill: col, stroke: 'none', op: 0.12, rx: 4 });
+    text(x + 100, y + 20, 'high part [133:64], 70 bits', { size: 10.5, anchor: 'middle', fill: C.ink });
+    text(x + 290, y + 20, 'low [63:0]', { size: 10.5, anchor: 'middle', fill: C.ink });
+    text(x - 8, y + 20, name, { size: 11, anchor: 'end', weight: 700, fill: col, mono: true });
+  };
+  bar(360, my + 52, 'PRODUCT_SUM', C.E); bar(360, my + 92, 'PRODUCT_CARRY', C.E);
+  text(380, my + 150, 'low 16 bits of PRODUCT_SUM =', { size: 10.5, anchor: 'middle', fill: C.sub });
+  text(380, my + 164, 'the next multiplier bits', { size: 10.5, anchor: 'middle', fill: C.sub });
+  rect(120, my + 180, 540, 110, { fill: '#FFF4E0', stroke: C.E, sw: 2, rx: 10 });
+  text(390, my + 204, 'CarrySaveMultiplyStep (a Wallace tree)', { size: 13, weight: 700, anchor: 'middle', fill: C.E });
+  text(390, my + 224, '16 partial products (A << j if bit j) + sum + carry = 18 numbers', { size: 11, anchor: 'middle', fill: C.sub });
+  // mini level strip
+  const lv = [18, 12, 8, 6, 4, 3, 2];
+  lv.forEach((n, i) => { const x = 160 + i * 70; rect(x, my + 238, 50, 36, { fill: C.E, stroke: 'none', op: 0.15 + i * 0.1, rx: 6 }); text(x + 25, my + 261, String(n), { size: 13, weight: 700, anchor: 'middle' }); if (i < lv.length - 1) wire([[x + 50, my + 256], [x + 70, my + 256]], 'E', { width: 1.4 }); });
+  text(390, my + 286, '6 levels of full adders, no carry propagation at all', { size: 10.5, anchor: 'middle', fill: C.sub });
+  wire([[120, my + 106], [120, my + 180]], 'data'); wire([[560, my + 122], [560, my + 180]], 'data');
+  wire([[640, my + 235], [700, my + 235], [700, my + 67], [742, my + 67]], 'E', { width: 2 });
+  text(690, my + 310, 'each step: {sum, carry} go back in, shifted right by 16', { size: 10.5, fill: C.E, anchor: 'end' });
+  wire([[660, my + 290], [720, my + 290], [720, my + 107], [742, my + 107]], 'E', { width: 2 });
+  text(40, my + 334, 'Why carry-save: adding the two numbers every step would put an 80-bit carry chain in the loop. They are added only once, in SIGN.', { size: 11, fill: C.sub });
+  text(40, my + 348, 'Measured: 747 ps (16 rows of ripple adders) -> 597 ps (tree) -> off the critical path (carry-save + SIGN).', { size: 11, fill: C.sub, weight: 600 });
+
+  // ---- divide datapath
+  const dx = 800;
+  rect(dx, my, 780, 360, { fill: '#FFF', stroke: C.line, rx: 10 });
+  text(dx + 16, my + 26, 'Divide: skip the leading zeros, then one quotient bit per cycle', { size: 14, weight: 700 });
+  box(dx + 20, my + 50, 210, 70, 'LeadingZeroCounter', ['tree: 64 -> 32 -> ... -> 1 block', '6 levels (Oklobdzija)'], { tsize: 12, stroke: C.F1 });
+  box(dx + 260, my + 50, 150, 70, 'ALIGN cycle', ['|A| << zeros', '(registered count)'], { tsize: 12, stroke: C.D });
+  box(dx + 440, my + 50, 320, 70, 'steps = 64 - zeros', ['1234 / 10 needs 11 steps, not 64', '(printing decimals divides small numbers)'], { tsize: 12 });
+  wire([[dx + 230, my + 85], [dx + 260, my + 85]], 'data'); wire([[dx + 410, my + 85], [dx + 440, my + 85]], 'data');
+  rect(dx + 20, my + 150, 740, 150, { fill: '#F3F0FF', stroke: C.D, sw: 1.8, rx: 10 });
+  text(dx + 390, my + 174, 'One BUSY step (restoring division)', { size: 13, weight: 700, anchor: 'middle', fill: C.D });
+  box(dx + 40, my + 190, 200, 60, 'bring down a bit', ['{remainder, next bit}'], { tsize: 12 });
+  box(dx + 270, my + 190, 220, 60, 'subtract |B|', ['65-bit Kogge-Stone'], { tsize: 12 });
+  box(dx + 520, my + 190, 220, 60, 'no borrow?', ['quotient bit = 1, keep it'], { tsize: 12 });
+  wire([[dx + 240, my + 220], [dx + 270, my + 220]], 'data'); wire([[dx + 490, my + 220], [dx + 520, my + 220]], 'data');
+  wire([[dx + 630, my + 250], [dx + 630, my + 282], [dx + 140, my + 282], [dx + 140, my + 250]], 'D', { width: 1.6 });
+  text(dx + 390, my + 296, 'next cycle', { size: 10.5, anchor: 'middle', fill: C.D });
+  text(dx + 16, my + 330, 'Measured: the old "is the top half zero? then shift" chain was 599 ps; the counter tree + a separate ALIGN', { size: 11, fill: C.sub });
+  text(dx + 16, my + 348, 'cycle took it off the critical path (one extra cycle per divide).', { size: 11, fill: C.sub });
+
+  // ---- SIGN cycle
+  const gy = 720;
+  rect(20, gy, W - 40, 250, { fill: '#FFF', stroke: C.line, rx: 10 });
+  text(36, gy + 26, 'SIGN: one 128-bit adder sums the carry-save pair AND negates it, then the result is registered', { size: 14, weight: 700 });
+  box(40, gy + 50, 190, 60, 'PRODUCT_SUM [127:0]', [], { tsize: 11.5 }); box(40, gy + 124, 190, 60, 'PRODUCT_CARRY [127:0]', [], { tsize: 11.5 });
+  box(260, gy + 86, 190, 64, '3:2 row of full adders', ['third input: NEG ? all ones : 0'], { tsize: 11.5, stroke: C.M });
+  box(480, gy + 86, 190, 64, '128-bit Kogge-Stone', ['one carry-propagate add'], { tsize: 11.5, stroke: C.M });
+  box(700, gy + 86, 160, 64, 'XOR with NEG', ['-(x + y) = ~(x + y - 1)'], { tsize: 11.5, stroke: C.M });
+  box(890, gy + 86, 200, 64, 'pick the result', ['low / high half, word, quotient,', 'remainder, x/0, MIN/-1 cases'], { tsize: 11.5 });
+  box(1120, gy + 86, 200, 64, 'RESULT_REGISTER', ['read in DONE: nothing slow', 'in front of forwarding'], { tsize: 11.5, stroke: C.W });
+  wire([[230, gy + 80], [245, gy + 80], [245, gy + 110], [260, gy + 110]], 'data'); wire([[230, gy + 154], [245, gy + 154], [245, gy + 126], [260, gy + 126]], 'data');
+  wire([[450, gy + 118], [480, gy + 118]], 'data'); wire([[670, gy + 118], [700, gy + 118]], 'data'); wire([[860, gy + 118], [890, gy + 118]], 'data'); wire([[1090, gy + 118], [1120, gy + 118]], 'data');
+  text(1350, gy + 90, 'Signs: the unit works on |A| and |B|;', { size: 11, fill: C.sub }); text(1350, gy + 106, 'the product is negated when', { size: 11, fill: C.sub }); text(1350, gy + 122, 'exactly one input was negative.', { size: 11, fill: C.sub });
+  text(36, gy + 214, 'Why this works: -(x + y) = ~(x + y) + 1 = ~(x + y + (-1)). Adding "all ones" as a third number costs one row of full adders, not a second adder.', { size: 11.5, fill: C.sub });
+  text(36, gy + 234, 'Quotient and remainder use a prefix negation (src/Prefix_Negate.sv) in the same cycle. The registered result costs one cycle per M instruction and removed the M unit from the critical path.', { size: 11.5, fill: C.sub });
+  return g.done();
+}
+
+// =============================================================================
+// Operands and the ALU: early/late paths in DECODE, parallel units, fast and late results
+// =============================================================================
+export function operandsAndAlu() {
+  const W = 1600, H = 950;
+  const g = canvas(W, H, 'Operands and the ALU: what sits in the one-cycle loop, and what was moved out of it',
+    'DECODE prepares both ALU operands (Zba shifts, .uw zero-extension, Zbb inverted operand) and EXECUTE computes every operation in parallel. src/Riscv64.sv, src/ALU.sv.');
+  const { add, text, rect, box, wire, dot, mux, pill } = g;
+  rect(20, 72, 600, 32, { fill: C.D, stroke: C.D }); text(32, 93, 'DECODE', { size: 14, weight: 700, fill: '#FFF' });
+  rect(650, 72, 600, 32, { fill: C.E, stroke: C.E }); text(662, 93, 'EXECUTE', { size: 14, weight: 700, fill: '#FFF' });
+  rect(1280, 72, 300, 32, { fill: C.M, stroke: C.M }); text(1292, 93, 'MEMORY', { size: 14, weight: 700, fill: '#FFF' });
+  // ---- operand A in DECODE
+  const oy = 130;
+  text(36, oy + 10, 'operand A', { size: 13, weight: 700 });
+  box(36, oy + 24, 150, 40, 'register file', [], { tsize: 11 }); box(36, oy + 72, 150, 40, 'WRITEBACK', [], { tsize: 11 }); box(36, oy + 120, 150, 40, 'MEMORY', [], { tsize: 11 });
+  mux(210, oy + 20, 26, 150, 'early');
+  [44, 92, 140].forEach(y => wire([[186, oy + y], [210, oy + y]], 'data', { width: 1.4 }));
+  box(256, oy + 60, 150, 70, 'prepare', ['zext(rs1[31:0])?', '<< 0, 1, 2 or 3'], { tsize: 11.5 });
+  wire([[236, oy + 95], [256, oy + 95]], 'data');
+  mux(420, oy + 40, 24, 100, 'PC?');
+  wire([[406, oy + 95], [420, oy + 95]], 'data'); text(410, oy + 56, 'PC', { size: 9.5, anchor: 'end', fill: C.sub, mono: true });
+  box(256, oy + 170, 150, 60, 'prepare (one-hot)', ['same, 1 small mux'], { tsize: 11.5, stroke: C.E });
+  mux(480, oy + 60, 26, 130, 'late?', [], { stroke: C.E });
+  wire([[444, oy + 90], [480, oy + 90]], 'data'); wire([[406, oy + 200], [460, oy + 200], [460, oy + 170], [480, oy + 170]], 'E', { width: 2.4 });
+  box(530, oy + 95, 90, 60, 'ALU_INPUT_A', ['register'], { tsize: 10.5 });
+  wire([[506, oy + 125], [530, oy + 125]], 'data');
+  // ---- operand B
+  const by = 400;
+  text(36, by + 10, 'operand B', { size: 13, weight: 700 });
+  box(36, by + 24, 150, 90, 'register file / W / M', ['same early choice'], { tsize: 11 });
+  box(256, by + 34, 150, 60, 'invert?', ['andn orn xnor: ~rs2'], { tsize: 11.5 });
+  wire([[186, by + 64], [256, by + 64]], 'data');
+  mux(420, by + 20, 24, 90, 'imm?'); wire([[406, by + 64], [420, by + 64]], 'data');
+  box(256, by + 130, 150, 50, 'invert? (late)', [], { tsize: 11.5, stroke: C.E });
+  mux(480, by + 40, 26, 110, 'late?', [], { stroke: C.E });
+  wire([[444, by + 65], [480, by + 65]], 'data'); wire([[406, by + 155], [460, by + 155], [460, by + 130], [480, by + 130]], 'E', { width: 2.4 });
+  box(530, by + 65, 90, 60, 'ALU_INPUT_B', ['register'], { tsize: 10.5 });
+  wire([[506, by + 95], [530, by + 95]], 'data');
+  rect(36, 640, 580, 110, { fill: '#FFF8E1', stroke: '#E0B03A', rx: 8 });
+  text(52, 664, 'Why split early and late?', { size: 13, weight: 700 });
+  ['Every source but EXECUTE is ready early in the cycle: all the muxing and preparing happens then.', 'The value forwarded from EXECUTE is the ALU output of this same cycle, the latest', 'signal of all: it passes through only one small prepare mux and one 2:1.'].forEach((s, i) => text(52, 688 + i * 18, s, { size: 11.5, fill: C.sub }));
+  // ---- ALU units
+  const ux = 680, uy = 130;
+  const units = [['Kogge-Stone adder', 'add sub slt jalr, addresses', C.E, 'SUBTRACT decoded in DECODE'], ['logic', 'and or xor (andn orn xnor)', C.sub, ''], ['shifter / rotator', 'sll srl sra, rol ror, W forms', C.sub, ''],
+    ['LeadingZeroCounter x 2', 'clz, ctz (mirror image), W', C.F1, '6-level tree'], ['byte ops', 'rev8 orc.b sext.b/h zext.h', C.sub, 'wires and 8-input ORs'], ['PopulationCount', 'cpop cpopw: adder tree', C.flush, 'deeper than the adder'], ['min / max', 'the adder\'s compare picks A or B', C.flush, 'steers all 64 bits']];
+  units.forEach(([n, d, col, note], i) => {
+    const y = uy + i * 76;
+    box(ux, y, 250, 64, n, note ? [d, note] : [d], { tsize: 12, stroke: col, lsize: 10 });
+  });
+  wire([[620, oy + 125], [650, oy + 125], [650, uy + 450], [680, uy + 450]], 'data', { width: 1.4 });
+  wire([[650, uy + 32], [680, uy + 32]], 'data', { width: 1.4 }); wire([[650, uy + 108], [680, uy + 108]], 'data', { width: 1.4 }); wire([[650, uy + 184], [680, uy + 184]], 'data', { width: 1.4 });
+  wire([[650, uy + 260], [680, uy + 260]], 'data', { width: 1.4 }); wire([[650, uy + 336], [680, uy + 336]], 'data', { width: 1.4 }); wire([[650, uy + 412], [680, uy + 412]], 'data', { width: 1.4 });
+  wire([[620, by + 95], [640, by + 95]], 'data', { width: 1.4, arrow: false }); dot(650, by + 95);
+  // fast mux: others first, adder last
+  mux(1040, uy + 60, 30, 260, 'others', []);
+  [108, 184, 260, 336].forEach(y => wire([[930, uy + y], [1040, uy + y]], 'data', { width: 1.2 }));
+  mux(1110, uy + 10, 28, 110, 'fast', [], { stroke: C.E });
+  wire([[930, uy + 32], [1110, uy + 32]], 'E', { width: 2.4 }); wire([[1070, uy + 190], [1090, uy + 190], [1090, uy + 100], [1110, uy + 100]], 'data');
+  text(1124, uy + 140, 'adder enters', { size: 10, fill: C.E, anchor: 'middle' }); text(1124, uy + 153, 'LAST', { size: 10, fill: C.E, anchor: 'middle', weight: 700 });
+  box(1160, uy + 30, 150, 50, 'ALUOutFast', [], { tsize: 12, stroke: C.E });
+  wire([[1138, uy + 65], [1160, uy + 55]], 'E', { width: 2.4 });
+  wire([[1235, uy + 30], [1235, 118], [140, 118], [140, oy + 200 - 30], [256, oy + 200]], 'E', { width: 2.2, dash: '7 4' });
+  text(1320, uy + 50, 'to DECODE (forwarded the', { size: 11, fill: C.E, weight: 700 }); text(1320, uy + 66, 'same cycle), load/store', { size: 11, fill: C.E, weight: 700 }); text(1320, uy + 82, 'addresses and JALR', { size: 11, fill: C.E, weight: 700 });
+  // late mux
+  mux(1180, uy + 380, 30, 110, 'late', [], { stroke: C.flush });
+  wire([[930, uy + 412], [1180, uy + 412]], 'flush', { width: 1.6 }); wire([[930, uy + 488], [1150, uy + 488], [1150, uy + 460], [1180, uy + 460]], 'flush', { width: 1.6 });
+  wire([[1235, uy + 80], [1235, uy + 395], [1210, uy + 395]], 'data', { width: 1.4 });
+  box(1300, uy + 400, 140, 60, 'ALUOut', ['everything'], { tsize: 12 });
+  wire([[1210, uy + 435], [1300, uy + 430]], 'data');
+  box(1300, uy + 500, 260, 70, 'MEMORY_ALU_RESULT', ['forwarded from MEMORY next cycle'], { tsize: 12, stroke: C.M });
+  wire([[1370, uy + 460], [1370, uy + 500]], 'data');
+  // late explanation
+  rect(680, 730, 900, 200, { fill: '#FFF', stroke: C.line, rx: 8 });
+  text(696, 754, 'The two-cycle results (EXECUTE_LATE_RESULT): cpop, cpopw, min, minu, max, maxu', { size: 13, weight: 700 });
+  ['Their logic is deeper than the adder path, so they leave through ALUOut only. For hazards they behave exactly like a load:', 'the next instruction may not take them from EXECUTE, and LOAD_STALL holds it one cycle if it needs them right away.', 'Measured: with them in the loop the clock was 758 ps (a popcount tree, then a 64-bit select); with them out: 523 ps.'].forEach((s, i) => text(696, 778 + i * 18, s, { size: 11.5, fill: C.sub }));
+  // mini pipeline example
+  const ex = [['cpop t1, t0', ['F1', 'F2', 'D', 'E', 'M', 'W', '']], ['addi t2, t1, 1', ['', 'F1', 'F2', 'D', 'D', 'E', 'M']]];
+  ex.forEach(([n, st], r) => {
+    text(696, 850 + r * 30, n, { size: 11.5, mono: true });
+    st.forEach((s, c) => { if (!s) return; const col = { F1: C.F1, F2: C.F2, D: C.D, E: C.E, M: C.M, W: C.W }[s]; rect(850 + c * 44, 836 + r * 30, 40, 22, { fill: col, stroke: 'none', rx: 4, op: r === 1 && c === 3 ? 0.45 : 0.9 }); text(870 + c * 44, 851 + r * 30, s, { size: 10.5, weight: 700, anchor: 'middle', fill: '#FFF' }); });
+  });
+  text(1180, 866, 'one stall, then t1 comes from MEMORY', { size: 11, fill: C.sub });
+  text(696, 916, 'The same trick every real core uses for longer operations: pipeline them, and let the hazard logic wait.', { size: 11, fill: C.faint });
+  return g.done();
+}
+
+// =============================================================================
+// Performance counters: where each term of the cycle equation is counted
+// =============================================================================
+export function performanceCounters(values) {
+  const W = 1600, H = 640;
+  const g = canvas(W, H, 'Hardware performance counters: the cycle equation, counted by the chip itself',
+    'cycles = N + 5 + L + 3F + R + K + I + D (docs/MATH.md). Each term has a read-only counter in src/Control_Status_Register_File.sv, readable with csrr.');
+  const { add, text, rect, box, wire, pill } = g;
+  const st = [['FETCH1', C.F1], ['FETCH2', C.F2], ['DECODE', C.D], ['EXECUTE', C.E], ['MEMORY', C.M], ['WRITEBACK', C.W]];
+  st.forEach(([n, col], i) => { rect(40 + i * 250, 80, 230, 40, { fill: col, stroke: col }); text(52 + i * 250, 106, n, { size: 14, weight: 700, fill: '#FFF' }); });
+  const ctr = [
+    ['I', 'hpmcounter7', '0xC07', 'instruction-cache miss cycles', 0, C.F1, 'TRACE_INSTRUCTION_MISS', values.I],
+    ['R', 'hpmcounter5', '0xC05', 'FETCH2 redirects', 1, C.F2, 'TRACE_REDIRECT', values.R],
+    ['L', 'hpmcounter3', '0xC03', 'load (and late-result) stalls', 2, C.D, 'TRACE_LOAD_STALL', values.L],
+    ['F', 'hpmcounter4', '0xC04', 'flushes (3 bubbles each)', 3, C.flush, 'TRACE_FLUSH', values.F],
+    ['K', 'hpmcounter6', '0xC06', 'multiply/divide busy cycles', 3, C.E, 'TRACE_MULTIPLY_DIVIDE_STALL', values.K],
+    ['D', 'hpmcounter8', '0xC08', 'data-cache miss cycles', 3, C.M, 'TRACE_DATA_MISS', values.D],
+    ['N', 'instret', '0xC02', 'instructions retired', 5, C.W, 'WRITEBACK_VALID', values.N],
+  ];
+  ctr.forEach(([term, name, addr, what, stage, col, sig, v], i) => {
+    const x = 40 + i * 218, y = 190;
+    wire([[40 + stage * 250 + 115, 120], [40 + stage * 250 + 115, 150], [x + 100, 150], [x + 100, y]], 'data', { width: 1.4 });
+    rect(x, y, 200, 150, { fill: '#FFF', stroke: col, sw: 2, rx: 10 });
+    text(x + 16, y + 40, term, { size: 32, weight: 800, fill: col });
+    text(x + 60, y + 26, name, { size: 12, weight: 700, mono: true });
+    text(x + 60, y + 42, addr, { size: 11, mono: true, fill: C.faint });
+    text(x + 16, y + 70, what, { size: 11, fill: C.sub });
+    text(x + 16, y + 88, sig, { size: 9, mono: true, fill: C.faint });
+    text(x + 16, y + 132, String(v), { size: 22, weight: 700, mono: true, fill: col });
+    text(x + 186, y + 132, 'in prog 19', { size: 9.5, anchor: 'end', fill: C.faint });
+  });
+  // stacked bar of program 19's cycles
+  const total = Math.max(values.cycles, values.sum), bx = 40, bw = W - 80, byy = 420, gap = values.sum - values.cycles;
+  text(40, byy - 30, `Program 19 at the moment it reads the counters: rdcycle says ${values.cycles}; the counters add up to ${values.N} + 5 + ${values.L} + 3 x ${values.F} + ${values.R} + ${values.K} + ${values.I} + ${values.D} = ${values.sum}.`, { size: 13, weight: 700 });
+  text(40, byy - 12, gap === 0 ? 'Exactly equal.' : `The ${Math.abs(gap)}-cycle difference: ${gap > 0 ? 'some counted bubbles and instructions have not reached WRITEBACK yet when rdcycle is read in EXECUTE' : 'a few cycles in flight are not counted yet'}. At the end of a program the two sides are exactly equal (make math).`, { size: 11.5, fill: C.sub });
+  const parts = [['N', values.N, C.W], ['fill', 5, C.faint], ['L', values.L, C.D], ['3F', 3 * values.F, C.flush], ['R', values.R, C.F2], ['K', values.K, C.E], ['I', values.I, C.F1], ['D', values.D, C.M]];
+  let x = bx;
+  parts.forEach(([n, v, col]) => {
+    const w = bw * v / total;
+    rect(x, byy, w - 1, 44, { fill: col, stroke: 'none', rx: 3, op: 0.85 });
+    if (w > 34) { text(x + w / 2, byy + 20, n, { size: 12, weight: 700, anchor: 'middle', fill: '#FFF' }); text(x + w / 2, byy + 36, String(v), { size: 11, anchor: 'middle', fill: '#FFF', mono: true }); }
+    x += w;
+  });
+  text(40, byy + 80, 'How to use them: read a counter before and after a piece of code (csrr t0, hpmcounter4 ... csrr t1, hpmcounter4); the difference is how many', { size: 12, fill: C.sub });
+  text(40, byy + 98, 'times that event happened in between. programs/19_performance_counters.s adds them all up and checks the sum against rdcycle.', { size: 12, fill: C.sub });
+  text(40, byy + 116, 'Real CPUs have hundreds of such events (Intel\'s "top-down" method builds exactly this kind of CPI stack from them); the counters are 64 bits,', { size: 12, fill: C.sub });
+  text(40, byy + 134, 'split into halves with a registered carry so they never slow down the clock.', { size: 12, fill: C.sub });
+  return g.done();
+}
+
 export const CLOCK_DATA = JSON.parse(fs.readFileSync(new URL('../docs/clock_roadmap.json', import.meta.url), 'utf8'));
+
+// The counter values program 19 reads, from the cycle-exact model (performance build)
+async function program19Counters() {
+  const { assemble } = await import('../model/asm.js');
+  const { Core, CONFIGS } = await import('../model/core.js');
+  const core = new Core(assemble(fs.readFileSync(new URL('../programs/19_performance_counters.s', import.meta.url), 'utf8')), CONFIGS.performance);
+  core.run(100000, false);
+  const r = i => Number(core.regs[i]);
+  const v = { cycles: r(10), N: r(11), L: r(12), F: r(13), R: r(14), K: r(15), I: r(16), D: r(17) };
+  v.sum = v.N + 5 + v.L + 3 * v.F + v.R + v.K + v.I + v.D;
+  return v;
+}
 
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname);
 if (isMain) {
   fs.mkdirSync('docs/img/diagrams', { recursive: true });
-  const figs = { branch_prediction: branchPrediction(), cache: cache(), memory_hierarchy: hierarchy(), clock_roadmap: clockRoadmap(CLOCK_DATA) };
+  const figs = { branch_prediction: branchPrediction(), cache: cache(), memory_hierarchy: hierarchy(), clock_roadmap: clockRoadmap(CLOCK_DATA),
+    multiply_divide: multiplyDivideUnit(), operands_and_alu: operandsAndAlu(), performance_counters: performanceCounters(await program19Counters()) };
   for (const [n, svg] of Object.entries(figs)) { fs.writeFileSync(`docs/img/diagrams/${n}.svg`, svg); console.log(`wrote docs/img/diagrams/${n}.svg`); }
 }

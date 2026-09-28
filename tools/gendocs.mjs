@@ -4,7 +4,7 @@
 //
 //   binary/README.md                       index of all instructions with bit patterns
 //   binary/opcode_map.md                   the RISC-V major-opcode map
-//   binary/<RV64I|RV64M|Zicsr>/<name>.md   one page per instruction
+//   binary/<RV64I|RV64M|Zicsr|Zba|Zbb>/<name>.md   one page per instruction
 //   binary/programs/*.lst, *.hex           every example program, assembled
 //   docs/img/formats/*.svg                 R/I/S/B/U/J/CSR bit-field diagrams
 //   docs/img/instructions/*.svg            one bit-field picture per instruction
@@ -78,6 +78,7 @@ function templateBits(def) {
     case 'I': sym(31, 20, 'i'); sym(19, 15, 's'); sym(11, 7, 'd'); break;
     case 'I-sh64': put(31, 26, def.funct7); sym(25, 20, 'h'); sym(19, 15, 's'); sym(11, 7, 'd'); break;
     case 'I-sh32': put(31, 25, def.funct7); sym(24, 20, 'h'); sym(19, 15, 's'); sym(11, 7, 'd'); break;
+    case 'I-unary': put(31, 20, def.funct7); sym(19, 15, 's'); sym(11, 7, 'd'); break;
     case 'S': sym(31, 25, 'i'); sym(24, 20, 't'); sym(19, 15, 's'); sym(11, 7, 'i'); break;
     case 'B': sym(31, 25, 'i'); sym(24, 20, 't'); sym(19, 15, 's'); sym(11, 7, 'i'); break;
     case 'U': case 'J': sym(31, 12, 'i'); sym(11, 7, 'd'); break;
@@ -118,9 +119,9 @@ function stageStory(def, word) {
     : isJal ? 'The word arrives. Opcode `1101111` = JAL: the target `PC + imm` is computed right here and FETCH1 is **always** redirected (the jump is never wrong), squashing the one instruction fetched behind it (1 bubble).'
     : 'The 32-bit word arrives from memory. It is not a branch or JAL, so fetching simply continues at `PC + 4`.';
   const reads = [];
-  if (['rrr', 'rri', 'load', 'store', 'branch', 'jalr', 'csr'].includes(s)) reads.push('`rs1`');
+  if (['rrr', 'rri', 'rr', 'load', 'store', 'branch', 'jalr', 'csr'].includes(s)) reads.push('`rs1`');
   if (['rrr', 'store', 'branch'].includes(s)) reads.push('`rs2`');
-  st.DECODE = `**ControlUnit** + **ALUdec** recognise \`${n}\` from opcode \`${b(def.opcode, 7)}\`${def.funct3 !== null ? `, funct3 \`${b(def.funct3, 3)}\`` : ''}${def.funct7 !== null ? `, funct${def.fmt === 'I-sh64' ? 6 : 7} \`${b(def.funct7, def.fmt === 'I-sh64' ? 6 : 7)}\`` : ''}; the **ImmediateGenerator** builds the ${c.immType}-type immediate.` +
+  st.DECODE = `**ControlUnit** + **ALUdec** recognise \`${n}\` from opcode \`${b(def.opcode, 7)}\`${def.funct3 !== null ? `, funct3 \`${b(def.funct3, 3)}\`` : ''}${def.funct7 !== null ? (def.fmt === 'I-unary' ? `, funct12 \`${b(def.funct7, 12)}\`` : `, funct${def.fmt === 'I-sh64' ? 6 : 7} \`${b(def.funct7, def.fmt === 'I-sh64' ? 6 : 7)}\``) : ''}; the **ImmediateGenerator** builds the ${c.immType}-type immediate.` +
     (reads.length ? ` The **RegisterFile** is read for ${reads.join(' and ')}, and the forwarding muxes replace a stale value with a newer one from EXECUTE, MEMORY or WRITEBACK.` : ' No registers are needed.');
   if (isB) st.EXECUTE = `**BranchComparator** checks \`${def.sem.replace(/ pc \+= sext\(imm\)/, '').replace('if ', '')}\`. **BranchControl** compares that with the prediction: right -> nothing happens; wrong -> \`FLUSH_FETCH1_FETCH2_DECODE\` squashes 3 instructions and FETCH1 restarts at the correct address. The gshare counter is trained either way.`;
   else if (isJal) st.EXECUTE = 'The ALU computes `PC + imm` (not needed any more) and `PC + 4` becomes the link value. BranchControl sees a JAL: it was already redirected in FETCH2, so **no flush**.';
@@ -130,7 +131,10 @@ function stageStory(def, word) {
   else if (n === 'auipc') st.EXECUTE = 'The ALU adds `PC + imm` (ALU input A is the PC).';
   else if (s === 'csr' || s === 'csri') st.EXECUTE = `The **CSRFile** is read at address \`csr\` (the old value goes to \`rd\`) and ${n.startsWith('csrrw') ? 'replaced by' : n.startsWith('csrrs') ? 'OR-ed with' : 'AND-ed with the inverse of'} ${s === 'csri' ? 'the 5-bit zero-extended immediate' : '`rs1`'} at the end of the cycle.${n === 'csrrs' || n === 'csrrc' || n === 'csrrsi' || n === 'csrrci' ? ' With `rs1 = x0` / `zimm = 0` nothing is written, so `csrr` is a pure read.' : ''}`;
   else if (s === 'none') st.EXECUTE = n === 'fence' ? 'Nothing: with a single in-order memory FENCE has nothing to order.' : 'Nothing: on this core ECALL/EBREAK are no-ops; programs finish by writing the `tohost` CSR (`halt`).';
-  else st.EXECUTE = `${c.isMulDiv ? 'The **MultiplyDivideUnit**' : 'The **ALU**'} performs \`${c.aluOp}\`${c.isWord ? ' on the low 32 bits and sign-extends the result to 64 bits' : ''}: \`${def.sem}\`.`;
+  else st.EXECUTE = `${c.isMulDiv ? 'The **MultiplyDivideUnit**' : 'The **ALU**'} performs \`${c.aluOp}\`${c.isWord ? ' on the low 32 bits and sign-extends the result to 64 bits' : ''}: \`${def.sem}\`.` +
+    (c.aShift || c.aZext ? ` DECODE already prepared operand A (${c.aZext ? 'zero-extended the low 32 bits of rs1' : ''}${c.aZext && c.aShift ? ' and ' : ''}${c.aShift ? `shifted it left by ${c.aShift}` : ''}), so the ALU only adds${c.aluOp === 'SLL' ? ' or shifts' : ''}.` : '') +
+    (c.invB ? ' DECODE already inverted operand B, so the ALU does a plain ' + c.aluOp + '.' : '') +
+    (c.late ? ' This result is one of the two-cycle ones (`EXECUTE_LATE_RESULT`): it is forwarded from MEMORY, so an instruction that needs it right away waits one cycle.' : '');
   if (s === 'load') st.MEMORY = `The doubleword read in EXECUTE is here. **LoadControl** picks the byte lanes with address bits [2:0] and ${/u$/.test(n) ? 'zero' : 'sign'}-extends the ${{ lb: 8, lbu: 8, lh: 16, lhu: 16, lw: 32, lwu: 32, ld: 64 }[n]}-bit value to 64 bits. This is the earliest point the value can be forwarded, which is why an instruction that needs it right away causes a LOAD_STALL.`;
   else st.MEMORY = `No memory work. **WriteControl** picks the ${c.regWrite ? `\`WRITEBACK_${WB_NAMES[c.wbSel]}\`` : 'result'} value${c.regWrite ? ', which can be forwarded back to DECODE' : ''}.`;
   st.WRITEBACK = c.regWrite ? `The **RegisterFile** writes \`rd\` at the clock edge (ignored if \`rd\` is \`x0\`). The instruction is now **retired** and the \`instret\` counter goes up by one.` : 'Nothing to write. The instruction retires (`instret` + 1).';
@@ -139,7 +143,8 @@ function stageStory(def, word) {
 
 // example with concrete registers
 const EXAMPLES = {
-  rrr: n => `${n} a0, a1, a2`, rri: n => (/^s(l|r)[la]iw?$/.test(n) ? `${n} a0, a1, ${n.endsWith('w') ? 5 : 40}` : `${n} a0, a1, -5`),
+  rrr: n => `${n} a0, a1, a2`, rri: n => (/^(s(l|r)[la]iw?|rori|roriw|slli\.uw)$/.test(n) ? `${n} a0, a1, ${n.endsWith('w') ? 5 : 40}` : `${n} a0, a1, -5`),
+  rr: n => `${n} a0, a1`,
   load: n => `${n} a0, 16(sp)`, store: n => `${n} a0, 16(sp)`, branch: n => `${n} a0, a1, -8`, ui: n => `${n} a0, 0x12345`,
   jal: () => 'jal ra, 2048', jalr: () => 'jalr ra, 8(t0)', none: n => n,
   csr: n => `${n} a0, status, a1`, csri: n => `${n} a0, status, 5`,
@@ -217,6 +222,7 @@ function main() {
     R: 'R-type: register-register (add, sub, mul, ...)', I: 'I-type: immediate, loads, jalr',
     'I-sh64': 'I-type shift (RV64): slli, srli, srai with a 6-bit shift amount',
     'I-sh32': 'I-type shift (word): slliw, srliw, sraiw with a 5-bit shift amount',
+    'I-unary': 'I-type, one operand (Zbb): clz, ctz, cpop, sext.b, rev8, ... funct12 names the operation',
     S: 'S-type: stores', B: 'B-type: conditional branches', U: 'U-type: lui, auipc', J: 'J-type: jal',
     SYS: 'SYSTEM: ecall, ebreak', FENCE: 'FENCE',
     CSR: 'CSR-type: csrrw, csrrs, csrrc (register source)', 'CSR-I': 'CSR-type immediate: csrrwi, csrrsi, csrrci (5-bit zimm)',
@@ -336,7 +342,7 @@ Letters in the pattern are the variable fields: \`d\` rd, \`s\` rs1, \`t\` rs2, 
 
   // 4. opcode map
   const opNames = Object.fromEntries(Object.entries(OPCODES).map(([k, v]) => [v, k]));
-  let om = `# RISC-V major opcode map (RV64IM + Zicsr subset implemented here)
+  let om = `# RISC-V major opcode map (RV64IM + Zicsr + Zba + Zbb subset implemented here)
 
 The opcode is \`inst[6:0]\`. For 32-bit instructions \`inst[1:0]\` is always \`11\`
 (\`00\`, \`01\`, \`10\` mark 16-bit compressed instructions, not implemented here).

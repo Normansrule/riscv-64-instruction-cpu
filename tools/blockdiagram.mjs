@@ -49,7 +49,7 @@ export function blockDiagramSVG() {
   add(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`);
   add(`<defs>${markers}</defs>`);
   add(`<rect width="100%" height="100%" rx="12" fill="${COL.paper}" stroke="#D5DBD0"/>`);
-  text(20, 28, 'Sixfold (src/Riscv64.sv): 6-stage RV64IM + Zicsr pipeline with caches, BTB + tournament prediction, RAS, forwarding into DECODE and traps', { size: 17, weight: 600 });
+  text(20, 28, 'Sixfold (src/Riscv64.sv): 6-stage RV64IM + Zba + Zbb + Zicsr pipeline with caches, BTB + tournament prediction, RAS, forwarding into DECODE, traps', { size: 17, weight: 600 });
 
   // ---------------------------------------------------------------- stage bands
   const stages = [
@@ -136,18 +136,18 @@ export function blockDiagramSVG() {
 
   // ---------------------------------------------------------------- EXECUTE
   // ALU operands are chosen in DECODE and latched (EXECUTE_ALU_INPUT_A/B): no multiplexer in front of the adder
-  mux(866, 176, 26, 60, 'A', [[190, 'rs1'], [222, 'PC']]);
-  mux(866, 290, 26, 60, 'B', [[304, 'rs2'], [336, 'imm']]);
+  mux(866, 176, 26, 60, 'A (Zba)', [[190, 'rs1'], [222, 'PC']]);
+  mux(866, 290, 26, 60, 'B (~rs2)', [[304, 'rs2'], [336, 'imm']]);
   wire([[892, 206], [905, 206]]); wire([[892, 320], [905, 320]]);
   wire([[858, 500], [858, 336], [866, 336]]); dot(858, 500);
   add(`<polygon points="1000,160 1070,190 1070,300 1000,330 1000,262 1014,245 1000,228" fill="#FFF3E0" stroke="${COL.EXECUTE}" stroke-width="2"/>`);
-  text(1040, 235, 'ALU', { size: 14, weight: 700, anchor: 'middle' }); text(1040, 250, '65-bit shared', { size: 9, anchor: 'middle', fill: COL.sub }); text(1040, 261, 'adder, W ops', { size: 9, anchor: 'middle', fill: COL.sub });
+  text(1040, 235, 'ALU', { size: 14, weight: 700, anchor: 'middle' }); text(1040, 250, '65-bit shared', { size: 9, anchor: 'middle', fill: COL.sub }); text(1040, 261, 'adder + Zbb units', { size: 9, anchor: 'middle', fill: COL.sub });
   wire([[915, 206], [1000, 206]]); wire([[915, 320], [1000, 320]]); lbl(930, 200, 'ALU_INPUT_A'); lbl(930, 314, 'ALU_INPUT_B');
   box(1000, 346, 130, 56, 'Iterative M unit', ['MUL 8, DIV 4+bits cycles'], { tsize: 11 });
   mux(1100, 216, 24, 80, 'result', []);
   wire([[1070, 240], [1100, 240]]); wire([[1130, 374], [1140, 374], [1140, 320], [1124, 320], [1124, 290]], 'data', { arrow: false });
   wire([[1124, 256], [1305, 256]]); lbl(1136, 250, 'EXECUTE_ALU_RESULT');
-  box(944, 424, 150, 70, 'CSRFile + traps', ['cycle instret tohost', 'mtvec mepc mcause'], { mod: 'Zicsr, ecall/mret', tsize: 12 });
+  box(944, 424, 150, 70, 'CSRFile + traps', ['cycle instret hpm3..8', 'mtvec mepc mcause'], { mod: 'Zicsr, ecall/mret', tsize: 12 });
   box(1110, 424, 176, 70, 'StoreControl', ['byte lanes + 8-bit', 'write mask (sb..sd)'], { tsize: 12 });
   box(944, 530, 150, 60, 'BranchComparator', ['== != < >= (signed', 'and unsigned)'], { tsize: 11.5 });
   box(1110, 522, 176, 82, 'BranchControl', ['predicted vs actual:', 'wrong or JALR -> FLUSH', 'ADJUST_NEXT_PC'], { tsize: 12, fill: '#FCE4EC', stroke: COL.flush });

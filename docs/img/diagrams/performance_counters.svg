@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 640" width="1600" height="640">
+<defs><marker id="m-data" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2B3A31"/></marker><marker id="m-pred" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#00796B"/></marker><marker id="m-flush" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C2185B"/></marker><marker id="m-F1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2E86C1"/></marker><marker id="m-F2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#17A2B8"/></marker><marker id="m-D" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6A5ACD"/></marker><marker id="m-E" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#E08E0B"/></marker><marker id="m-M" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#27AE60"/></marker><marker id="m-tag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C9982E"/></marker><marker id="m-idx" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#17A2B8"/></marker><marker id="m-off" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6A5ACD"/></marker><marker id="m-hit" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1E8449"/></marker><marker id="m-miss" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C0392B"/></marker><marker id="m-sub" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4A5A50"/></marker></defs>
+<rect width="100%" height="100%" rx="12" fill="#FBFCF8" stroke="#D5DBD0"/>
+<text x="24" y="34" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="20" font-weight="700" fill="#17251D" text-anchor="start">Hardware performance counters: the cycle equation, counted by the chip itself</text>
+<text x="24" y="56" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="400" fill="#4A5A50" text-anchor="start">cycles = N + 5 + L + 3F + R + K + I + D (docs/MATH.md). Each term has a read-only counter in src/Control_Status_Register_File.sv, readable with csrr.</text>
+<rect x="40" y="80" width="230" height="40" rx="6" fill="#2E86C1" stroke="#2E86C1" stroke-width="1.5"/>
+<text x="52" y="106" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#FFF" text-anchor="start">FETCH1</text>
+<rect x="290" y="80" width="230" height="40" rx="6" fill="#17A2B8" stroke="#17A2B8" stroke-width="1.5"/>
+<text x="302" y="106" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#FFF" text-anchor="start">FETCH2</text>
+<rect x="540" y="80" width="230" height="40" rx="6" fill="#6A5ACD" stroke="#6A5ACD" stroke-width="1.5"/>
+<text x="552" y="106" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#FFF" text-anchor="start">DECODE</text>
+<rect x="790" y="80" width="230" height="40" rx="6" fill="#E08E0B" stroke="#E08E0B" stroke-width="1.5"/>
+<text x="802" y="106" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#FFF" text-anchor="start">EXECUTE</text>
+<rect x="1040" y="80" width="230" height="40" rx="6" fill="#27AE60" stroke="#27AE60" stroke-width="1.5"/>
+<text x="1052" y="106" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#FFF" text-anchor="start">MEMORY</text>
+<rect x="1290" y="80" width="230" height="40" rx="6" fill="#C0392B" stroke="#C0392B" stroke-width="1.5"/>
+<text x="1302" y="106" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#FFF" text-anchor="start">WRITEBACK</text>
+<path d="M155,120 L155,150 L140,150 L140,190" fill="none" stroke="#2B3A31" stroke-width="1.4" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<rect x="40" y="190" width="200" height="150" rx="10" fill="#FFF" stroke="#2E86C1" stroke-width="2"/>
+<text x="56" y="230" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="32" font-weight="800" fill="#2E86C1" text-anchor="start">I</text>
+<text x="100" y="216" font-family="'IBM Plex Mono',Consolas,monospace" font-size="12" font-weight="700" fill="#17251D" text-anchor="start">hpmcounter7</text>
+<text x="100" y="232" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="400" fill="#8A968E" text-anchor="start">0xC07</text>
+<text x="56" y="260" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">instruction-cache miss cycles</text>
+<text x="56" y="278" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9" font-weight="400" fill="#8A968E" text-anchor="start">TRACE_INSTRUCTION_MISS</text>
+<text x="56" y="322" font-family="'IBM Plex Mono',Consolas,monospace" font-size="22" font-weight="700" fill="#2E86C1" text-anchor="start">12</text>
+<text x="226" y="322" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="end">in prog 19</text>
+<path d="M405,120 L405,150 L358,150 L358,190" fill="none" stroke="#2B3A31" stroke-width="1.4" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<rect x="258" y="190" width="200" height="150" rx="10" fill="#FFF" stroke="#17A2B8" stroke-width="2"/>
+<text x="274" y="230" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="32" font-weight="800" fill="#17A2B8" text-anchor="start">R</text>
+<text x="318" y="216" font-family="'IBM Plex Mono',Consolas,monospace" font-size="12" font-weight="700" fill="#17251D" text-anchor="start">hpmcounter5</text>
+<text x="318" y="232" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="400" fill="#8A968E" text-anchor="start">0xC05</text>
+<text x="274" y="260" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">FETCH2 redirects</text>
+<text x="274" y="278" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9" font-weight="400" fill="#8A968E" text-anchor="start">TRACE_REDIRECT</text>
+<text x="274" y="322" font-family="'IBM Plex Mono',Consolas,monospace" font-size="22" font-weight="700" fill="#17A2B8" text-anchor="start">2</text>
+<text x="444" y="322" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="end">in prog 19</text>
+<path d="M655,120 L655,150 L576,150 L576,190" fill="none" stroke="#2B3A31" stroke-width="1.4" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<rect x="476" y="190" width="200" height="150" rx="10" fill="#FFF" stroke="#6A5ACD" stroke-width="2"/>
+<text x="492" y="230" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="32" font-weight="800" fill="#6A5ACD" text-anchor="start">L</text>
+<text x="536" y="216" font-family="'IBM Plex Mono',Consolas,monospace" font-size="12" font-weight="700" fill="#17251D" text-anchor="start">hpmcounter3</text>
+<text x="536" y="232" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="400" fill="#8A968E" text-anchor="start">0xC03</text>
+<text x="492" y="260" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">load (and late-result) stalls</text>
+<text x="492" y="278" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9" font-weight="400" fill="#8A968E" text-anchor="start">TRACE_LOAD_STALL</text>
+<text x="492" y="322" font-family="'IBM Plex Mono',Consolas,monospace" font-size="22" font-weight="700" fill="#6A5ACD" text-anchor="start">12</text>
+<text x="662" y="322" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="end">in prog 19</text>
+<path d="M905,120 L905,150 L794,150 L794,190" fill="none" stroke="#2B3A31" stroke-width="1.4" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<rect x="694" y="190" width="200" height="150" rx="10" fill="#FFF" stroke="#C2185B" stroke-width="2"/>
+<text x="710" y="230" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="32" font-weight="800" fill="#C2185B" text-anchor="start">F</text>
+<text x="754" y="216" font-family="'IBM Plex Mono',Consolas,monospace" font-size="12" font-weight="700" fill="#17251D" text-anchor="start">hpmcounter4</text>
+<text x="754" y="232" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="400" fill="#8A968E" text-anchor="start">0xC04</text>
+<text x="710" y="260" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">flushes (3 bubbles each)</text>
+<text x="710" y="278" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9" font-weight="400" fill="#8A968E" text-anchor="start">TRACE_FLUSH</text>
+<text x="710" y="322" font-family="'IBM Plex Mono',Consolas,monospace" font-size="22" font-weight="700" fill="#C2185B" text-anchor="start">7</text>
+<text x="880" y="322" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="end">in prog 19</text>
+<path d="M905,120 L905,150 L1012,150 L1012,190" fill="none" stroke="#2B3A31" stroke-width="1.4" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<rect x="912" y="190" width="200" height="150" rx="10" fill="#FFF" stroke="#E08E0B" stroke-width="2"/>
+<text x="928" y="230" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="32" font-weight="800" fill="#E08E0B" text-anchor="start">K</text>
+<text x="972" y="216" font-family="'IBM Plex Mono',Consolas,monospace" font-size="12" font-weight="700" fill="#17251D" text-anchor="start">hpmcounter6</text>
+<text x="972" y="232" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="400" fill="#8A968E" text-anchor="start">0xC06</text>
+<text x="928" y="260" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">multiply/divide busy cycles</text>
+<text x="928" y="278" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9" font-weight="400" fill="#8A968E" text-anchor="start">TRACE_MULTIPLY_DIVIDE_STALL</text>
+<text x="928" y="322" font-family="'IBM Plex Mono',Consolas,monospace" font-size="22" font-weight="700" fill="#E08E0B" text-anchor="start">24</text>
+<text x="1098" y="322" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="end">in prog 19</text>
+<path d="M905,120 L905,150 L1230,150 L1230,190" fill="none" stroke="#2B3A31" stroke-width="1.4" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<rect x="1130" y="190" width="200" height="150" rx="10" fill="#FFF" stroke="#27AE60" stroke-width="2"/>
+<text x="1146" y="230" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="32" font-weight="800" fill="#27AE60" text-anchor="start">D</text>
+<text x="1190" y="216" font-family="'IBM Plex Mono',Consolas,monospace" font-size="12" font-weight="700" fill="#17251D" text-anchor="start">hpmcounter8</text>
+<text x="1190" y="232" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="400" fill="#8A968E" text-anchor="start">0xC08</text>
+<text x="1146" y="260" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">data-cache miss cycles</text>
+<text x="1146" y="278" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9" font-weight="400" fill="#8A968E" text-anchor="start">TRACE_DATA_MISS</text>
+<text x="1146" y="322" font-family="'IBM Plex Mono',Consolas,monospace" font-size="22" font-weight="700" fill="#27AE60" text-anchor="start">23</text>
+<text x="1316" y="322" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="end">in prog 19</text>
+<path d="M1405,120 L1405,150 L1448,150 L1448,190" fill="none" stroke="#2B3A31" stroke-width="1.4" stroke-linejoin="round" marker-end="url(#m-data)"/>
+<rect x="1348" y="190" width="200" height="150" rx="10" fill="#FFF" stroke="#C0392B" stroke-width="2"/>
+<text x="1364" y="230" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="32" font-weight="800" fill="#C0392B" text-anchor="start">N</text>
+<text x="1408" y="216" font-family="'IBM Plex Mono',Consolas,monospace" font-size="12" font-weight="700" fill="#17251D" text-anchor="start">instret</text>
+<text x="1408" y="232" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="400" fill="#8A968E" text-anchor="start">0xC02</text>
+<text x="1364" y="260" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">instructions retired</text>
+<text x="1364" y="278" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9" font-weight="400" fill="#8A968E" text-anchor="start">WRITEBACK_VALID</text>
+<text x="1364" y="322" font-family="'IBM Plex Mono',Consolas,monospace" font-size="22" font-weight="700" fill="#C0392B" text-anchor="start">96</text>
+<text x="1534" y="322" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="end">in prog 19</text>
+<text x="40" y="390" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#17251D" text-anchor="start">Program 19 at the moment it reads the counters: rdcycle says 192; the counters add up to 96 + 5 + 12 + 3 x 7 + 2 + 24 + 12 + 23 = 195.</text>
+<text x="40" y="408" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4A5A50" text-anchor="start">The 3-cycle difference: some counted bubbles and instructions have not reached WRITEBACK yet when rdcycle is read in EXECUTE. At the end of a program the two sides are exactly equal (make math).</text>
+<rect x="40" y="420" width="747.3076923076923" height="44" rx="3" fill="#C0392B" stroke="none" stroke-width="1.5" fill-opacity="0.85"/>
+<text x="414.15384615384613" y="440" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#FFF" text-anchor="middle">N</text>
+<text x="414.15384615384613" y="456" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="400" fill="#FFF" text-anchor="middle">96</text>
+<rect x="788.3076923076923" y="420" width="37.97435897435897" height="44" rx="3" fill="#8A968E" stroke="none" stroke-width="1.5" fill-opacity="0.85"/>
+<text x="807.7948717948717" y="440" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#FFF" text-anchor="middle">fill</text>
+<text x="807.7948717948717" y="456" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="400" fill="#FFF" text-anchor="middle">5</text>
+<rect x="827.2820512820513" y="420" width="92.53846153846153" height="44" rx="3" fill="#6A5ACD" stroke="none" stroke-width="1.5" fill-opacity="0.85"/>
+<text x="874.051282051282" y="440" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#FFF" text-anchor="middle">L</text>
+<text x="874.051282051282" y="456" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="400" fill="#FFF" text-anchor="middle">12</text>
+<rect x="920.8205128205128" y="420" width="162.69230769230768" height="44" rx="3" fill="#C2185B" stroke="none" stroke-width="1.5" fill-opacity="0.85"/>
+<text x="1002.6666666666666" y="440" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#FFF" text-anchor="middle">3F</text>
+<text x="1002.6666666666666" y="456" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="400" fill="#FFF" text-anchor="middle">21</text>
+<rect x="1084.5128205128206" y="420" width="14.58974358974359" height="44" rx="3" fill="#17A2B8" stroke="none" stroke-width="1.5" fill-opacity="0.85"/>
+<rect x="1100.1025641025642" y="420" width="186.07692307692307" height="44" rx="3" fill="#E08E0B" stroke="none" stroke-width="1.5" fill-opacity="0.85"/>
+<text x="1193.6410256410256" y="440" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#FFF" text-anchor="middle">K</text>
+<text x="1193.6410256410256" y="456" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="400" fill="#FFF" text-anchor="middle">24</text>
+<rect x="1287.1794871794873" y="420" width="92.53846153846153" height="44" rx="3" fill="#2E86C1" stroke="none" stroke-width="1.5" fill-opacity="0.85"/>
+<text x="1333.948717948718" y="440" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#FFF" text-anchor="middle">I</text>
+<text x="1333.948717948718" y="456" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="400" fill="#FFF" text-anchor="middle">12</text>
+<rect x="1380.7179487179487" y="420" width="178.28205128205127" height="44" rx="3" fill="#27AE60" stroke="none" stroke-width="1.5" fill-opacity="0.85"/>
+<text x="1470.3589743589744" y="440" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#FFF" text-anchor="middle">D</text>
+<text x="1470.3589743589744" y="456" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="400" fill="#FFF" text-anchor="middle">23</text>
+<text x="40" y="500" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="400" fill="#4A5A50" text-anchor="start">How to use them: read a counter before and after a piece of code (csrr t0, hpmcounter4 ... csrr t1, hpmcounter4); the difference is how many</text>
+<text x="40" y="518" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="400" fill="#4A5A50" text-anchor="start">times that event happened in between. programs/19_performance_counters.s adds them all up and checks the sum against rdcycle.</text>
+<text x="40" y="536" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="400" fill="#4A5A50" text-anchor="start">Real CPUs have hundreds of such events (Intel's "top-down" method builds exactly this kind of CPI stack from them); the counters are 64 bits,</text>
+<text x="40" y="554" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="400" fill="#4A5A50" text-anchor="start">split into halves with a registered carry so they never slow down the clock.</text>
+</svg>

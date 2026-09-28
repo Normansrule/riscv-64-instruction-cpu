@@ -18,16 +18,16 @@ cycles = N + (S - 1) + L + P * F + R + K + I + D
        = N + 5       + L + 3 * F + R + K + I + D
 ```
 
-| symbol | meaning | source in the RTL |
-|---|---|---|
-| N | instructions retired | `WRITEBACK_VALID` |
-| S | stages = 6; the first instruction needs 6 cycles, so S - 1 = 5 fill bubbles | |
-| L | load stalls, 1 bubble each | `LOAD_STALL` |
-| F | flushes: wrong branch guesses + every JALR, P = 3 bubbles each | `FLUSH_FETCH1_FETCH2_DECODE` |
-| R | FETCH2 redirects whose bubble survives, 1 each (taken branches found in the BTB cost 0 and are not counted) | `FETCH2_BRANCH_OFF_OR_CONTINUE` |
-| K | cycles the iterative M unit holds EXECUTE (performance build) | `MULTIPLY_DIVIDE_STALL` |
-| I | bubbles sent to FETCH2 while the instruction cache refills | `icache_hit` |
-| D | cycles a load waits in EXECUTE for its data-cache line | `DATA_CACHE_STALL` |
+| symbol | meaning | source in the RTL | hardware counter |
+|---|---|---|---|
+| N | instructions retired | `WRITEBACK_VALID` | `instret` (0xC02) |
+| S | stages = 6; the first instruction needs 6 cycles, so S - 1 = 5 fill bubbles | | |
+| L | load stalls (loads and the 2-cycle Zbb results), 1 bubble each | `LOAD_STALL` | `hpmcounter3` |
+| F | flushes: wrong branch guesses + JALR misses + traps, P = 3 bubbles each | `FLUSH_FETCH1_FETCH2_DECODE` | `hpmcounter4` |
+| R | FETCH2 redirects whose bubble survives, 1 each (taken branches found in the BTB cost 0 and are not counted) | `FETCH2_BRANCH_OFF_OR_CONTINUE` | `hpmcounter5` (every redirect) |
+| K | cycles the iterative M unit holds EXECUTE (performance build) | `MULTIPLY_DIVIDE_STALL` | `hpmcounter6` |
+| I | bubbles sent to FETCH2 while the instruction cache refills | `icache_hit` | `hpmcounter7` |
+| D | cycles a load waits in EXECUTE for its data-cache line | `DATA_CACHE_STALL` | `hpmcounter8` |
 
 **Why 3 for a flush:** when EXECUTE flushes, FETCH1, FETCH2 and DECODE all hold wrong-path
 instructions. They are replaced by bubbles, and the correct instruction starts in FETCH1 on the next
@@ -38,7 +38,7 @@ overwritten, so it is counted inside the flush's 3. The model tags every bubble 
 counts them as they reach WRITEBACK, so the equation is an identity, not an estimate:
 
 ```bash
-make math     # checks all 16 programs, both builds, predictor on and off
+make math     # checks every program and the self-check, both builds, predictor on and off
 ```
 
 Example, `04_branch_penalty.s` (10 loop iterations, N = 33), baseline build:
@@ -50,6 +50,15 @@ Example, `04_branch_penalty.s` (10 loop iterations, N = 33), baseline build:
 
 On the performance build with gshare, the Branch Target Buffer removes 8 of those 9 redirects
 (the first taken branch fills the BTB): 33 + 5 + 3 + 1 = **42** cycles.
+
+**The same equation in hardware.** The CSR file counts every term as it happens (last column), so a
+program can build its own CPI stack: [`programs/19_performance_counters.s`](../programs/19_performance_counters.s)
+reads all of them and adds them up. At the moment of reading, the two sides differ by a few cycles: the
+counters are read in EXECUTE while the last bubbles and instructions are still on their way to
+WRITEBACK, and `hpmcounter5` counts every redirect, including the few whose bubble a flush then
+absorbs. At the end of a program the model's bubble tags make the equation exact.
+
+![performance counters](img/diagrams/performance_counters.svg)
 
 ## 3. Branch cost per branch
 

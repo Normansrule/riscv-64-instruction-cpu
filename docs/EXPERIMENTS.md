@@ -129,3 +129,18 @@ the multiplier bits in overlapping groups of three and produces 8 partial produc
 {-2, -1, 0, +1, +2} x the multiplicand. Write it, keep `CarrySaveMultiplyStep`'s ports, and compare
 the number of compressor levels, the delay (`tools/timing.sh`) and the area. The 864-case self-check
 (`make test`) covers MUL, MULH, MULHSU, MULHU and MULW with signed corner cases.
+
+## Lab 15: your own CPI stack, from the hardware counters
+
+`programs/19_performance_counters.s` reads `hpmcounter3..8` (the L, F, R, K, I and D terms of the cycle
+equation). Wrap the same reads around another program's main loop (for example `09_primes_sieve.s`) and
+explain every number: which loads stall, which branches flush, how many cycles the caches cost. Then
+change one thing (predictor off with `BP=0`, a smaller `MISS_LATENCY`) and predict the new counter
+values before you run it.
+
+## Lab 16: rewrite a program with Zba and Zbb
+
+`programs/18_bit_tricks.s` measures a popcount loop against `cpop` and a byte-by-byte `strlen` against
+`orc.b` + `ctz`. Take `06_bubble_sort.s` and use `sh3add` for the array addresses and `min`/`max` to
+swap without a branch. Count instructions and cycles with `rdcycle`/`rdinstret` before and after. Watch
+for the 2-cycle latency of `min`/`max`: put an independent instruction between the `max` and its use.

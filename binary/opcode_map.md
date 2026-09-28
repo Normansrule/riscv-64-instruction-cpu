@@ -1,4 +1,4 @@
-# RISC-V major opcode map (RV64IM + Zicsr subset implemented here)
+# RISC-V major opcode map (RV64IM + Zicsr + Zba + Zbb subset implemented here)
 
 The opcode is `inst[6:0]`. For 32-bit instructions `inst[1:0]` is always `11`
 (`00`, `01`, `10` mark 16-bit compressed instructions, not implemented here).
@@ -23,7 +23,7 @@ Rows are `inst[6:5]`, columns are `inst[4:2]`.
 
 ### OP_IMM `0010011`
 
-[`addi`](RV64I/addi.md) · [`slti`](RV64I/slti.md) · [`sltiu`](RV64I/sltiu.md) · [`xori`](RV64I/xori.md) · [`ori`](RV64I/ori.md) · [`andi`](RV64I/andi.md) · [`slli`](RV64I/slli.md) · [`srli`](RV64I/srli.md) · [`srai`](RV64I/srai.md)
+[`addi`](RV64I/addi.md) · [`slti`](RV64I/slti.md) · [`sltiu`](RV64I/sltiu.md) · [`xori`](RV64I/xori.md) · [`ori`](RV64I/ori.md) · [`andi`](RV64I/andi.md) · [`slli`](RV64I/slli.md) · [`srli`](RV64I/srli.md) · [`srai`](RV64I/srai.md) · [`rori`](Zbb/rori.md) · [`clz`](Zbb/clz.md) · [`ctz`](Zbb/ctz.md) · [`cpop`](Zbb/cpop.md) · [`sext.b`](Zbb/sext.b.md) · [`sext.h`](Zbb/sext.h.md) · [`rev8`](Zbb/rev8.md) · [`orc.b`](Zbb/orc.b.md)
 
 ### AUIPC `0010111`
 
@@ -31,7 +31,7 @@ Rows are `inst[6:5]`, columns are `inst[4:2]`.
 
 ### OP_IMM_32 `0011011`
 
-[`addiw`](RV64I/addiw.md) · [`slliw`](RV64I/slliw.md) · [`srliw`](RV64I/srliw.md) · [`sraiw`](RV64I/sraiw.md)
+[`addiw`](RV64I/addiw.md) · [`slliw`](RV64I/slliw.md) · [`srliw`](RV64I/srliw.md) · [`sraiw`](RV64I/sraiw.md) · [`slli.uw`](Zba/slli.uw.md) · [`roriw`](Zbb/roriw.md) · [`clzw`](Zbb/clzw.md) · [`ctzw`](Zbb/ctzw.md) · [`cpopw`](Zbb/cpopw.md)
 
 ### STORE `0100011`
 
@@ -39,7 +39,7 @@ Rows are `inst[6:5]`, columns are `inst[4:2]`.
 
 ### OP `0110011`
 
-[`add`](RV64I/add.md) · [`sub`](RV64I/sub.md) · [`sll`](RV64I/sll.md) · [`slt`](RV64I/slt.md) · [`sltu`](RV64I/sltu.md) · [`xor`](RV64I/xor.md) · [`srl`](RV64I/srl.md) · [`sra`](RV64I/sra.md) · [`or`](RV64I/or.md) · [`and`](RV64I/and.md) · [`mul`](RV64M/mul.md) · [`mulh`](RV64M/mulh.md) · [`mulhsu`](RV64M/mulhsu.md) · [`mulhu`](RV64M/mulhu.md) · [`div`](RV64M/div.md) · [`divu`](RV64M/divu.md) · [`rem`](RV64M/rem.md) · [`remu`](RV64M/remu.md)
+[`add`](RV64I/add.md) · [`sub`](RV64I/sub.md) · [`sll`](RV64I/sll.md) · [`slt`](RV64I/slt.md) · [`sltu`](RV64I/sltu.md) · [`xor`](RV64I/xor.md) · [`srl`](RV64I/srl.md) · [`sra`](RV64I/sra.md) · [`or`](RV64I/or.md) · [`and`](RV64I/and.md) · [`mul`](RV64M/mul.md) · [`mulh`](RV64M/mulh.md) · [`mulhsu`](RV64M/mulhsu.md) · [`mulhu`](RV64M/mulhu.md) · [`div`](RV64M/div.md) · [`divu`](RV64M/divu.md) · [`rem`](RV64M/rem.md) · [`remu`](RV64M/remu.md) · [`sh1add`](Zba/sh1add.md) · [`sh2add`](Zba/sh2add.md) · [`sh3add`](Zba/sh3add.md) · [`andn`](Zbb/andn.md) · [`orn`](Zbb/orn.md) · [`xnor`](Zbb/xnor.md) · [`min`](Zbb/min.md) · [`minu`](Zbb/minu.md) · [`max`](Zbb/max.md) · [`maxu`](Zbb/maxu.md) · [`rol`](Zbb/rol.md) · [`ror`](Zbb/ror.md)
 
 ### LUI `0110111`
 
@@ -47,7 +47,7 @@ Rows are `inst[6:5]`, columns are `inst[4:2]`.
 
 ### OP_32 `0111011`
 
-[`addw`](RV64I/addw.md) · [`subw`](RV64I/subw.md) · [`sllw`](RV64I/sllw.md) · [`srlw`](RV64I/srlw.md) · [`sraw`](RV64I/sraw.md) · [`mulw`](RV64M/mulw.md) · [`divw`](RV64M/divw.md) · [`divuw`](RV64M/divuw.md) · [`remw`](RV64M/remw.md) · [`remuw`](RV64M/remuw.md)
+[`addw`](RV64I/addw.md) · [`subw`](RV64I/subw.md) · [`sllw`](RV64I/sllw.md) · [`srlw`](RV64I/srlw.md) · [`sraw`](RV64I/sraw.md) · [`mulw`](RV64M/mulw.md) · [`divw`](RV64M/divw.md) · [`divuw`](RV64M/divuw.md) · [`remw`](RV64M/remw.md) · [`remuw`](RV64M/remuw.md) · [`add.uw`](Zba/add.uw.md) · [`sh1add.uw`](Zba/sh1add.uw.md) · [`sh2add.uw`](Zba/sh2add.uw.md) · [`sh3add.uw`](Zba/sh3add.uw.md) · [`rolw`](Zbb/rolw.md) · [`rorw`](Zbb/rorw.md) · [`zext.h`](Zbb/zext.h.md)
 
 ### BRANCH `1100011`
 

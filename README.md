@@ -3,29 +3,44 @@
 **Six stages. One instruction per clock. Watch a 64-bit RISC-V processor think.**
 
 Sixfold is a 64-bit RISC-V processor you can read, run, watch, and see as real silicon: a 6-stage pipelined
-RV64IM core with instruction and data caches, a tournament branch predictor, a branch target buffer,
-a return address stack and a Wallace-tree multiplier, written in SystemVerilog and built to **teach how a modern RISC-V CPU works
+RV64IM core with the Zba and Zbb bit-manipulation extensions, instruction and data caches, a tournament
+branch predictor, a branch target buffer, a return address stack, a Wallace-tree multiplier and
+hardware performance counters, written in SystemVerilog and built to **teach how a modern RISC-V CPU works
 and how to read its diagrams**.
 
 ![The Sixfold datapath](docs/img/cpu_block_diagram.svg)
 
 | | |
 |---|---|
-| **Instruction set** | RV64I + M (multiply/divide) + Zicsr (CSR instructions): 71 instructions, every one documented [in binary](binary/README.md) |
+| **Instruction set** | RV64I + M (multiply/divide) + **Zba + Zbb** (address generation and bit manipulation: `sh3add`, `clz`, `cpop`, `rev8`, `orc.b`, `min`/`max`, rotates, ...) + Zicsr: **104 instructions**, every one documented [in binary](binary/README.md) |
 | **Pipeline** | FETCH1 → FETCH2 → DECODE → EXECUTE → MEMORY → WRITEBACK, in order, one instruction per cycle |
-| **Hazards** | forwarding into DECODE from EXECUTE / MEMORY / WRITEBACK, 1-cycle `LOAD_STALL` |
+| **Hazards** | forwarding into DECODE from EXECUTE / MEMORY / WRITEBACK (the late EXECUTE value takes its own short path), 1-cycle `LOAD_STALL` for loads and the 2-cycle Zbb results (`cpop`, `min`, `max`) |
 | **Branch prediction** | tournament: a per-branch Branch History Table and `GSharePredictor` (PC xor global history, checkpoint repair) with a chooser; a 16-entry Branch Target Buffer (known taken branches cost 0 cycles); an 8-entry Return Address Stack |
 | **Memory** | 4 KiB instruction cache with next-line prefetch and 4 KiB write-through data cache, both 2-way set-associative with LRU replacement and next-line prefetch (32-byte lines), in front of a 10-cycle main memory |
 | **Predictor arena** | the real branch stream of each program replayed through a per-branch table, gshare, the tournament, a perceptron and TAGE (the families in AMD Zen and other modern cores): [MODERN_CPUS.md](docs/MODERN_CPUS.md) |
 | **Traps** | `ecall`, `ebreak`, `mret` with `mtvec`, `mepc`, `mcause`, `mstatus`, `mscratch`: enough to run a tiny kernel ([`15_system_calls.s`](programs/15_system_calls.s)) |
+| **Performance counters** | `hpmcounter3..8` count the six bubble kinds of the cycle equation (load stalls, flushes, redirects, multiply/divide, instruction- and data-cache misses): a program can measure its own CPI stack ([`19_performance_counters.s`](programs/19_performance_counters.s)) |
 | **Multiply / divide** | iterative: a 64 x 16-bit Wallace-tree step with a carry-save accumulator (multiply in 8 cycles), 1 quotient bit per cycle after a leading-zero-counter skip (divide in 5 + significant bits) |
-| **Clock (logic only)** | about **265 MHz** on SkyWater 130 nm and **1.92 GHz** on the ASAP7 7 nm research kit, with the full M extension (up from 1.37 GHz): [PERFORMANCE.md](docs/PERFORMANCE.md) |
+| **Clock (logic only)** | about **234 MHz** on SkyWater 130 nm and **1.91 GHz** on the ASAP7 7 nm research kit, with the full M extension, Zba and Zbb (up from 1.37 GHz): [PERFORMANCE.md](docs/PERFORMANCE.md) |
 | **Two builds** | the performance edition (default) and a simple baseline pipeline (`-DBASELINE`), both in the same RTL behind parameters |
-| **Verified** | 18 programs + an 864-case self-checking test, predictor on and off, **both builds**: the RTL matches a software twin on **every clock cycle** (76 runs) |
+| **Verified** | 20 programs + a 1,428-case self-checking test (expected values from an independent Python model), predictor on and off, **both builds**: the RTL matches a software twin on **every clock cycle** (84 runs) |
 | **Silicon** | the original design's real sky130 layout, timing and area, plus sky130 synthesis of this RTL |
 | **Runs on** | Icarus Verilog, Verilator, Yosys, any web browser |
 
-## How it works, in four pictures
+## Watch it move
+
+Animated straight from the design (they play right here in the README): the pipeline is a trace of the cycle-exact
+model, the multiplier uses real numbers and checks its answer. `make animations` redraws them.
+
+![The pipeline, cycle by cycle](docs/img/animations/pipeline.svg)
+
+| | |
+|---|---|
+| ![Wallace tree](docs/img/animations/wallace.svg) | ![Cache](docs/img/animations/cache.svg) |
+
+![Branch predictors](docs/img/animations/predictor.svg)
+
+## How it works, in pictures
 
 ### 1. The front end: Branch Target Buffer, Branch History Table, gshare, chooser, Return Address Stack
 
@@ -54,7 +69,28 @@ least-recently-used way, and then fetches the **next** line in the background.
 
 ![Memory hierarchy](docs/img/diagrams/memory_hierarchy.svg)
 
-### 4. The clock: from 7.5 MHz to 1.92 GHz, and what 2.5 GHz and 5 GHz take
+### 4. The multiply/divide unit
+
+![Multiply/divide unit](docs/img/diagrams/multiply_divide.svg)
+
+A multiply takes 8 cycles: four steps of 64 x 16 bits through a Wallace tree whose running total stays in
+carry-save form (two numbers), then one SIGN cycle where a single 128-bit adder sums **and** negates it.
+A divide first counts the dividend's leading zeros with a tree, so small numbers finish quickly.
+
+### 5. Operands and the ALU: what stays in the one-cycle loop
+
+![Operands and the ALU](docs/img/diagrams/operands_and_alu.svg)
+
+The ALU's result is forwarded to the very next instruction in the same cycle, so everything in that loop
+decides the clock. DECODE prepares the operands (the Zba shifts, the inverted operand of `andn`), the
+value forwarded from EXECUTE gets its own short path, the adder result enters the output multiplexer
+last, and the two Zbb operations too deep for the loop (`cpop`, `min`/`max`) get a 2-cycle latency.
+
+### 6. Performance counters: the cycle equation in hardware
+
+![Performance counters](docs/img/diagrams/performance_counters.svg)
+
+### 7. The clock: from 7.5 MHz to 1.91 GHz, and what 2.5 GHz and 5 GHz take
 
 ![Clock roadmap](docs/img/diagrams/clock_roadmap.svg)
 
@@ -62,7 +98,7 @@ The clock period is the slowest path between two registers. Every "done" step ab
 with `tools/timing.sh` and verified cycle by cycle against the model; the "next" steps are how
 commercial 2.5 to 5 GHz cores get there (deeper pipelines, pipelined caches, out-of-order execution,
 custom circuits), each with its price in cycles or area: [PERFORMANCE.md](docs/PERFORMANCE.md).
-All four figures are drawn by `make diagrams` from the same parameters as the RTL.
+All these figures are drawn by `make diagrams` from the same parameters as the RTL.
 
 ## Open the live site
 
@@ -141,7 +177,8 @@ Target Buffer, a Return Address Stack and precise load stalls, while its caches 
 realistic. A second round of critical-path work (a Wallace-tree multiplier with a carry-save
 accumulator, a leading-zero counter tree, decisions taken one stage earlier, and slow control
 signals kept off large register enables) took the 7 nm result from 729 ps to 522 ps.
-Result: about 265 MHz (logic-only, sky130 typical corner) instead of about 7.5 MHz, and 1.92 GHz for
+A third round added Zba, Zbb and the counters without slowing the 7 nm clock.
+Result: about 234 MHz (logic-only, sky130 typical corner) instead of about 7.5 MHz, and 1.91 GHz for
 the same RTL on a 7 nm-class library.
 [PERFORMANCE.md](docs/PERFORMANCE.md) has every step, every trade-off (multiply and divide take more
 cycles), and what 2.5 GHz and 5 GHz would take.
@@ -189,6 +226,8 @@ performance edition.
 | [`15_system_calls`](programs/15_system_calls.s) | traps, the way an operating system gets control | 116 | 2.19 | 119 | 2.25 |
 | [`16_cache_conflicts`](programs/16_cache_conflicts.s) | why caches have "ways" | 440 | 2.57 | 472 | 2.76 |
 | [`17_predictor_challenge`](programs/17_predictor_challenge.s) | branches that need history, and a branch that needs OTHER branches | 6277 | 1.24 | 8790 | 1.73 |
+| [`18_bit_tricks`](programs/18_bit_tricks.s) | the Zba and Zbb extensions, measured against plain RV64I code | 711 | 1.26 | 912 | 1.61 |
+| [`19_performance_counters`](programs/19_performance_counters.s) | the cycle equation, counted by the hardware itself | 231 | 1.96 | 258 | 2.19 |
 
 ## Down to silicon
 
@@ -219,10 +258,11 @@ the pipeline registers): [SILICON.md](docs/SILICON.md).
 
 ## Experiments
 
-Fourteen labs in [EXPERIMENTS.md](docs/EXPERIMENTS.md): history length, counter reset values, a
+Sixteen labs in [EXPERIMENTS.md](docs/EXPERIMENTS.md): history length, counter reset values, a
 multi-cycle divider, removing false load stalls, a return address stack, a branch target buffer, a
 faster adder for the critical path, forwarding into EXECUTE, cache experiments, bigger and smarter
-predictors, chasing the 7 nm critical path, and Booth recoding for the multiplier.
+predictors, chasing the 7 nm critical path, Booth recoding for the multiplier, your own CPI stack from
+the hardware counters, and rewriting a program with Zba and Zbb.
 
 ## Repository map
 
@@ -246,7 +286,7 @@ make test / test-model / math        verification (both builds)
 make timing                          sky130 logic-only clock estimate (tools/timing.sh performance asap7: 7 nm)
 make run / pipe / cycle / bp         explore a program     (PROG=..., BP=0, HIST=6, CONFIG=baseline)
 make rtl / vsim / wave               run on Icarus, Verilator, or open GTKWave
-make docs / charts / diagram / diagrams / arena   regenerate generated pages and pictures
+make docs / charts / diagram / diagrams / animations / arena   regenerate generated pages and pictures
 make synth / schematics              sky130 synthesis per module, Yosys schematics
 make lint / serve / clean
 ```
