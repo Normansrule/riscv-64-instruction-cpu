@@ -29,7 +29,8 @@ module ControlUnit (
     output alu_op_t ALU_OPERATION,
     output logic ALU_OPERAND_A_ZERO_EXTEND, // Zba .uw: operand A = zext(rs1[31:0])   (applied in DECODE)
     output logic [1:0] ALU_OPERAND_A_SHIFT, // Zba shNadd: operand A = rs1 << N
-    output logic ALU_OPERAND_B_INVERT // Zbb andn / orn / xnor: operand B = ~rs2
+    output logic ALU_OPERAND_B_INVERT, // Zbb andn / orn / xnor: operand B = ~rs2 (Zbs bclr: ~(1 << rs2))
+    output logic ALU_OPERAND_B_SINGLE_BIT // Zbs bset / bclr / binv: operand B = 1 << rs2[5:0] (or the immediate)
 );
 
     logic [6:0] INSTRUCTION_OPCODE;
@@ -54,6 +55,7 @@ module ControlUnit (
         .OPERAND_A_ZERO_EXTEND(ALU_OPERAND_A_ZERO_EXTEND),
         .OPERAND_A_SHIFT(ALU_OPERAND_A_SHIFT),
         .OPERAND_B_INVERT(ALU_OPERAND_B_INVERT),
+        .OPERAND_B_SINGLE_BIT(ALU_OPERAND_B_SINGLE_BIT),
         .FULL_WIDTH_RESULT(FULL_WIDTH_RESULT)
     );
 

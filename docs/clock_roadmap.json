@@ -8,9 +8,9 @@
     ],
     [
       "performance, SkyWater 130 nm",
-      4276,
+      3750,
       "measured",
-      "limit: the cpop tree (a 2-cycle Zbb result)"
+      "limit: the divider SIGN step (cpop now split over 2 stages)"
     ],
     [
       "performance, ASAP7 7 nm, first",
@@ -20,9 +20,9 @@
     ],
     [
       "performance, ASAP7 7 nm, now",
-      523,
+      536,
       "best",
-      "limit: ALU -> forwarding loop (with Zba + Zbb)"
+      "limit: divider SIGN step (with the full B extension)"
     ],
     [
       "target: 2.5 GHz",
@@ -66,6 +66,11 @@
     [
       "Zba + Zbb without slowing the loop",
       "early/late operand paths, adder enters the result mux last, cpop/min/max take 2 cycles",
+      "done"
+    ],
+    [
+      "Zbs, cpop over two stages",
+      "single-bit decoder only on the early operand path; cpop finishes its count in MEMORY",
       "done"
     ],
     [

@@ -38,6 +38,10 @@ module Riscv64 #(
   input  logic        reset,
   input  logic        BRANCH_PREDICTION_ENABLE, // 1 = GShare predictor, 0 = always predict not taken
 
+  // Where the first instruction is fetched after reset (PC_RESET = 0x2000 for programs; the FPGA system
+  // points it at its boot firmware at 0x0000 first, like a PC's reset vector pointing into its BIOS ROM)
+  input  logic [63:0] RESET_VECTOR,
+
   // Memory system ports
   output logic [63:0] dcache_addr,
   output logic [63:0] icache_addr,
@@ -273,7 +277,8 @@ module Riscv64 #(
   alu_op_t DECODE_ALU_OPERATION; // Determine which ALU operation is required
   logic DECODE_ALU_OPERAND_A_ZERO_EXTEND; // Zba .uw forms
   logic [1:0] DECODE_ALU_OPERAND_A_SHIFT; // Zba shNadd
-  logic DECODE_ALU_OPERAND_B_INVERT; // Zbb andn / orn / xnor
+  logic DECODE_ALU_OPERAND_B_INVERT; // Zbb andn / orn / xnor, Zbs bclr
+  logic DECODE_ALU_OPERAND_B_SINGLE_BIT; // Zbs bset / bclr / binv: 1 << rs2[5:0]
 
   assign DECODE_REGISTER1_ADDRESS = DECODE_INSTRUCTION[19:15]; // Register 1 Address (rs1) is always the 5 bits at 19-15
   assign DECODE_REGISTER2_ADDRESS = DECODE_INSTRUCTION[24:20]; // Register 2 Address (rs2) is always the 5 bits at 24-20
@@ -345,13 +350,14 @@ module Riscv64 #(
 
   logic LOAD_HAZARD_REGISTER1; // Determine if Decode is reading register1 as Execute Load is writing to same place
   logic LOAD_HAZARD_REGISTER2; // Determine if Decode is reading register2 as Execute Load is writing to same place
+  logic SINGLE_BIT_HAZARD; // Zbs bset / bclr / binv whose bit number is the value EXECUTE is computing right now
 
   // If the Execute Destination Address during a Load is the same as the Decode's register 1 that is being read a load hazard exists
   // (the rs1/rs2 FIELDS are compared even when an instruction does not use them: simple and safe, sometimes stalls for nothing, see Lab 5)
   assign LOAD_HAZARD_REGISTER1 = EXECUTE_VALID && (EXECUTE_MEMORY_READ_ENABLE || EXECUTE_LATE_RESULT) && (EXECUTE_DESTINATION_REGISTER_ADDRESS != 5'd0) && (EXECUTE_DESTINATION_REGISTER_ADDRESS == DECODE_REGISTER1_ADDRESS) && (!PRECISE_LOAD_STALL || DECODE_USES_REGISTER1);
   // If the Execute Destination Address during a Load is the same as the Decode's register 2 that is being read a load hazard exists
   assign LOAD_HAZARD_REGISTER2 = EXECUTE_VALID && (EXECUTE_MEMORY_READ_ENABLE || EXECUTE_LATE_RESULT) && (EXECUTE_DESTINATION_REGISTER_ADDRESS != 5'd0) && (EXECUTE_DESTINATION_REGISTER_ADDRESS == DECODE_REGISTER2_ADDRESS) && (!PRECISE_LOAD_STALL || DECODE_USES_REGISTER2);
-  assign LOAD_STALL = DECODE_VALID && (LOAD_HAZARD_REGISTER1 || LOAD_HAZARD_REGISTER2); // Load Hazard Exists and thus enable the load stall
+  assign LOAD_STALL = DECODE_VALID && (LOAD_HAZARD_REGISTER1 || LOAD_HAZARD_REGISTER2 || SINGLE_BIT_HAZARD); // Load Hazard Exists and thus enable the load stall
 
   ControlUnit control_unit (
     .INSTRUCTION (DECODE_INSTRUCTION),
@@ -377,7 +383,8 @@ module Riscv64 #(
     .ALU_OPERATION (DECODE_ALU_OPERATION),
     .ALU_OPERAND_A_ZERO_EXTEND (DECODE_ALU_OPERAND_A_ZERO_EXTEND),
     .ALU_OPERAND_A_SHIFT (DECODE_ALU_OPERAND_A_SHIFT),
-    .ALU_OPERAND_B_INVERT (DECODE_ALU_OPERAND_B_INVERT)
+    .ALU_OPERAND_B_INVERT (DECODE_ALU_OPERAND_B_INVERT),
+    .ALU_OPERAND_B_SINGLE_BIT (DECODE_ALU_OPERAND_B_SINGLE_BIT)
   );
 
   // ALU operands, chosen and prepared in DECODE (Zba / Zbb need: sh1add / sh2add / sh3add: rs1 << 1, 2, 3;
@@ -407,12 +414,22 @@ module Riscv64 #(
     extended = zero_extend ? {32'd0, value[31:0]} : value;
     return extended << shift;
   endfunction
+  // Operand B: rs2 or the immediate, then Zbs's single bit (a 6-to-64 decoder) and the Zbb / Zbs inversion
+  function automatic logic [63:0] prepare_operand_b(input logic [63:0] value, input logic invert, input logic single_bit);
+    logic [63:0] chosen;
+    chosen = single_bit ? (64'd1 << value[5:0]) : value;
+    return invert ? ~chosen : chosen;
+  endfunction
   logic [63:0] DECODE_EARLY_ALU_INPUT_A, DECODE_EARLY_ALU_INPUT_B, DECODE_LATE_ALU_INPUT_A, DECODE_LATE_ALU_INPUT_B;
   logic [63:0] DECODE_ALU_INPUT_A, DECODE_ALU_INPUT_B;
   assign DECODE_EARLY_ALU_INPUT_A = DECODE_ALU_INPUT_A_IS_PC ? DECODE_PC : prepare_operand_a(DECODE_EARLY_REGISTER1_DATA, DECODE_ALU_OPERAND_A_ZERO_EXTEND, DECODE_ALU_OPERAND_A_SHIFT);
-  assign DECODE_EARLY_ALU_INPUT_B = DECODE_ALU_INPUT_B_IS_IMMEDIATE ? DECODE_IMMEDIATE : (DECODE_ALU_OPERAND_B_INVERT ? ~DECODE_EARLY_REGISTER2_DATA : DECODE_EARLY_REGISTER2_DATA);
+  assign DECODE_EARLY_ALU_INPUT_B = prepare_operand_b(DECODE_ALU_INPUT_B_IS_IMMEDIATE ? DECODE_IMMEDIATE : DECODE_EARLY_REGISTER2_DATA, DECODE_ALU_OPERAND_B_INVERT, DECODE_ALU_OPERAND_B_SINGLE_BIT);
   assign DECODE_LATE_ALU_INPUT_A = prepare_operand_a(EXECUTE_FORWARD_DATA, DECODE_ALU_OPERAND_A_ZERO_EXTEND, DECODE_ALU_OPERAND_A_SHIFT);
+  // The late (EXECUTE-forwarded) path only inverts: the 6-to-64 single-bit decoder would sit in the ALU's
+  // one-cycle loop (measured: 485 ps -> 571 ps at 7 nm). A bset / bclr / binv whose bit number EXECUTE is
+  // computing right now waits one cycle instead (SINGLE_BIT_HAZARD) and takes it from MEMORY, early.
   assign DECODE_LATE_ALU_INPUT_B = DECODE_ALU_OPERAND_B_INVERT ? ~EXECUTE_FORWARD_DATA : EXECUTE_FORWARD_DATA;
+  assign SINGLE_BIT_HAZARD = DECODE_ALU_OPERAND_B_SINGLE_BIT && !DECODE_ALU_INPUT_B_IS_IMMEDIATE && DECODE_REGISTER2_FROM_EXECUTE;
   assign DECODE_ALU_INPUT_A = (DECODE_REGISTER1_FROM_EXECUTE && !DECODE_ALU_INPUT_A_IS_PC) ? DECODE_LATE_ALU_INPUT_A : DECODE_EARLY_ALU_INPUT_A;
   assign DECODE_ALU_INPUT_B = (DECODE_REGISTER2_FROM_EXECUTE && !DECODE_ALU_INPUT_B_IS_IMMEDIATE) ? DECODE_LATE_ALU_INPUT_B : DECODE_EARLY_ALU_INPUT_B;
 
@@ -622,6 +639,18 @@ module Riscv64 #(
   logic [63:0] MEMORY_DATA_CACHE_DATA; // Data Memory's doubleword, captured at the end of Execute (like an SRAM output register)
   logic MEMORY_WRITES_TOHOST; // Program finishing instruction in the Memory Stage
   logic MEMORY_REGISTER_WRITE_ENABLE_OUT; // Write enable after the Writeback MUX (same value, kept for the WriteControl interface)
+  logic MEMORY_IS_POPULATION_COUNT, MEMORY_POPULATION_COUNT_WORD; // cpop / cpopw: finish the count here
+  logic [6:0] MEMORY_POPULATION; // the finished count
+  logic [63:0] MEMORY_RESULT; // the ALU result, with cpop's last addition done
+
+  // cpop leaves EXECUTE as four quarter counts (src/Population_Count.sv); its last addition happens here,
+  // beside LoadControl's lane selection, so the 64-bit count never has to fit in one EXECUTE cycle
+  PopulationCountFinish population_count_finish (
+    .QUARTER_COUNTS (MEMORY_ALU_RESULT[19:0]),
+    .WORD (MEMORY_POPULATION_COUNT_WORD),
+    .COUNT (MEMORY_POPULATION)
+  );
+  assign MEMORY_RESULT = MEMORY_IS_POPULATION_COUNT ? {57'd0, MEMORY_POPULATION} : MEMORY_ALU_RESULT;
 
   LoadControl load_control (
     .LOAD_FUNCT3 (MEMORY_FUNCT3), // Determines Load Alignment
@@ -634,7 +663,7 @@ module Riscv64 #(
   WriteControl write_control (
     .REGISTER_WRITE_ENABLE_INPUT (MEMORY_REGISTER_WRITE_ENABLE),
     .WRITEBACK_SELECT (MEMORY_WRITEBACK_SELECT),
-    .ALU_RESULT (MEMORY_ALU_RESULT),
+    .ALU_RESULT (MEMORY_RESULT),
     .MEMORY_DATA (MEMORY_LOAD_DATA),
     .PC_ADD_4 (MEMORY_PC_ADD_4),
     .CSR_DATA (MEMORY_CSR_READ_DATA),
@@ -652,7 +681,7 @@ module Riscv64 #(
   always_ff @(posedge clk) begin
     if (reset) begin
        // ========== Fetch 1 ==========
-      FETCH1_PC <= PC_RESET;
+      FETCH1_PC <= RESET_VECTOR;
       HALTED <= 1'b0;
       // ========== Fetch 2 ==========
       FETCH2_VALID <= 1'b0;
@@ -728,6 +757,8 @@ module Riscv64 #(
       MEMORY_DESTINATION_REGISTER_ADDRESS <= 5'd0;
       MEMORY_FUNCT3 <= 3'd0;
       MEMORY_ALU_RESULT <= 64'd0;
+      MEMORY_IS_POPULATION_COUNT <= 1'b0;
+      MEMORY_POPULATION_COUNT_WORD <= 1'b0;
       MEMORY_PC_ADD_4 <= 64'd0;
       MEMORY_CSR_READ_DATA <= 64'd0;
       MEMORY_REGISTER_WRITE_ENABLE <= 1'b0;
@@ -755,6 +786,8 @@ module Riscv64 #(
       MEMORY_DESTINATION_REGISTER_ADDRESS <= EXECUTE_DESTINATION_REGISTER_ADDRESS; // Update Memory Destination Register Address
       MEMORY_FUNCT3 <= EXECUTE_FUNCT3; // Update Memory Funct3
       MEMORY_ALU_RESULT <= EXECUTE_ALU_RESULT; // Update Memory ALU Result
+      MEMORY_IS_POPULATION_COUNT <= !EXECUTE_IS_A_MULTIPLY_DIVIDE_INSTRUCTION && (EXECUTE_ALU_OPERATION == ALU_CPOP);
+      MEMORY_POPULATION_COUNT_WORD <= EXECUTE_ALU_IS_WORD_OPERATION;
       MEMORY_PC_ADD_4 <= EXECUTE_PC_ADD_4; // Update Memory Program Counter + 4
       MEMORY_CSR_READ_DATA <= EXECUTE_CSR_READ_DATA; // Update Control Status Register Read Data
       MEMORY_REGISTER_WRITE_ENABLE <= EXECUTE_REGISTER_WRITE_ENABLE; // Update Register Write Enable Signal

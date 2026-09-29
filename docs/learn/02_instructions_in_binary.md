@@ -45,13 +45,16 @@ pattern, an example encoding, **the exact control signals the `ControlUnit` prod
 (with the same names as the RTL, like `ALU_INPUT_B_IS_IMMEDIATE`), and its journey through the six
 stages. For example [`beq`](../../binary/RV64I/beq.md) or [`ld`](../../binary/RV64I/ld.md).
 
-## Newer instructions: Zba and Zbb
+## Newer instructions: the B extension (Zba, Zbb, Zbs)
 
 Besides RV64I, M and Zicsr, Sixfold implements **Zba** (address generation, like `sh3add a0, a1, a2`
 = `a2 + a1 * 8`, the address of element `a1` of an array of 8-byte values) and **Zbb** (bit
 manipulation: `clz`, `ctz`, `cpop`, `rev8`, `orc.b`, `min`, `max`, rotates, ...). They are in every
 current RISC-V application processor. Most reuse existing formats; the one-operand ones (`clz a0, a1`)
 put a 12-bit operation code where an immediate would go ([`clz`](../../binary/Zbb/clz.md)).
+**Zbs** works on single bits: `bset`, `bclr`, `binv` and `bext` set, clear, flip or read bit `rs2`
+(or an immediate bit number: [`bseti`](../../binary/Zbs/bseti.md) reuses the shift-immediate format, with
+the bit number where a shift amount would go). Together the three are the **B** extension.
 Try them in the "Bit tricks" section of the site.
 
 Next: [3. The six stages and how to read the diagrams](03_the_six_stages.md)

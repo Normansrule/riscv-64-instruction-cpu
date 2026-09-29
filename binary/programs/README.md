@@ -25,3 +25,4 @@ Every file in [`programs/`](../../programs) assembled by `model/asm.js` (code st
 * [17_predictor_challenge.lst](17_predictor_challenge.lst) · [17_predictor_challenge.hex](17_predictor_challenge.hex)
 * [18_bit_tricks.lst](18_bit_tricks.lst) · [18_bit_tricks.hex](18_bit_tricks.hex)
 * [19_performance_counters.lst](19_performance_counters.lst) · [19_performance_counters.hex](19_performance_counters.hex)
+* [20_leds_and_buttons.lst](20_leds_and_buttons.lst) · [20_leds_and_buttons.hex](20_leds_and_buttons.hex)

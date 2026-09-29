@@ -10,7 +10,9 @@ import const_pkg::*;
 // SRAM's output register, exactly like a synchronous SRAM macro:
 //   Instruction port : address sent in Fetch 1  -> instruction arrives in Fetch 2
 //   Data port        : address sent in Execute  -> load data arrives in Memory, stores write at the clock edge
-// A store to MMIO_PUTCHAR (0x1000_0000) prints a character instead of writing memory.
+// The 256 bytes at MMIO_BASE (0x1000_0000) are devices, not memory: stores there never reach the array,
+// a store to MMIO_PUTCHAR prints a character, and loads there read 0 (the simulator has no buttons; the
+// FPGA system in fpga/rtl answers them with real devices).
 module ScratchpadMemory (
     input  logic clk,
     // ===== Instruction Port (Fetch 1) =====
@@ -45,11 +47,12 @@ module ScratchpadMemory (
                                MEMORY[INSTRUCTION_BYTE_ADDRESS + 16'd1], MEMORY[INSTRUCTION_BYTE_ADDRESS]};
 
     // ===== Data Port: aligned 64-bit doubleword =====
-    logic IS_PUTCHAR; // The address is the character output register
+    logic IS_MMIO, IS_PUTCHAR; // The address is a device register / the character output register
     logic [15:0] DOUBLEWORD_BYTE_ADDRESS; // Address rounded down to a multiple of 8
+    assign IS_MMIO = (DATA_ADDRESS[63:8] == MMIO_BASE[63:8]);
     assign IS_PUTCHAR = (DATA_ADDRESS == MMIO_PUTCHAR);
     assign DOUBLEWORD_BYTE_ADDRESS = {DATA_ADDRESS[15:3], 3'b000};
-    assign DATA_READ_DATA = IS_PUTCHAR ? 64'd0 :
+    assign DATA_READ_DATA = IS_MMIO ? 64'd0 :
         {MEMORY[DOUBLEWORD_BYTE_ADDRESS + 16'd7], MEMORY[DOUBLEWORD_BYTE_ADDRESS + 16'd6],
          MEMORY[DOUBLEWORD_BYTE_ADDRESS + 16'd5], MEMORY[DOUBLEWORD_BYTE_ADDRESS + 16'd4],
          MEMORY[DOUBLEWORD_BYTE_ADDRESS + 16'd3], MEMORY[DOUBLEWORD_BYTE_ADDRESS + 16'd2],
@@ -67,8 +70,8 @@ module ScratchpadMemory (
 
     // ===== Synchronous byte-lane writes =====
     always_ff @(posedge clk) begin
-        if (IS_PUTCHAR) begin
-            if (|DATA_WRITE_MASK) begin
+        if (IS_MMIO) begin
+            if (IS_PUTCHAR && (|DATA_WRITE_MASK)) begin
                 $write("%c", DATA_WRITE_DATA[7:0]); // Memory mapped character output
                 $fflush();
             end

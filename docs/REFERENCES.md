@@ -201,8 +201,29 @@ https://github.com/riscv/riscv-bitmanip/releases . The Zba, Zbb, Zbc and Zbs ext
 used in `model/isa.js`.
 
 **[50]** RISC-V International, *RVA23 Profile*, 2024, https://github.com/riscv/riscv-profiles . The set of
-extensions an application-class RISC-V processor is expected to have (includes Zba and Zbb).
+extensions an application-class RISC-V processor is expected to have (RVA22 requires Zba, Zbb and Zbs;
+RVA23 requires the whole B extension).
 
 **[51]** A. Yasin, "A Top-Down Method for Performance Analysis and Counters Architecture," *IEEE
 International Symposium on Performance Analysis of Systems and Software (ISPASS)*, 2014. How Intel
 cores break cycles down into categories from hardware counters (the idea behind hpmcounter3..8 here).
+
+**[52]** RISC-V International, *The RISC-V Instruction Set Manual, Volume II: Privileged Architecture*,
+and the *RISC-V Platform Specification* drafts, https://github.com/riscv/riscv-isa-manual . Reset vectors,
+memory-mapped I/O and machine-mode firmware as RISC-V systems define them (the model for `fpga/`).
+
+**[53]** Lattice Semiconductor, *ECP5 and ECP5-5G Family Data Sheet* (FPGA-DS-02012),
+https://www.latticesemi.com/Products/FPGAandCPLD/ECP5 . LUT4 slices, CCU2C carry chains, DP16KD block RAM,
+EHXPLLL PLLs: the resources `fpga/boards/ulx3s/build.sh` maps Sixfold onto.
+
+**[54]** AMD (Xilinx), *7 Series FPGAs Data Sheet: Overview* (DS180), *Artix-7 FPGAs Data Sheet: DC and AC
+Switching Characteristics* (DS181), *7 Series FPGAs Memory Resources* (UG473), *7 Series FPGAs Clocking
+Resources* (UG472), https://docs.amd.com . The Arty A7-100T build.
+
+**[55]** C. Wolf, D. Shah et al., *Yosys*, *nextpnr* and *Project Trellis*, https://github.com/YosysHQ . The
+open-source synthesis, place-and-route and bitstream tools used for the ULX3S build, including the
+timing report quoted in [FPGA.md](FPGA.md).
+
+**[56]** Radiona.org, *ULX3S* (open hardware), https://github.com/emard/ulx3s ; Digilent, *Arty A7 Reference
+Manual*, https://digilent.com/reference/programmable-logic/arty-a7/reference-manual . The boards
+summarized in [boards/ULX3S.md](boards/ULX3S.md) and [boards/ARTY_A7.md](boards/ARTY_A7.md).

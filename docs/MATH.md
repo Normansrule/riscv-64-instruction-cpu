@@ -22,7 +22,7 @@ cycles = N + (S - 1) + L + P * F + R + K + I + D
 |---|---|---|---|
 | N | instructions retired | `WRITEBACK_VALID` | `instret` (0xC02) |
 | S | stages = 6; the first instruction needs 6 cycles, so S - 1 = 5 fill bubbles | | |
-| L | load stalls (loads and the 2-cycle Zbb results), 1 bubble each | `LOAD_STALL` | `hpmcounter3` |
+| L | load stalls (loads, the 2-cycle Zbb results, and a Zbs single-bit operation whose bit number was just computed), 1 bubble each | `LOAD_STALL` | `hpmcounter3` |
 | F | flushes: wrong branch guesses + JALR misses + traps, P = 3 bubbles each | `FLUSH_FETCH1_FETCH2_DECODE` | `hpmcounter4` |
 | R | FETCH2 redirects whose bubble survives, 1 each (taken branches found in the BTB cost 0 and are not counted) | `FETCH2_BRANCH_OFF_OR_CONTINUE` | `hpmcounter5` (every redirect) |
 | K | cycles the iterative M unit holds EXECUTE (performance build) | `MULTIPLY_DIVIDE_STALL` | `hpmcounter6` |

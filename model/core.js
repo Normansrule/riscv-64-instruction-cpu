@@ -22,7 +22,8 @@ import { decode, disasm, usesRegs } from './isa.js';
 export const STAGES = ['FETCH1', 'FETCH2', 'DECODE', 'EXECUTE', 'MEMORY', 'WRITEBACK'];
 export const SHORT = { FETCH1: 'F1', FETCH2: 'F2', DECODE: 'D', EXECUTE: 'E', MEMORY: 'M', WRITEBACK: 'W' };
 export const RESET_PC = 0x2000;
-export const MMIO_PUTCHAR = 0x10000000n;
+export const MMIO_BASE = 0x10000000n, MMIO_PUTCHAR = 0x10000000n, MMIO_LEDS = 0x10000008n, MMIO_BUTTONS = 0x10000010n;
+export const isMmio = a => (a >> 8n) === (MMIO_BASE >> 8n); // 0x1000_0000 .. 0x1000_00FF: devices, never RAM
 export const HPM = { 0xC03: 'stall', 0xC04: 'flush', 0xC05: 'redirect', 0xC06: 'busy', 0xC07: 'imiss', 0xC08: 'dmiss' }; // hpmcounter3..8 = L F R K I D
 export const CSR = { TOHOST: 0x51E, STATUS: 0x50A, HARTID: 0x50B, CYCLE: 0xC00, INSTRET: 0xC02, MHARTID: 0xF14,
   MSTATUS: 0x300, MTVEC: 0x305, MSCRATCH: 0x340, MEPC: 0x341, MCAUSE: 0x342 };
@@ -72,12 +73,18 @@ const MULDIV = ['MUL', 'MULH', 'MULHSU', 'MULHU', 'DIV', 'DIVU', 'REM', 'REMU'];
 // although the opcode is in the W space).
 export function aluDecode(word) {
   const op = word & 0x7f, f3 = bits(word, 14, 12), f7 = bits(word, 31, 25), f6 = f7 >> 1, f12 = bits(word, 31, 20), b30 = bits(word, 30, 30);
-  const r = { aluOp: 'XXX', aZext: 0, aShift: 0, invB: 0, full: 0 };
+  const r = { aluOp: 'XXX', aZext: 0, aShift: 0, invB: 0, oneB: 0, full: 0 };
   const base = () => { const n = ARITH[f3]; return n === 'SRL_SRA' ? (b30 ? 'SRA' : 'SRL') : n; };
   switch (op) {
     case OPC.OP_IMM:
-      if (f3 === 0b001) r.aluOp = ({ 0x600: 'CLZ', 0x601: 'CTZ', 0x602: 'CPOP', 0x604: 'SEXT_B', 0x605: 'SEXT_H' })[f12] || 'SLL';
-      else if (f3 === 0b101) r.aluOp = f12 === 0x6b8 ? 'REV8' : f12 === 0x287 ? 'ORC_B' : f6 === 0b011000 ? 'ROR' : (b30 ? 'SRA' : 'SRL');
+      if (f3 === 0b001) {
+        r.aluOp = ({ 0x600: 'CLZ', 0x601: 'CTZ', 0x602: 'CPOP', 0x604: 'SEXT_B', 0x605: 'SEXT_H' })[f12] || 'SLL';
+        if (r.aluOp === 'SLL') { // Zbs immediates: bseti bclri binvi are OR / AND / XOR with 1 << shamt
+          if (f6 === 0b001010) Object.assign(r, { aluOp: 'OR', oneB: 1 });
+          else if (f6 === 0b010010) Object.assign(r, { aluOp: 'AND', oneB: 1, invB: 1 });
+          else if (f6 === 0b011010) Object.assign(r, { aluOp: 'XOR', oneB: 1 });
+        }
+      } else if (f3 === 0b101) r.aluOp = f12 === 0x6b8 ? 'REV8' : f12 === 0x287 ? 'ORC_B' : f6 === 0b011000 ? 'ROR' : f6 === 0b010010 ? 'BEXT' : (b30 ? 'SRA' : 'SRL');
       else r.aluOp = f3 === 0 ? 'ADD' : base();
       break;
     case OPC.OP_IMM_32:
@@ -99,6 +106,10 @@ export function aluDecode(word) {
       } else if (f7 === 0b0010000 && (f3 === 0b010 || f3 === 0b100 || f3 === 0b110)) Object.assign(r, { aluOp: 'ADD', aShift: f3 >> 1, aZext: word32 ? 1 : 0, full: word32 ? 1 : 0 });
       else if (f7 === 0b0000101 && !word32 && f3 >= 0b100) r.aluOp = ['MIN', 'MINU', 'MAX', 'MAXU'][f3 - 4];
       else if (f7 === 0b0110000 && (f3 === 0b001 || f3 === 0b101)) r.aluOp = f3 === 0b001 ? 'ROL' : 'ROR';
+      else if (!word32 && f3 === 0b001 && f7 === 0b0010100) Object.assign(r, { aluOp: 'OR', oneB: 1 }); // bset
+      else if (!word32 && f3 === 0b001 && f7 === 0b0100100) Object.assign(r, { aluOp: 'AND', oneB: 1, invB: 1 }); // bclr
+      else if (!word32 && f3 === 0b001 && f7 === 0b0110100) Object.assign(r, { aluOp: 'XOR', oneB: 1 }); // binv
+      else if (!word32 && f3 === 0b101 && f7 === 0b0100100) r.aluOp = 'BEXT';
       else if (f7 === 0b0000100 && word32 && f3 === 0b000) Object.assign(r, { aluOp: 'ADD', aZext: 1, full: 1 });
       else if (f7 === 0b0000100 && word32 && f3 === 0b100) Object.assign(r, { aluOp: 'ZEXT_H', full: 1 });
       break;
@@ -115,9 +126,9 @@ export function control(word) {
   const op = word & 0x7f, f3 = bits(word, 14, 12), f7 = bits(word, 31, 25), rs1f = bits(word, 19, 15);
   const c = { regWrite: 0, memRead: 0, memWrite: 0, csrWrite: 0, csrImm: 0, aIsPC: 0, bIsImm: 0, isWord: 0, isMulDiv: 0,
     isBranch: 0, isJal: 0, isJalr: 0, isEcall: 0, isEbreak: 0, isMret: 0, immType: 'I', wbSel: WB.ALU, aluOp: 'XXX',
-    aZext: 0, aShift: 0, invB: 0, late: 0 };
+    aZext: 0, aShift: 0, invB: 0, oneB: 0, late: 0 };
   const md = f7 === 0b0000001;
-  const dec = () => { const d = aluDecode(word); Object.assign(c, { aluOp: d.aluOp, aZext: d.aZext, aShift: d.aShift, invB: d.invB, late: LATE_OPS.has(d.aluOp) ? 1 : 0 }); return d; };
+  const dec = () => { const d = aluDecode(word); Object.assign(c, { aluOp: d.aluOp, aZext: d.aZext, aShift: d.aShift, invB: d.invB, oneB: d.oneB, late: LATE_OPS.has(d.aluOp) ? 1 : 0 }); return d; };
   switch (op) {
     case OPC.LUI: Object.assign(c, { regWrite: 1, bIsImm: 1, immType: 'U', aluOp: 'COPY_B' }); break;
     case OPC.AUIPC: Object.assign(c, { regWrite: 1, aIsPC: 1, bIsImm: 1, immType: 'U', aluOp: 'ADD' }); break;
@@ -153,7 +164,8 @@ export function control(word) {
 
 // DECODE's operand preparation (Riscv64.sv: EXECUTE_ALU_INPUT_A / _B are chosen and prepared in DECODE)
 export function prepareA(rs1, c) { const x = c.aZext ? (rs1 & 0xffffffffn) : rs1; return u64(x << BigInt(c.aShift || 0)); }
-export function prepareB(rs2, c) { return c.invB ? u64(~rs2) : rs2; }
+// operand B (rs2 or the immediate): Zbs's single bit, then the Zbb / Zbs inversion (src/Riscv64.sv prepare_operand_b)
+export function prepareB(value, c) { const chosen = c.oneB ? 1n << (value & 63n) : value; return c.invB ? u64(~chosen) : chosen; }
 
 // ---------------------------------------------------------------- ImmediateGenerator
 export function immediate(word, type) {
@@ -217,6 +229,7 @@ export function alu(a, b, op, isWord) {
     case 'SEXT_H': return u64(BigInt.asIntN(16, a));
     case 'ZEXT_H': return a & 0xffffn;
     case 'REV8': { let r = 0n; for (let i = 0n; i < 8n; i++) r |= ((a >> (8n * i)) & 0xffn) << (8n * (7n - i)); return r; }
+    case 'BEXT': return (a >> sh) & 1n;
     case 'ORC_B': { let r = 0n; for (let i = 0n; i < 8n; i++) if ((a >> (8n * i)) & 0xffn) r |= 0xffn << (8n * i); return r; }
     default: return 0n;
   }
@@ -310,8 +323,11 @@ const BUBBLE = cause => ({ valid: false, cause });
 // ---------------------------------------------------------------- the core
 export class Core {
   // opts.bp: false = always predict not taken; opts.historyBits: GSHARE_HISTORY_BITS
-  constructor(image, { bp = true, historyBits = DEFAULT_HISTORY_BITS, btb = true, ras = true, preciseStall = true, iterativeMdu = true, tournament = true, caches = true, missLatency = 10 } = {}) {
-    this.opts = { bp, historyBits, btb, ras, preciseStall, iterativeMdu, tournament, caches, missLatency };
+  // devices (optional): { load(address) -> value, store(address, value, mask) } answers the device page
+  // 0x1000_0000 .. 0x1000_00FF the way fpga/rtl/Sixfold_System.sv does (the site's FPGA console uses it).
+  // Without it, device loads read 0, like the simulation testbench. resetPc: the RESET_VECTOR input.
+  constructor(image, { bp = true, historyBits = DEFAULT_HISTORY_BITS, btb = true, ras = true, preciseStall = true, iterativeMdu = true, tournament = true, caches = true, missLatency = 10, devices = null, resetPc = RESET_PC } = {}) {
+    this.opts = { bp, historyBits, btb, ras, preciseStall, iterativeMdu, tournament, caches, missLatency, devices, resetPc };
     this.bht = new Uint8Array(128).fill(2); // TournamentChooser: per-branch history table (weakly taken)
     this.chooser = new Uint8Array(128).fill(1); // ... and chooser (weakly trust the BHT)
     // 2-way set-associative: slot = way * 64 + set (64 sets x 2 ways), one LRU bit per set
@@ -326,9 +342,9 @@ export class Core {
     this.bp = new GShare(historyBits, bp);
     this.csr = { tohost: 0n, status: 0n, cycle: 0n, instret: 0n, mstatus: 0n, mtvec: 0n, mscratch: 0n, mepc: 0n, mcause: 0n };
     this.hpm = { stall: 0n, flush: 0n, redirect: 0n, busy: 0n, imiss: 0n, dmiss: 0n };
-    this.F1PC = RESET_PC;
+    this.F1PC = resetPc;
     this.f2 = BUBBLE('fill'); this.d = BUBBLE('fill'); this.e = BUBBLE('fill'); this.m = BUBBLE('fill'); this.w = BUBBLE('fill');
-    this.cycle = 0; this.halted = false; this.output = '';
+    this.cycle = 0; this.halted = false; this.output = ''; this.leds = 0;
     this.instrs = []; this.nextId = 0;
     this.stats = { cycles: 0, retired: 0, loadStalls: 0, falseLoadStalls: 0, flushes: 0, mispredicts: 0, jalrFlushes: 0,
       redirects: 0, branches: 0, predictedTaken: 0, forwards: 0, btbRedirects: 0, returnsPredicted: 0, multiplyDivideBusy: 0,
@@ -361,11 +377,12 @@ export class Core {
     return false;
   }
   irefill(missing, pc) { return this.prefetchingRefill(this.icache, missing, pc); }
-  prefetchingRefill(c, missing, addr) { // a refill engine with next-line prefetch (InstructionCache and DataCache)
+  prefetchingRefill(c, missing, addr, storing = false) { // a refill engine with next-line prefetch (InstructionCache and DataCache)
     if (!c.busy) {
       if (missing) { c.busy = true; c.left = this.opts.missLatency; c.line = Number(BigInt.asUintN(32, (typeof addr === 'bigint' ? addr : BigInt(addr >>> 0))) & ~31n); c.demand = true; return true; }
       if (c.pf) { c.pf = false; if (!this.cacheHit(c, c.pfLine)) { c.busy = true; c.left = this.opts.missLatency; c.line = c.pfLine; c.demand = false; this.stats.prefetches = (this.stats.prefetches || 0) + 1; if (c === this.dcache) this.stats.dprefetches = (this.stats.dprefetches || 0) + 1; } }
     } else if (c.left === 1) {
+      if (storing) return false; // DataCache: a store this cycle goes first, the line installs next cycle
       c.busy = false; this.install(c);
       if (c.demand) { c.pf = true; c.pfLine = (c.line + 32) >>> 0; }
     } else c.left--;
@@ -373,7 +390,7 @@ export class Core {
   }
   fetch(pc) { const m = this.mem, a = pc & 0xffff; return (m[a] | (m[(a + 1) & 0xffff] << 8) | (m[(a + 2) & 0xffff] << 16) | (m[(a + 3) & 0xffff] << 24)) >>> 0; }
   readDouble(addr) {
-    if (addr === MMIO_PUTCHAR) return 0n;
+    if (isMmio(addr)) return this.opts.devices ? BigInt.asUintN(64, BigInt(this.opts.devices.load(addr))) : 0n; // devices read 0 in simulation
     const base = Number(addr & 0xfff8n); let v = 0n;
     for (let k = 7; k >= 0; k--) v = (v << 8n) | BigInt(this.mem[(base + k) & 0xffff]);
     return v;
@@ -424,7 +441,7 @@ export class Core {
     let FLUSH = false, adjust = 0, fwdE = 0n, exNext = null, storeOp = null, csrWrite = null, bpTrain = null, restoreGhr = null, btbWrite = null, MDU_STALL = false, mduSteps = 0;
     let dReq = false, dHit = true, dAddr = 0n, D_STALL = false, trap = null, mret = false, dStoreSlot = -1;
     if (e.valid) {
-      const A = e.aIsPC ? BigInt(e.pc) : prepareA(e.rs1v, e), B = e.bIsImm ? e.imm : prepareB(e.rs2v, e);
+      const A = e.aIsPC ? BigInt(e.pc) : prepareA(e.rs1v, e), B = prepareB(e.bIsImm ? e.imm : e.rs2v, e);
       const aluOut = alu(A, B, e.aluOp, e.isWord);
       const result = e.isMulDiv ? multiplyDivide(e.rs1v, e.rs2v, e.aluOp, e.isWord) : aluOut;
       const pc4 = u64(BigInt(e.pc) + 4n);
@@ -477,7 +494,10 @@ export class Core {
       return [this.regs[r], null];
     };
     const useD = usesRegisters(dw), exact = this.opts.preciseStall;
-    const LOAD_STALL = d.valid && e.valid && (!!e.memRead || !!e.late) && e.rd !== 0 && ((e.rd === rs1f && (!exact || useD.rs1)) || (e.rd === rs2f && (!exact || useD.rs2)));
+    // Zbs bset / bclr / binv whose bit number comes from EXECUTE wait one cycle (src/Riscv64.sv SINGLE_BIT_HAZARD)
+    const ctlD = d.valid ? control(dw) : null;
+    const SINGLE_BIT_STALL = !!(d.valid && e.valid && ctlD.oneB && !ctlD.bIsImm && e.regWrite && !e.memRead && !e.late && e.rd !== 0 && e.rd === rs2f);
+    const LOAD_STALL = (d.valid && e.valid && (!!e.memRead || !!e.late) && e.rd !== 0 && ((e.rd === rs1f && (!exact || useD.rs1)) || (e.rd === rs2f && (!exact || useD.rs2)))) || SINGLE_BIT_STALL;
     let deNext = null;
     if (d.valid) {
       ev.stages.DECODE = { id: d.id, pc: d.pc };
@@ -488,7 +508,7 @@ export class Core {
       deNext = { valid: true, id: d.id, pc: d.pc, word: d.word, ...c, rs1v: v1, rs2v: v2, imm: immediate(d.word, c.immType), rd: rdf,
         funct3: bits(d.word, 14, 12), csrAddr: bits(d.word, 31, 20), pred: d.pred, idx: d.idx, ckpt: d.ckpt, target: d.target,
         returnPredicted: d.returnPredicted, isCall: d.isCall, isReturn: d.isReturn, rasCkpt: d.rasCkpt, gTaken: d.gTaken, bTaken: d.bTaken };
-      if (LOAD_STALL) ev.loadStallReal = (useD.rs1 && e.rd === rs1f) || (useD.rs2 && e.rd === rs2f);
+      if (LOAD_STALL) ev.loadStallReal = SINGLE_BIT_STALL || (useD.rs1 && e.rd === rs1f) || (useD.rs2 && e.rd === rs2f);
     }
 
     // ================= FETCH2 =================
@@ -545,6 +565,9 @@ export class Core {
     if (w.valid) this.stats.retired++; else this.stats.bubbles[w.cause]++;
     if (storeOp && storeOp.mask) {
       if (storeOp.addr === MMIO_PUTCHAR) { this.output += String.fromCharCode(Number(storeOp.data & 0xffn)); ev.putchar = true; }
+      else if (storeOp.addr === MMIO_LEDS && (storeOp.mask & 1)) { this.leds = Number(storeOp.data & 0xffn); ev.leds = this.leds; }
+      else if (isMmio(storeOp.addr)) { /* other device addresses: only the devices hook sees them */ }
+      if (isMmio(storeOp.addr) && this.opts.devices) this.opts.devices.store(storeOp.addr, storeOp.data, storeOp.mask);
       else { const base = Number(storeOp.addr & 0xfff8n); for (let k = 0; k < 8; k++) if (storeOp.mask & (1 << k)) this.mem[(base + k) & 0xffff] = Number((storeOp.data >> BigInt(8 * k)) & 0xffn); }
     }
     if (trap) { this.csr.mepc = BigInt(trap.pc) & ~1n; this.csr.mcause = trap.cause; const mie = (this.csr.mstatus >> 3n) & 1n; this.csr.mstatus = (this.csr.mstatus & ~0x88n) | (mie << 7n); this.stats.traps = (this.stats.traps || 0) + 1; }
@@ -570,7 +593,7 @@ export class Core {
       if (dReq && dHit) this.touch(this.dcache, this.cacheSlot(this.dcache, dAddr));
       if (storeOp && storeOp.mask && dStoreSlot >= 0) this.touch(this.dcache, dStoreSlot);
       if (this.irefill(!iHit, this.F1PC)) this.stats.icacheMisses++;
-      if (this.prefetchingRefill(this.dcache, dReq && !dHit, dAddr)) this.stats.dcacheMisses++;
+      if (this.prefetchingRefill(this.dcache, dReq && !dHit, dAddr, !!(storeOp && storeOp.mask))) this.stats.dcacheMisses++;
     }
     const rasTopBefore = this.ras.top; // DECODE_RAS_CHECKPOINT: the pointer BEFORE this cycle's push or pop
     if (btbWrite) Object.assign(this.btb[btbWrite.idx], { valid: true, tag: btbWrite.tag, target: btbWrite.target, isJal: btbWrite.isJal });

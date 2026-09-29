@@ -333,3 +333,27 @@ label { font-size: .88rem; color: var(--ink2); display: inline-flex; gap: .5em; 
 #wt-svg .wt-line { stroke: var(--ink2); stroke-width: 1.5; }
 .wt-info { min-height: 4.5em; color: var(--ink2); }
 @media (prefers-reduced-motion: no-preference) { #wt-svg .wt-row { animation: bt-in .45s both; animation-delay: var(--d, 0ms); } }
+
+/* ---------------------------------------------------------------- FPGA console */
+.fc { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 22px; margin-top: 26px; }
+.fc-board { background: #0B1418; border: 1px solid var(--rule); border-radius: 14px; padding: 14px 16px 16px; min-width: 0; }
+.fc-top { display: flex; justify-content: space-between; gap: 12px; font: 12px var(--mono); color: var(--ink3); margin-bottom: 8px; flex-wrap: wrap; }
+.fc-status { color: var(--M, #27AE60); }
+.fc-term { height: 340px; overflow: auto; margin: 0; padding: 12px; background: #050A0C; color: #9FF0B4; font: 12.5px/1.45 var(--mono); border-radius: 8px; white-space: pre; outline: none; border: 1px solid transparent; }
+.fc-term:focus { border-color: #2E86C1; }
+.fc-row { display: flex; align-items: center; gap: 14px; margin-top: 12px; flex-wrap: wrap; }
+.fc-label { font: 11px var(--mono); color: var(--ink3); min-width: 150px; }
+.fc-leds { display: flex; gap: 10px; }
+.fc-led { width: 16px; height: 16px; border-radius: 50%; background: #2A1A16; border: 1px solid #4A2A22; transition: background .05s; }
+.fc-led.on { background: #FF5A36; border-color: #FF8A66; box-shadow: 0 0 10px #FF5A36; }
+.fc-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+.fc-btn { font: 11px var(--mono); padding: 5px 9px; }
+.fc-btn.down { background: #2E86C1; color: #fff; }
+.fc-side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.fc-side select { width: 100%; }
+.fc-keys { display: flex; flex-wrap: wrap; gap: 8px; }
+.fc-figs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 30px; }
+.fc-figs figure { margin: 0; }
+.fc-figs img { width: 100%; height: auto; display: block; border-radius: 8px; background: #FBFCF8; }
+.fc-figs figcaption { font-size: .85rem; color: var(--ink2); margin-top: 8px; }
+@media (max-width: 900px) { .fc { grid-template-columns: 1fr; } .fc-figs { grid-template-columns: 1fr; } .fc-term { height: 280px; font-size: 11px; } }

@@ -70,8 +70,8 @@ module riscv64_top #(
         .READ_DATA (CACHE_DATA), .HIT (dcache_hit),
         .REFILL_ADDRESS (DATA_REFILL_ADDRESS), .REFILL_LINE (DATA_REFILL_LINE)
       );
-      // Memory-mapped I/O is not cached (loads from the putchar address read 0 from the memory itself)
-      assign dcache_dout = (dcache_addr == MMIO_PUTCHAR) ? MEMORY_DATA : CACHE_DATA;
+      // Memory-mapped I/O is not cached: loads from a device address take the device's answer (0 here)
+      assign dcache_dout = (dcache_addr[63:8] == MMIO_BASE[63:8]) ? MEMORY_DATA : CACHE_DATA;
     end else begin : no_caches
       assign icache_dout = MEMORY_INSTRUCTION;
       assign icache_hit = 1'b1;
@@ -94,6 +94,7 @@ module riscv64_top #(
     .clk                      (clk),
     .reset                    (reset),
     .BRANCH_PREDICTION_ENABLE (BRANCH_PREDICTION_ENABLE),
+    .RESET_VECTOR             (PC_RESET),
     .dcache_addr              (dcache_addr),
     .icache_addr              (icache_addr),
     .dcache_we                (dcache_we),

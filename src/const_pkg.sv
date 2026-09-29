@@ -16,7 +16,11 @@ package const_pkg;
   // Main memory (behind the instruction and data caches in the performance build)
   // -----------------------------
   localparam int MEMORY_BYTES      = 65536;                    // 64 KiB unified instruction + data memory
-  localparam logic [63:0] MMIO_PUTCHAR = 64'h0000_0000_1000_0000; // A store here prints one character
+  // Memory-mapped input/output: the 256 bytes at 0x1000_0000 are devices, not memory (never written to RAM)
+  localparam logic [63:0] MMIO_BASE    = 64'h0000_0000_1000_0000; // 0x1000_0000 .. 0x1000_00FF
+  localparam logic [63:0] MMIO_PUTCHAR = 64'h0000_0000_1000_0000; // store: print one character (the FPGA's UART)
+  localparam logic [63:0] MMIO_LEDS    = 64'h0000_0000_1000_0008; // store: the 8 LEDs (low byte); load: what was stored
+  localparam logic [63:0] MMIO_BUTTONS = 64'h0000_0000_1000_0010; // load: the board's buttons / switches (0 in simulation)
 
   // -----------------------------
   // PC address on reset

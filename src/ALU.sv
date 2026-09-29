@@ -33,24 +33,24 @@ module ALU (
 
     // ---------------------------------------------------------------- Zbb counting units
     // clz / ctz / cpop and their word forms. The word forms pad the low 32 bits so the 64-bit units give
-    // the 32-bit answer: clzw counts in {A[31:0], ones}, ctzw in {ones, A[31:0]}, cpopw in {zeros, A[31:0]}.
-    logic [63:0] CLZ_INPUT, CTZ_INPUT_REVERSED, CPOP_INPUT;
+    // the 32-bit answer: clzw counts in {A[31:0], ones}, ctzw in {ones, A[31:0]}. cpop and cpopw leave
+    // EXECUTE as four 16-bit quarter counts; MEMORY adds all four (cpop) or the low two (cpopw).
+    logic [63:0] CLZ_INPUT, CTZ_INPUT_REVERSED;
     logic [5:0] CLZ_COUNT, CTZ_COUNT;
     logic CLZ_ALL_ZERO, CTZ_ALL_ZERO;
-    logic [6:0] POPULATION;
+    logic [19:0] QUARTER_POPULATIONS;
     logic [63:0] CTZ_INPUT;
     assign CLZ_INPUT = ALU_IS_WORD_OPERATION ? {A[31:0], 32'hFFFF_FFFF} : A;
     assign CTZ_INPUT = ALU_IS_WORD_OPERATION ? {32'hFFFF_FFFF, A[31:0]} : A;
-    assign CPOP_INPUT = ALU_IS_WORD_OPERATION ? {32'd0, A[31:0]} : A;
     always_comb for (int i = 0; i < 64; i++) CTZ_INPUT_REVERSED[i] = CTZ_INPUT[63-i]; // trailing zeros = leading zeros of the mirror image
     LeadingZeroCounter count_leading (.X (CLZ_INPUT), .COUNT (CLZ_COUNT), .ALL_ZERO (CLZ_ALL_ZERO));
     LeadingZeroCounter count_trailing (.X (CTZ_INPUT_REVERSED), .COUNT (CTZ_COUNT), .ALL_ZERO (CTZ_ALL_ZERO));
-    PopulationCount count_ones (.X (CPOP_INPUT), .COUNT (POPULATION));
+    PopulationCount count_ones (.X (A), .QUARTER_COUNTS (QUARTER_POPULATIONS));
 
     logic [63:0] CLZ_RESULT, CTZ_RESULT, CPOP_RESULT;
     assign CLZ_RESULT = CLZ_ALL_ZERO ? 64'd64 : {58'd0, CLZ_COUNT}; // all-zero input: 64 (the word forms never get here: their padding is never all zero)
     assign CTZ_RESULT = CTZ_ALL_ZERO ? 64'd64 : {58'd0, CTZ_COUNT};
-    assign CPOP_RESULT = {57'd0, POPULATION};
+    assign CPOP_RESULT = {44'd0, QUARTER_POPULATIONS}; // finished in MEMORY (src/Population_Count.sv)
 
     function automatic logic [63:0] alu (
         input logic [63:0] rs1, // First operand
@@ -139,6 +139,7 @@ module ALU (
             ALU_ZEXT_H: alu_result = {48'd0, rs1[15:0]};
             ALU_REV8: alu_result = rev8_result;
             ALU_ORC_B: alu_result = orc_b_result;
+            ALU_BEXT: alu_result = {63'd0, srl_result[0]}; // the bit the right shifter brings down to position 0
             default: alu_result = 64'd0; // Default Case for any edge cases not covered (ALU_XXX and the M extension which uses the Multiply Divide Unit)
         endcase
 
@@ -188,7 +189,7 @@ module ALU (
             ALU_MINU: LATE_VALUE = ADDER_SLTU ? A : B;
             ALU_MAX: LATE_VALUE = ADDER_SLT ? B : A;
             ALU_MAXU: LATE_VALUE = ADDER_SLTU ? B : A;
-            default: LATE_VALUE = CPOP_RESULT; // cpop, cpopw: the count fits in 7 bits, sign extension changes nothing
+            default: LATE_VALUE = CPOP_RESULT; // cpop, cpopw: four partial counts, added up in MEMORY
         endcase
         ALUOutFast = ADDER_OPERATION ? ADDER_FAMILY_RESULT : OTHER_RESULT;
         ALUOut = LATE_RESULT ? LATE_VALUE : ALUOutFast;

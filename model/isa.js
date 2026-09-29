@@ -1,7 +1,7 @@
 // =============================================================================
 // model/isa.js — THE single source of truth for the RV64IM + Zicsr instruction set.
 //
-// RV64IM + Zicsr + Zba + Zbb (the bit-manipulation extensions every current RISC-V application core has).
+// RV64IM + Zicsr + Zba + Zbb + Zbs (together Zba Zbb Zbs are the B extension, which every current RISC-V application core has).
 // Every other part of the repo derives from this table:
 //   * model/asm.js        assembles text into machine code using `encode()`
 //   * model/core.js       decodes machine code using `decode()`
@@ -171,6 +171,15 @@ export const INSTRUCTIONS = [
   I('zext.h', 'I-unary', O.OP_32,     0b100, 0x080, 'rr', 'Zbb', 'Bit manipulation', 'Zero-extend Halfword', 'rd = zext(rs1[15:0])'),
   I('rev8',   'I-unary', O.OP_IMM,    0b101, 0x6B8, 'rr', 'Zbb', 'Bit manipulation', 'Reverse byte order', 'rd = the 8 bytes of rs1 in reverse order (endianness swap)'),
   I('orc.b',  'I-unary', O.OP_IMM,    0b101, 0x287, 'rr', 'Zbb', 'Bit manipulation', 'OR-Combine each Byte', 'rd byte i = (rs1 byte i != 0) ? 0xFF : 0x00 (finds the 0 byte ending a string)'),
+  // ---------------- Zbs: single-bit instructions ------------------------------------------
+  I('bset',  'R', O.OP, 0b001, 0b0010100, 'rrr', 'Zbs', 'Single-bit', 'Bit Set', 'rd = rs1 | (1 << rs2[5:0])'),
+  I('bclr',  'R', O.OP, 0b001, 0b0100100, 'rrr', 'Zbs', 'Single-bit', 'Bit Clear', 'rd = rs1 & ~(1 << rs2[5:0])'),
+  I('binv',  'R', O.OP, 0b001, 0b0110100, 'rrr', 'Zbs', 'Single-bit', 'Bit Invert', 'rd = rs1 ^ (1 << rs2[5:0])'),
+  I('bext',  'R', O.OP, 0b101, 0b0100100, 'rrr', 'Zbs', 'Single-bit', 'Bit Extract', 'rd = (rs1 >> rs2[5:0]) & 1'),
+  I('bseti', 'I-sh64', O.OP_IMM, 0b001, 0b001010, 'rri', 'Zbs', 'Single-bit', 'Bit Set Immediate', 'rd = rs1 | (1 << shamt)'),
+  I('bclri', 'I-sh64', O.OP_IMM, 0b001, 0b010010, 'rri', 'Zbs', 'Single-bit', 'Bit Clear Immediate', 'rd = rs1 & ~(1 << shamt)'),
+  I('binvi', 'I-sh64', O.OP_IMM, 0b001, 0b011010, 'rri', 'Zbs', 'Single-bit', 'Bit Invert Immediate', 'rd = rs1 ^ (1 << shamt)'),
+  I('bexti', 'I-sh64', O.OP_IMM, 0b101, 0b010010, 'rri', 'Zbs', 'Single-bit', 'Bit Extract Immediate', 'rd = (rs1 >> shamt) & 1'),
 ];
 
 export const BY_NAME = Object.fromEntries(INSTRUCTIONS.map(i => [i.name, i]));

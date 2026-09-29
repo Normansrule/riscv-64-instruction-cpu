@@ -15,6 +15,9 @@ module PrefixNegate #(
     output logic [WIDTH-1:0] NEGATED
 );
 
+`ifdef SIXFOLD_FPGA
+    assign NEGATED = -X; // the FPGA carry chain (see src/Parallel_Prefix_Adder.sv)
+`else
     localparam int LEVELS = $clog2(WIDTH);
 
     genvar LEVEL, BIT_INDEX;
@@ -38,6 +41,7 @@ module PrefixNegate #(
 
     // Bit i flips when any bit BELOW i is set: shift the inclusive prefix OR up by one
     assign NEGATED = X ^ {or_level[LEVELS].ANY_SET[WIDTH-2:0], 1'b0};
+`endif
 
 endmodule
 

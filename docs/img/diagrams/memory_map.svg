@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 780" width="1300" height="780">
+<defs><marker id="m-data" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2B3A31"/></marker><marker id="m-pred" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#00796B"/></marker><marker id="m-flush" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C2185B"/></marker><marker id="m-F1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2E86C1"/></marker><marker id="m-F2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#17A2B8"/></marker><marker id="m-D" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6A5ACD"/></marker><marker id="m-E" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#E08E0B"/></marker><marker id="m-M" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#27AE60"/></marker><marker id="m-tag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C9982E"/></marker><marker id="m-idx" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#17A2B8"/></marker><marker id="m-off" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6A5ACD"/></marker><marker id="m-hit" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1E8449"/></marker><marker id="m-miss" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C0392B"/></marker><marker id="m-sub" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4A5A50"/></marker></defs>
+<rect width="100%" height="100%" rx="12" fill="#FBFCF8" stroke="#D5DBD0"/>
+<text x="24" y="34" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="20" font-weight="700" fill="#17251D" text-anchor="start">Memory map: what each address means</text>
+<text x="24" y="56" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="400" fill="#4A5A50" text-anchor="start">Loads and stores reach memory and devices; CSR instructions reach the registers inside the core. Same map in simulation and on the FPGA.</text>
+<text x="270" y="92" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="600" fill="#4A5A50" text-anchor="middle">addresses (64-bit, only these are used)</text>
+<rect x="120" y="104" width="300" height="70" rx="4" fill="#C2185B" stroke="#2B3A31" stroke-width="1.5" fill-opacity="0.16"/>
+<text x="134" y="126" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#17251D" text-anchor="start">Device registers (256 bytes)</text>
+<text x="134" y="144" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="start">0x1000_0000 .. 0x1000_00FF</text>
+<text x="134" y="159" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="start">never cached, never stored to RAM</text>
+<text x="112" y="116" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="end">0x1000_00FF</text>
+<text x="112" y="174" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="end">0x1000_0000</text>
+<text x="270" y="196" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#8A968E" text-anchor="middle" font-style="italic">. . .  nothing here  . . .</text>
+<rect x="120" y="212" width="300" height="330" rx="4" fill="#27AE60" stroke="#2B3A31" stroke-width="1.5" fill-opacity="0.16"/>
+<text x="134" y="234" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#17251D" text-anchor="start">Programs  0x2000 .. 0xFFFF  (56 KiB)</text>
+<text x="134" y="252" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="start">the assembler puts code at 0x2000 (PC_RESET)</text>
+<text x="134" y="267" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="start">then its data; programs set their own sp</text>
+<text x="134" y="282" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="start">loaded by the firmware ("l") on the FPGA,</text>
+<text x="134" y="297" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="start">from +HEX= in simulation</text>
+<text x="112" y="224" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="end">0xFFFF</text>
+<text x="112" y="542" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="end">0x2000</text>
+<rect x="120" y="542" width="300" height="90" rx="4" fill="#6A5ACD" stroke="#2B3A31" stroke-width="1.5" fill-opacity="0.16"/>
+<text x="134" y="564" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#17251D" text-anchor="start">Firmware stack  0x1000 .. 0x1FFF</text>
+<text x="134" y="582" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="start">grows down from 0x2000</text>
+<text x="112" y="632" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="end">0x1000</text>
+<rect x="120" y="632" width="300" height="100" rx="4" fill="#2E86C1" stroke="#2B3A31" stroke-width="1.5" fill-opacity="0.16"/>
+<text x="134" y="654" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#17251D" text-anchor="start">Boot firmware  0x0000 .. 0x0FFF</text>
+<text x="134" y="672" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="start">fpga/firmware/bios.s (about 2 KiB)</text>
+<text x="134" y="687" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="start">RESET_VECTOR after power-on</text>
+<text x="134" y="702" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="start">(zeros in simulation)</text>
+<text x="112" y="732" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="end">0x0000</text>
+<text x="270" y="754" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="middle">main memory: 64 KiB (addresses wrap every 64 KiB)</text>
+<rect x="488" y="100" width="780" height="334" rx="8" fill="#FFF" stroke="#C2185B" stroke-width="1.5"/>
+<text x="500" y="120" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#C2185B" text-anchor="start">Device registers at 0x1000_0000 + offset (8 bytes each; use ld / sd, or sb for PUTCHAR)</text>
+<text x="500" y="140" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="700" fill="#4A5A50" text-anchor="start">offset</text>
+<text x="560" y="140" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="700" fill="#4A5A50" text-anchor="start">register</text>
+<text x="680" y="140" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="700" fill="#4A5A50" text-anchor="start">a load returns</text>
+<text x="1000" y="140" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="700" fill="#4A5A50" text-anchor="start">a store does</text>
+<rect x="494" y="144" width="768" height="24" fill="#C2185B" fill-opacity="0.05"/>
+<text x="500" y="160" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="400" fill="#17251D" text-anchor="start">0x00</text>
+<text x="560" y="160" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="700" fill="#17251D" text-anchor="start">PUTCHAR</text>
+<text x="680" y="160" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">0</text>
+<text x="1000" y="160" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">print one character (UART on the FPGA)</text>
+<text x="500" y="186" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="400" fill="#17251D" text-anchor="start">0x08</text>
+<text x="560" y="186" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="700" fill="#17251D" text-anchor="start">LEDS</text>
+<text x="680" y="186" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">the LED byte</text>
+<text x="1000" y="186" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">set the 8 LEDs</text>
+<rect x="494" y="196" width="768" height="24" fill="#C2185B" fill-opacity="0.05"/>
+<text x="500" y="212" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="400" fill="#17251D" text-anchor="start">0x10</text>
+<text x="560" y="212" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="700" fill="#17251D" text-anchor="start">BUTTONS</text>
+<text x="680" y="212" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">buttons and switches</text>
+<text x="1000" y="212" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">-</text>
+<text x="500" y="238" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="400" fill="#17251D" text-anchor="start">0x18</text>
+<text x="560" y="238" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="700" fill="#17251D" text-anchor="start">UART</text>
+<text x="680" y="238" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">bit0 byte waiting, bit1 queue full, bit2 idle, 15:8 byte</text>
+<text x="1000" y="238" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">drop the received byte</text>
+<rect x="494" y="248" width="768" height="24" fill="#C2185B" fill-opacity="0.05"/>
+<text x="500" y="264" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="400" fill="#17251D" text-anchor="start">0x20</text>
+<text x="560" y="264" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="700" fill="#17251D" text-anchor="start">BOOT</text>
+<text x="680" y="264" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">0</text>
+<text x="1000" y="264" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">restart the core at BOOT_ADDRESS</text>
+<text x="500" y="290" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="400" fill="#17251D" text-anchor="start">0x28</text>
+<text x="560" y="290" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="700" fill="#17251D" text-anchor="start">CLOCK</text>
+<text x="680" y="290" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">clock rate in Hz</text>
+<text x="1000" y="290" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">-</text>
+<rect x="494" y="300" width="768" height="24" fill="#C2185B" fill-opacity="0.05"/>
+<text x="500" y="316" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="400" fill="#17251D" text-anchor="start">0x30</text>
+<text x="560" y="316" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="700" fill="#17251D" text-anchor="start">LAST_TOHOST</text>
+<text x="680" y="316" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">TOHOST of the last program</text>
+<text x="1000" y="316" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">-</text>
+<text x="500" y="342" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="400" fill="#17251D" text-anchor="start">0x38</text>
+<text x="560" y="342" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="700" fill="#17251D" text-anchor="start">LAST_CYCLES</text>
+<text x="680" y="342" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">cycles the last program ran</text>
+<text x="1000" y="342" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">-</text>
+<rect x="494" y="352" width="768" height="24" fill="#C2185B" fill-opacity="0.05"/>
+<text x="500" y="368" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="400" fill="#17251D" text-anchor="start">0x40</text>
+<text x="560" y="368" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="700" fill="#17251D" text-anchor="start">BOOT_REASON</text>
+<text x="680" y="368" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">0 power-on, 1 program ended, 2 BOOT</text>
+<text x="1000" y="368" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">-</text>
+<text x="500" y="394" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="400" fill="#17251D" text-anchor="start">0x48</text>
+<text x="560" y="394" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="700" fill="#17251D" text-anchor="start">TIMER</text>
+<text x="680" y="394" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">cycles since power-on</text>
+<text x="1000" y="394" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">-</text>
+<rect x="494" y="404" width="768" height="24" fill="#C2185B" fill-opacity="0.05"/>
+<text x="500" y="420" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="400" fill="#17251D" text-anchor="start">0x50</text>
+<text x="560" y="420" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="700" fill="#17251D" text-anchor="start">BOOT_ADDRESS</text>
+<text x="680" y="420" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">where BOOT starts (0x2000)</text>
+<text x="1000" y="420" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">set it</text>
+<text x="500" y="460" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#8A968E" text-anchor="start">In simulation every device load returns 0 and only PUTCHAR (and LEDS, in the model) do anything, so the</text>
+<text x="500" y="474" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#8A968E" text-anchor="start">same program runs unchanged on the model, the RTL and the board.</text>
+<rect x="488" y="520" width="780" height="212" rx="8" fill="#FFF" stroke="#6A5ACD" stroke-width="1.5"/>
+<text x="500" y="542" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#6A5ACD" text-anchor="start">Control and status registers: a separate address space, inside the core (csrr / csrw)</text>
+<text x="500" y="570" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="700" fill="#17251D" text-anchor="start">0xC00 cycle</text>
+<text x="650" y="570" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="700" fill="#17251D" text-anchor="start">0xC02 instret</text>
+<text x="800" y="570" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">counters since reset (rdcycle, rdinstret)</text>
+<text x="500" y="596" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="700" fill="#17251D" text-anchor="start">0xC03..0xC08</text>
+<text x="650" y="596" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="700" fill="#17251D" text-anchor="start">hpmcounter3..8</text>
+<text x="800" y="596" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">L F R K I D: the bubble counters of the cycle equation</text>
+<text x="500" y="622" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="700" fill="#17251D" text-anchor="start">0x300 mstatus</text>
+<text x="650" y="622" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="700" fill="#17251D" text-anchor="start">0x305 mtvec</text>
+<text x="800" y="622" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">trap setup: interrupt enable bits, handler address</text>
+<text x="500" y="648" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="700" fill="#17251D" text-anchor="start">0x341 mepc</text>
+<text x="650" y="648" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="700" fill="#17251D" text-anchor="start">0x342 mcause</text>
+<text x="800" y="648" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">where a trap happened and why (ecall, ebreak)</text>
+<text x="500" y="674" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="700" fill="#17251D" text-anchor="start">0x340 mscratch</text>
+<text x="650" y="674" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="700" fill="#17251D" text-anchor="start">0x50A status</text>
+<text x="800" y="674" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">scratch registers for software</text>
+<text x="500" y="700" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="700" fill="#17251D" text-anchor="start">0x51E tohost</text>
+<text x="650" y="700" font-family="'IBM Plex Mono',Consolas,monospace" font-size="11" font-weight="700" fill="#17251D" text-anchor="start"></text>
+<text x="800" y="700" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">write 1: PASS, (n &lt;&lt; 1) | 1: FAIL test n. Halts the core</text>
+</svg>

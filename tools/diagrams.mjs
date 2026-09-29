@@ -6,6 +6,10 @@
 //   docs/img/diagrams/cache.svg              one 2-way set-associative cache lookup, refill and prefetch
 //   docs/img/diagrams/memory_hierarchy.svg   Sixfold's memory next to a typical desktop core
 //   docs/img/diagrams/clock_roadmap.svg      measured clock periods against 2.5 GHz and 5 GHz
+//   docs/img/diagrams/cache_interfaces.svg   every port between the pipeline, the caches, memory and devices
+//   docs/img/diagrams/memory_map.svg         addresses: firmware, programs, device registers, CSRs
+//   docs/img/diagrams/boot_sequence.svg      reset vector -> firmware -> program -> firmware (FPGA)
+//   docs/img/diagrams/fpga_system.svg        the FPGA computer on its board (docs/fpga_results.json)
 //
 // Every number in these figures comes from the RTL parameters (src/*.sv) or from
 // docs/PERFORMANCE.md; the figures are redrawn by `make diagrams`.
@@ -605,7 +609,7 @@ export function multiplyDivideUnit() {
 export function operandsAndAlu() {
   const W = 1600, H = 950;
   const g = canvas(W, H, 'Operands and the ALU: what sits in the one-cycle loop, and what was moved out of it',
-    'DECODE prepares both ALU operands (Zba shifts, .uw zero-extension, Zbb inverted operand) and EXECUTE computes every operation in parallel. src/Riscv64.sv, src/ALU.sv.');
+    'DECODE prepares both ALU operands (Zba shifts, .uw zero-extension, Zbs single bit, Zbb/Zbs inverted operand) and EXECUTE computes every operation in parallel. src/Riscv64.sv, src/ALU.sv.');
   const { add, text, rect, box, wire, dot, mux, pill } = g;
   rect(20, 72, 600, 32, { fill: C.D, stroke: C.D }); text(32, 93, 'DECODE', { size: 14, weight: 700, fill: '#FFF' });
   rect(650, 72, 600, 32, { fill: C.E, stroke: C.E }); text(662, 93, 'EXECUTE', { size: 14, weight: 700, fill: '#FFF' });
@@ -629,10 +633,10 @@ export function operandsAndAlu() {
   const by = 400;
   text(36, by + 10, 'operand B', { size: 13, weight: 700 });
   box(36, by + 24, 150, 90, 'register file / W / M', ['same early choice'], { tsize: 11 });
-  box(256, by + 34, 150, 60, 'invert?', ['andn orn xnor: ~rs2'], { tsize: 11.5 });
-  wire([[186, by + 64], [256, by + 64]], 'data');
-  mux(420, by + 20, 24, 90, 'imm?'); wire([[406, by + 64], [420, by + 64]], 'data');
-  box(256, by + 130, 150, 50, 'invert? (late)', [], { tsize: 11.5, stroke: C.E });
+  mux(206, by + 20, 24, 90, 'imm?'); wire([[186, by + 64], [206, by + 64]], 'data');
+  box(256, by + 34, 150, 60, 'bit? invert?', ['bset: 1<<rs2  andn: ~rs2', 'bclr: ~(1<<rs2)'], { tsize: 11.5, lsize: 9.5 });
+  wire([[230, by + 64], [256, by + 64]], 'data'); wire([[406, by + 65], [444, by + 65]], 'data', { arrow: false });
+  box(256, by + 130, 150, 50, 'bit? invert? (late)', [], { tsize: 11.5, stroke: C.E });
   mux(480, by + 40, 26, 110, 'late?', [], { stroke: C.E });
   wire([[444, by + 65], [480, by + 65]], 'data'); wire([[406, by + 155], [460, by + 155], [460, by + 130], [480, by + 130]], 'E', { width: 2.4 });
   box(530, by + 65, 90, 60, 'ALU_INPUT_B', ['register'], { tsize: 10.5 });
@@ -643,7 +647,7 @@ export function operandsAndAlu() {
   // ---- ALU units
   const ux = 680, uy = 130;
   const units = [['Kogge-Stone adder', 'add sub slt jalr, addresses', C.E, 'SUBTRACT decoded in DECODE'], ['logic', 'and or xor (andn orn xnor)', C.sub, ''], ['shifter / rotator', 'sll srl sra, rol ror, W forms', C.sub, ''],
-    ['LeadingZeroCounter x 2', 'clz, ctz (mirror image), W', C.F1, '6-level tree'], ['byte ops', 'rev8 orc.b sext.b/h zext.h', C.sub, 'wires and 8-input ORs'], ['PopulationCount', 'cpop cpopw: adder tree', C.flush, 'deeper than the adder'], ['min / max', 'the adder\'s compare picks A or B', C.flush, 'steers all 64 bits']];
+    ['LeadingZeroCounter x 2', 'clz, ctz (mirror image), W', C.F1, '6-level tree'], ['byte ops', 'rev8 orc.b sext.b/h zext.h', C.sub, 'wires and 8-input ORs'], ['PopulationCount', 'cpop cpopw: 4 quarter counts', C.flush, 'MEMORY adds them up'], ['min / max', 'the adder\'s compare picks A or B', C.flush, 'steers all 64 bits']];
   units.forEach(([n, d, col, note], i) => {
     const y = uy + i * 76;
     box(ux, y, 250, 64, n, note ? [d, note] : [d], { tsize: 12, stroke: col, lsize: 10 });
@@ -673,7 +677,7 @@ export function operandsAndAlu() {
   // late explanation
   rect(680, 730, 900, 200, { fill: '#FFF', stroke: C.line, rx: 8 });
   text(696, 754, 'The two-cycle results (EXECUTE_LATE_RESULT): cpop, cpopw, min, minu, max, maxu', { size: 13, weight: 700 });
-  ['Their logic is deeper than the adder path, so they leave through ALUOut only. For hazards they behave exactly like a load:', 'the next instruction may not take them from EXECUTE, and LOAD_STALL holds it one cycle if it needs them right away.', 'Measured: with them in the loop the clock was 758 ps (a popcount tree, then a 64-bit select); with them out: 523 ps.'].forEach((s, i) => text(696, 778 + i * 18, s, { size: 11.5, fill: C.sub }));
+  ['Their logic is deeper than the adder path, so they leave through ALUOut only. For hazards they behave exactly like a load:', 'the next instruction may not take them from EXECUTE, and LOAD_STALL holds it one cycle if it needs them right away.', 'Measured: with them in the loop the clock was 758 ps (a popcount tree, then a 64-bit select); with them out: 523 ps. cpop now adds its partial counts in MEMORY.'].forEach((s, i) => text(696, 778 + i * 18, s, { size: 11.5, fill: C.sub }));
   // mini pipeline example
   const ex = [['cpop t1, t0', ['F1', 'F2', 'D', 'E', 'M', 'W', '']], ['addi t2, t1, 1', ['', 'F1', 'F2', 'D', 'D', 'E', 'M']]];
   ex.forEach(([n, st], r) => {
@@ -735,6 +739,7 @@ export function performanceCounters(values) {
   return g.done();
 }
 
+export const FPGA_RESULTS = JSON.parse(fs.readFileSync(new URL('../docs/fpga_results.json', import.meta.url), 'utf8'));
 export const CLOCK_DATA = JSON.parse(fs.readFileSync(new URL('../docs/clock_roadmap.json', import.meta.url), 'utf8'));
 
 // The counter values program 19 reads, from the cycle-exact model (performance build)
@@ -753,6 +758,244 @@ const isMain = process.argv[1] && path.resolve(process.argv[1]) === path.resolve
 if (isMain) {
   fs.mkdirSync('docs/img/diagrams', { recursive: true });
   const figs = { branch_prediction: branchPrediction(), cache: cache(), memory_hierarchy: hierarchy(), clock_roadmap: clockRoadmap(CLOCK_DATA),
-    multiply_divide: multiplyDivideUnit(), operands_and_alu: operandsAndAlu(), performance_counters: performanceCounters(await program19Counters()) };
+    multiply_divide: multiplyDivideUnit(), operands_and_alu: operandsAndAlu(), performance_counters: performanceCounters(await program19Counters()),
+    cache_interfaces: cacheInterfaces(), memory_map: memoryMap(), boot_sequence: bootSequence(), fpga_system: fpgaSystem(FPGA_RESULTS) };
   for (const [n, svg] of Object.entries(figs)) { fs.writeFileSync(`docs/img/diagrams/${n}.svg`, svg); console.log(`wrote docs/img/diagrams/${n}.svg`); }
+}
+
+// =============================================================================
+// The computer around the core: caches, main memory, devices, boot (docs/FPGA.md)
+// =============================================================================
+
+// How the two caches sit between the pipeline, main memory and the device registers
+export function cacheInterfaces() {
+  const W = 1440, H = 860;
+  const g = canvas(W, H, 'How the caches connect the pipeline to main memory and to the devices',
+    'Every signal that crosses a cache boundary, with its width. src/Riscv64_top.sv (simulation) and fpga/rtl/Sixfold_System.sv (FPGA) wire exactly these ports.');
+  const { add, text, rect, box, wire, dot, mux, pill } = g;
+
+  // Pipeline column
+  const px = 40, pw = 250, stages = [['FETCH1', C.F1, 'PC, next-PC prediction'], ['FETCH2', C.F2, 'instruction register'], ['DECODE', C.D, 'registers, forwarding'],
+    ['EXECUTE', C.E, 'ALU: load/store address'], ['MEMORY', C.M, 'LoadControl picks bytes'], ['WRITEBACK', C.W, 'register file write']];
+  rect(px - 14, 96, pw + 28, 640, { fill: '#FFF', stroke: C.line, rx: 10 });
+  text(px + pw / 2, 118, 'Riscv64 core (src/Riscv64.sv)', { size: 13, weight: 700, anchor: 'middle' });
+  const sy = i => 138 + i * 98;
+  stages.forEach(([n, col, s], i) => {
+    rect(px, sy(i), pw, 70, { fill: col, stroke: col, op: 0.12 });
+    text(px + 14, sy(i) + 26, n, { size: 14, weight: 700, fill: col });
+    text(px + 14, sy(i) + 46, s, { size: 11, fill: C.sub });
+  });
+  for (let i = 0; i < 5; i++) wire([[px + pw / 2, sy(i) + 70], [px + pw / 2, sy(i + 1)]], 'sub', { width: 1.5 });
+
+  const cx = 540, cw = 300, mx = 1140, mw = 280, dx = 930;
+  box(cx, 110, cw, 210, 'Instruction cache', ['4 KiB, 2 ways x 64 sets x 32-byte lines', 'hit: the instruction in the same cycle', 'miss: refill engine, 11 cycles', 'then prefetch the next line', 'reset clears every valid bit'], { file: 'src/Instruction_Cache.sv', stroke: C.F1 });
+  box(cx, 430, cw, 250, 'Data cache', ['4 KiB, 2 ways x 64 sets x 32-byte lines', 'load hit: the doubleword in the same cycle', 'load miss: DATA_CACHE_STALL, 11 cycles', 'store: write-through to main memory,', 'and into the line if it is cached', 'a prefetch waits one cycle for a store', '(one write per cycle into the arrays)'], { file: 'src/Data_Cache.sv', stroke: C.M });
+  box(mx, 110, mw, 260, 'Main memory', ['64 KiB, 2048 lines x 256 bits', 'simulation: src/Scratchpad_Memory.sv', 'FPGA: fpga/rtl/Main_Memory.sv', 'two block-RAM copies: a store writes', 'both, each refill port reads its own', 'the line address is steady for the', 'whole refill, so 1-cycle block RAM', 'keeps up; the last store is merged in'], { stroke: C.edge });
+  box(mx, 470, mw, 210, 'Device registers', ['0x1000_0000 .. 0x1000_00FF', 'PUTCHAR LEDS BUTTONS UART BOOT', 'CLOCK LAST_TOHOST LAST_CYCLES', 'BOOT_REASON TIMER BOOT_ADDRESS', 'never cached, never written to RAM', 'fpga/rtl/Sixfold_System.sv'], { stroke: C.flush });
+
+  const lbl = (x, y, s, col, anchor = 'middle') => text(x, y, s, { size: 10.5, mono: true, fill: col, anchor, weight: 600 });
+  const mid = (px + pw + cx) / 2 - 20;
+  // Instruction side
+  wire([[px + pw, sy(0) + 24], [cx, sy(0) + 24]], 'F1'); lbl(mid, sy(0) + 18, 'FETCH_ADDRESS [63:0] (the PC)', C.F1);
+  wire([[cx, sy(1) + 30], [px + pw, sy(1) + 30]], 'F1'); lbl(mid, sy(1) + 24, 'INSTRUCTION [31:0]', C.F1);
+  wire([[cx, 300], [505, 300], [505, sy(0) + 56], [px + pw, sy(0) + 56]], 'miss', { dash: '5 3' });
+  lbl(512, 338, 'HIT = 0: FETCH1 holds (an I-cache miss bubble)', C.miss, 'start');
+
+  // Data side
+  wire([[px + pw, sy(3) + 18], [cx, sy(3) + 18]], 'E'); lbl(mid, sy(3) + 12, 'ADDRESS, LOAD_REQUEST', C.E);
+  wire([[px + pw, sy(3) + 42], [cx, sy(3) + 42]], 'E'); lbl(mid, sy(3) + 36, 'WRITE_MASK, WRITE_DATA', C.E);
+  wire([[cx, 660], [505, 660], [505, sy(3) + 62], [px + pw, sy(3) + 62]], 'miss', { dash: '5 3' });
+  lbl(530, 697, 'HIT = 0: DATA_CACHE_STALL, FETCH1..EXECUTE hold', C.miss, 'start');
+  mux(dx - 13, 560, 26, 90, '', []);
+  lbl(dx + 18, 640, 'address[63:8]', C.flush, 'start'); lbl(dx + 18, 654, '= 0x1000_00 ?', C.flush, 'start');
+  wire([[cx + cw, 590], [dx - 13, 590]], 'M'); lbl(cx + cw + 4, 584, 'READ_DATA', C.M, 'start');
+  wire([[mx, 600], [dx + 13, 600]], 'flush'); lbl(mx - 8, 594, 'device value', C.flush, 'end');
+  wire([[dx, 644], [dx, 724], [520, 724], [520, sy(4) + 40], [px + pw, sy(4) + 40]], 'M');
+  lbl(530, 740, 'load data [63:0], registered into MEMORY', C.M, 'start');
+  wire([[px + pw, sy(3) + 42], [470, sy(3) + 42], [470, 760], [mx + mw / 2, 760], [mx + mw / 2, 680]], 'flush', { dash: '6 3' });
+  text(820, 776, 'a store to 0x1000_00xx goes to the device register instead of memory (the core cannot tell the difference)', { size: 10.5, fill: C.flush, anchor: 'middle' });
+
+  // Refill ports and write-through
+  wire([[cx + cw, 150], [mx, 150]], 'F1'); lbl((cx + cw + mx) / 2, 144, 'REFILL_ADDRESS (line)', C.F1);
+  wire([[mx, 190], [cx + cw, 190]], 'F1'); lbl((cx + cw + mx) / 2, 184, 'REFILL_LINE [255:0] (8 instructions)', C.F1);
+  wire([[cx + cw, 455], [940, 455], [940, 270], [mx, 270]], 'M'); lbl(946, 264, 'REFILL_ADDRESS', C.M, 'start');
+  wire([[mx, 320], [970, 320], [970, 485], [cx + cw, 485]], 'M'); lbl(976, 314, 'REFILL_LINE [255:0]', C.M, 'start');
+  wire([[cx + cw, 530], [1010, 530], [1010, 370]], 'E', { dash: '6 3' }); lbl(1016, 410, 'every store', C.E, 'start'); lbl(1016, 424, '(write-through)', C.E, 'start');
+
+  rect(540, 790, 880, 54, { fill: '#FFF', stroke: C.line, rx: 8 });
+  text(556, 812, 'Timing: a hit costs nothing; a miss costs 11 cycles (10-cycle main memory + 1). The model counts them as the I and D terms', { size: 11, fill: C.sub });
+  text(556, 830, 'of cycles = N + 5 + L + 3F + R + K + I + D, and the FPGA system reports the same count: its memory answers in the same 10 cycles.', { size: 11, fill: C.sub });
+  text(px, 812, 'solid: every cycle', { size: 10.5, fill: C.sub });
+  text(px, 830, 'dashed: stall / store paths', { size: 10.5, fill: C.sub });
+  return g.done();
+}
+
+// The address space: memory, the firmware's area, programs, device registers, and the CSRs
+export function memoryMap() {
+  const W = 1300, H = 780;
+  const g = canvas(W, H, 'Memory map: what each address means',
+    'Loads and stores reach memory and devices; CSR instructions reach the registers inside the core. Same map in simulation and on the FPGA.');
+  const { add, text, rect, pill } = g;
+  const x = 120, w = 300;
+  const seg = (y, h, fill, title, lines, addrTop, addrBottom) => {
+    rect(x, y, w, h, { fill, stroke: C.edge, op: 0.16, rx: 4 });
+    text(x + 14, y + 22, title, { size: 13, weight: 700 });
+    lines.forEach((s, i) => text(x + 14, y + 40 + i * 15, s, { size: 10.5, fill: C.sub }));
+    if (addrTop) text(x - 8, y + 12, addrTop, { size: 10.5, mono: true, anchor: 'end', fill: C.ink });
+    if (addrBottom) text(x - 8, y + h, addrBottom, { size: 10.5, mono: true, anchor: 'end', fill: C.ink });
+  };
+  text(x + w / 2, 92, 'addresses (64-bit, only these are used)', { size: 11, anchor: 'middle', fill: C.sub, weight: 600 });
+  seg(104, 70, C.flush, 'Device registers (256 bytes)', ['0x1000_0000 .. 0x1000_00FF', 'never cached, never stored to RAM'], '0x1000_00FF', '0x1000_0000');
+  text(x + w / 2, 196, '. . .  nothing here  . . .', { size: 11, anchor: 'middle', fill: C.faint, italic: true });
+  seg(212, 330, C.M, 'Programs  0x2000 .. 0xFFFF  (56 KiB)', ['the assembler puts code at 0x2000 (PC_RESET)', 'then its data; programs set their own sp', 'loaded by the firmware ("l") on the FPGA,', 'from +HEX= in simulation'], '0xFFFF', '0x2000');
+  seg(542, 90, C.D, 'Firmware stack  0x1000 .. 0x1FFF', ['grows down from 0x2000'], '', '0x1000');
+  seg(632, 100, C.F1, 'Boot firmware  0x0000 .. 0x0FFF', ['fpga/firmware/bios.s (about 2 KiB)', 'RESET_VECTOR after power-on', '(zeros in simulation)'], '', '0x0000');
+  text(x + w / 2, 754, 'main memory: 64 KiB (addresses wrap every 64 KiB)', { size: 11, anchor: 'middle', fill: C.sub });
+
+  // Device table
+  const tx = 500, ty = 104;
+  const rows = [
+    ['0x00', 'PUTCHAR', '0', 'print one character (UART on the FPGA)'],
+    ['0x08', 'LEDS', 'the LED byte', 'set the 8 LEDs'],
+    ['0x10', 'BUTTONS', 'buttons and switches', '-'],
+    ['0x18', 'UART', 'bit0 byte waiting, bit1 queue full, bit2 idle, 15:8 byte', 'drop the received byte'],
+    ['0x20', 'BOOT', '0', 'restart the core at BOOT_ADDRESS'],
+    ['0x28', 'CLOCK', 'clock rate in Hz', '-'],
+    ['0x30', 'LAST_TOHOST', 'TOHOST of the last program', '-'],
+    ['0x38', 'LAST_CYCLES', 'cycles the last program ran', '-'],
+    ['0x40', 'BOOT_REASON', '0 power-on, 1 program ended, 2 BOOT', '-'],
+    ['0x48', 'TIMER', 'cycles since power-on', '-'],
+    ['0x50', 'BOOT_ADDRESS', 'where BOOT starts (0x2000)', 'set it'],
+  ];
+  const cols = [[0, 'offset'], [60, 'register'], [180, 'a load returns'], [500, 'a store does']];
+  rect(tx - 12, ty - 4, 780, 48 + rows.length * 26, { fill: '#FFF', stroke: C.flush, rx: 8 });
+  text(tx, ty + 16, 'Device registers at 0x1000_0000 + offset (8 bytes each; use ld / sd, or sb for PUTCHAR)', { size: 12.5, weight: 700, fill: C.flush });
+  cols.forEach(([cx, h]) => text(tx + cx, ty + 36, h, { size: 10.5, weight: 700, fill: C.sub }));
+  rows.forEach((r, i) => {
+    const yy = ty + 56 + i * 26;
+    if (i % 2 === 0) add(`<rect x="${tx - 6}" y="${yy - 16}" width="768" height="24" fill="${C.flush}" fill-opacity="0.05"/>`);
+    text(tx, yy, r[0], { size: 11, mono: true });
+    text(tx + 60, yy, r[1], { size: 11, mono: true, weight: 700 });
+    text(tx + 180, yy, r[2], { size: 11, fill: C.sub });
+    text(tx + 500, yy, r[3], { size: 11, fill: C.sub });
+  });
+  text(tx, ty + 70 + rows.length * 26, 'In simulation every device load returns 0 and only PUTCHAR (and LEDS, in the model) do anything, so the', { size: 10.5, fill: C.faint });
+  text(tx, ty + 84 + rows.length * 26, 'same program runs unchanged on the model, the RTL and the board.', { size: 10.5, fill: C.faint });
+
+  // CSR box
+  const cy = 520;
+  rect(tx - 12, cy, 780, 212, { fill: '#FFF', stroke: C.D, rx: 8 });
+  text(tx, cy + 22, 'Control and status registers: a separate address space, inside the core (csrr / csrw)', { size: 12.5, weight: 700, fill: C.D });
+  const csrs = [['0xC00 cycle', '0xC02 instret', 'counters since reset (rdcycle, rdinstret)'], ['0xC03..0xC08', 'hpmcounter3..8', 'L F R K I D: the bubble counters of the cycle equation'],
+    ['0x300 mstatus', '0x305 mtvec', 'trap setup: interrupt enable bits, handler address'], ['0x341 mepc', '0x342 mcause', 'where a trap happened and why (ecall, ebreak)'],
+    ['0x340 mscratch', '0x50A status', 'scratch registers for software'], ['0x51E tohost', '', 'write 1: PASS, (n << 1) | 1: FAIL test n. Halts the core']];
+  csrs.forEach(([a, b, s], i) => {
+    const yy = cy + 50 + i * 26;
+    text(tx, yy, a, { size: 11, mono: true, weight: 700 });
+    text(tx + 150, yy, b, { size: 11, mono: true, weight: 700 });
+    text(tx + 300, yy, s, { size: 11, fill: C.sub });
+  });
+  return g.done();
+}
+
+// The boot sequence as a sequence diagram: time runs down, each column is a part of the computer
+export function bootSequence() {
+  const W = 1300, H = 1010;
+  const g = canvas(W, H, 'Boot sequence of the FPGA computer: reset vector, firmware, program, and back',
+    'Like a PC: the reset vector points into firmware ("BIOS"), which loads the program and hands over. Checked end to end by tools/fpga_sim.mjs.');
+  const { add, text, rect, wire, pill } = g;
+  const lanes = [['Your PC', 'tools/fpga_load.py', C.sub], ['UART', 'receive / transmit queues', C.F2], ['Boot firmware', 'core at 0x0000', C.F1], ['System', 'reset and boot control', C.flush], ['Program', 'core at 0x2000', C.M]];
+  const lx = i => 130 + i * 255;
+  lanes.forEach(([n, s, col], i) => {
+    rect(lx(i) - 95, 78, 190, 48, { fill: col, stroke: col, op: 0.14 });
+    text(lx(i), 98, n, { size: 13.5, weight: 700, anchor: 'middle', fill: col });
+    text(lx(i), 115, s, { size: 10, anchor: 'middle', fill: C.sub });
+    add(`<line x1="${lx(i)}" y1="126" x2="${lx(i)}" y2="${H - 30}" stroke="${col}" stroke-width="1.4" stroke-dasharray="4 4" opacity="0.6"/>`);
+  });
+  let y = 150, step = 0;
+  const kindOf = { 0: 'sub', 1: 'F2', 2: 'F1', 3: 'flush', 4: 'M' };
+  const msg = (from, to, label, sub = '') => {
+    step++; y += 50;
+    const x0 = lx(from), x1 = lx(to), dir = x1 > x0 ? 1 : -1;
+    wire([[x0 + dir * 6, y], [x1 - dir * 8, y]], kindOf[from], { width: 2 });
+    const mid = (x0 + x1) / 2;
+    text(mid, y - 8, `${step}. ${label}`, { size: 11.5, anchor: 'middle', weight: 600 });
+    if (sub) text(mid, y + 16, sub, { size: 10, anchor: 'middle', fill: C.sub });
+  };
+  const act = (lane, label, sub = '') => {
+    step++; y += 50;
+    const w = Math.max(label.length, sub.length) * 6.3 + 30;
+    rect(lx(lane) - w / 2, y - 20, w, sub ? 40 : 28, { fill: '#FFF', stroke: lanes[lane][2] });
+    text(lx(lane), y - 2, `${step}. ${label}`, { size: 11.5, anchor: 'middle', weight: 600 });
+    if (sub) text(lx(lane), y + 13, sub, { size: 10, anchor: 'middle', fill: C.sub });
+  };
+  act(3, 'power on: PLL locks, reset held ~1.6 ms', 'RESET_VECTOR = 0x0000');
+  msg(3, 2, 'core + caches leave reset at 0x0000', 'the firmware is in the block RAM image');
+  msg(2, 1, 'banner, clock, memory, "sixfold> "', 'sb to PUTCHAR, after checking UART bit 1 (queue full)');
+  msg(1, 0, 'characters at 115200 baud');
+  msg(0, 1, "'l' address length bytes checksum", 'little-endian words; the sum of the bytes mod 2^32');
+  msg(1, 2, 'getc: poll UART bit 0, read bits 15:8, sd to UART', 'the store drops the byte from the receive queue');
+  act(2, 'sb every byte to 0x2000..', 'write-through: straight into main memory');
+  msg(2, 0, '"loaded N bytes", then r from the PC');
+  act(2, "'r': clear x1..x31 (all but tp), sd to BOOT", 'registers as a simulation starts: all zero');
+  msg(2, 3, 'BOOT store', 'RESET_VECTOR = BOOT_ADDRESS = 0x2000');
+  msg(3, 4, 'reset core and both caches, start at 0x2000', 'cold caches, fresh CSRs and predictors');
+  msg(4, 1, 'the program prints (PUTCHAR)', 'the 2 KiB transmit queue absorbs bursts');
+  msg(4, 3, 'writes TOHOST: the core halts', 'the system counts the cycles from reset to halt');
+  act(3, 'wait for the transmit queue to drain', 'latch LAST_TOHOST, LAST_CYCLES; BOOT_REASON = 1');
+  msg(3, 2, 'restart the firmware at 0x0000');
+  msg(2, 0, '"program finished: PASS in N cycles"', 'N equals the cycle-exact model (tools/fpga_sim.mjs checks)');
+  return g.done();
+}
+
+// The whole FPGA computer on its board
+export function fpgaSystem(results) {
+  const W = 1500, H = 900;
+  const r = results.ulx3s, x7 = results.arty;
+  const g = canvas(W, H, 'The Sixfold FPGA computer (fpga/rtl/Sixfold_System.sv) on its board',
+    `ULX3S (ECP5-85F): ${r.lut4.toLocaleString('en-US')} LUT4s (${r.lutPercent}%), ${r.ff.toLocaleString('en-US')} flip-flops, ${r.bram} block RAMs, routed for ${r.fmax.toFixed(1)} MHz and clocked at ${r.clock} MHz. Arty A7-100T: about ${x7.lut6.toLocaleString('en-US')} LUT6s (${x7.lutPercent}%).`);
+  const { add, text, rect, box, wire, pill } = g;
+
+  // Board parts: clock and reset on the left, serial port, LEDs and buttons on the right
+  const part = (x, y, t, sub, col) => { rect(x, y, 200, 62, { fill: col, stroke: col, op: 0.12 }); text(x + 12, y + 24, t, { size: 12.5, weight: 700, fill: col }); text(x + 12, y + 44, sub, { size: 10, fill: C.sub }); };
+  part(30, 130, '25 MHz oscillator', 'ULX3S pin G2 (Arty: 100 MHz)', C.F1);
+  part(30, 270, 'PWR / RESET button', 'active low, synchronized', C.flush);
+  part(1270, 470, 'USB to serial chip', 'FT231X (Arty: FT2232HQ)', C.F2);
+  part(1270, 610, '8 LEDs', 'the LEDS register', C.E);
+  part(1270, 720, '6 buttons + 2 switches', 'synchronized, active high', C.D);
+
+  // The system
+  rect(270, 90, 960, 780, { fill: '#FFF', stroke: C.edge, dash: '8 5', rx: 14 });
+  text(286, 112, 'SixfoldSystem', { size: 14, weight: 700 });
+  box(300, 130, 190, 100, 'PLL / MMCM', [`25 -> ${r.clock} MHz (ECP5)`, `100 -> ${x7.clock} MHz (Artix-7)`, 'one clock for everything'], { stroke: C.F1 });
+  box(300, 260, 190, 110, 'Reset and boot', ['power-on: 65536 cycles', 'RESET_VECTOR 0x0000', 'or BOOT_ADDRESS'], { stroke: C.flush });
+  box(560, 130, 300, 290, 'Riscv64 core', ['6 stages: F1 F2 D E M W', 'RV64IM Zicsr Zba Zbb Zbs', 'BTB, tournament predictor, RAS', 'forwarding into DECODE', 'iterative multiply / divide', 'traps: ecall ebreak mret', 'performance counters', '', 'RESET_VECTOR input: the only', 'difference from simulation'], { stroke: C.E, file: 'src/Riscv64.sv' });
+  box(560, 460, 140, 110, 'I-cache', ['4 KiB 2-way', 'LUT RAM'], { stroke: C.F1 });
+  box(720, 460, 140, 110, 'D-cache', ['4 KiB 2-way', 'write-through', 'per-byte writes'], { stroke: C.M });
+  box(560, 640, 300, 200, 'Main memory: 64 KiB block RAM', ['2 copies x 2048 lines x 256 bits', '(ECP5 DP16KD / Artix-7 RAMB36)', 'copy A: instruction refills', 'copy B: data refills', 'every store writes both', 'initial image: firmware + a demo', 'program (tools/fpga_image.mjs)'], { stroke: C.edge, file: 'fpga/rtl/Main_Memory.sv' });
+  box(300, 640, 190, 200, 'Boot firmware', ['software, 2 KiB', 'fpga/firmware/bios.s', 'banner, info, memory test', "l: load over the UART", "r: clear registers, BOOT", 'after a program:', 'PASS / FAIL, cycles'], { stroke: C.F1 });
+  box(920, 130, 280, 330, 'Device registers', ['address[63:8] = 0x1000_00', '', '0x00 PUTCHAR   -> transmit queue', '0x08 LEDS      -> 8 LEDs', '0x10 BUTTONS   <- buttons, switches', '0x18 UART      status / receive', '0x20 BOOT      -> restart the core', '0x28 CLOCK     = CLOCK_HZ', '0x30 LAST_TOHOST 0x38 LAST_CYCLES', '0x40 BOOT_REASON 0x48 TIMER', '0x50 BOOT_ADDRESS'], { stroke: C.flush, lsize: 10.5 });
+  box(920, 500, 280, 130, 'UART', ['receiver: 16-byte queue', 'transmitter: 2 KiB queue', '115200 baud, 8N1', 'divider = CLOCK_HZ / BAUD'], { stroke: C.F2, file: 'fpga/rtl/Uart.sv' });
+  box(1270, 130, 200, 220, 'Your PC', ['a serial terminal', '(screen, minicom, PuTTY)', 'at 115200 baud', '', 'tools/fpga_load.py:', 'program.s -> the board', '-> PASS in N cycles'], { stroke: C.sub });
+
+  const lbl = (x, y, s, col, anchor = 'middle') => text(x, y, s, { size: 9.5, anchor, mono: true, fill: col });
+  wire([[230, 161], [300, 161]], 'F1');
+  wire([[230, 301], [300, 301]], 'flush');
+  wire([[490, 180], [560, 180]], 'F1'); lbl(541, 173, 'clk', C.F1);
+  wire([[490, 300], [560, 300]], 'flush'); lbl(541, 293, 'reset', C.flush);
+  wire([[490, 340], [560, 340]], 'flush'); lbl(541, 333, 'vector', C.flush);
+  wire([[630, 420], [630, 460]], 'F1'); wire([[790, 420], [790, 460]], 'M');
+  wire([[630, 570], [630, 640]], 'F1'); lbl(636, 610, 'refill 256', C.F1, 'start');
+  wire([[790, 570], [790, 640]], 'M'); lbl(796, 610, 'refill / stores', C.M, 'start');
+  wire([[860, 250], [920, 250]], 'flush'); lbl(890, 243, 'ld / sd', C.flush);
+  wire([[920, 300], [860, 300]], 'flush'); lbl(890, 318, 'value', C.flush);
+  wire([[1060, 460], [1060, 500]], 'F2');
+  wire([[940, 130], [940, 121], [520, 121], [520, 355], [490, 355]], 'flush', { dash: '5 3' }); lbl(730, 116, 'BOOT store, or a halt -> restart the core', C.flush);
+  wire([[490, 740], [560, 740]], 'F1', { dash: '4 3' }); lbl(525, 733, 'at 0x0', C.F1);
+  wire([[1200, 540], [1270, 500]], 'F2'); lbl(1222, 518, 'TX', C.F2);
+  wire([[1270, 520], [1200, 580]], 'F2'); lbl(1222, 588, 'RX', C.F2);
+  wire([[1370, 470], [1370, 350]], 'F2', { width: 3 }); lbl(1378, 420, 'USB cable', C.F2, 'start');
+  wire([[1200, 400], [1245, 400], [1245, 641], [1270, 641]], 'E', { dash: '5 3' });
+  wire([[1270, 751], [1255, 751], [1255, 360], [1200, 360]], 'D', { dash: '5 3' });
+  return g.done();
 }

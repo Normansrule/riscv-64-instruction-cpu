@@ -54,16 +54,18 @@ def rotr(x,n,w): x%=1<<w; n%=w; return ((x>>n)|(x<<(w-n)))%(1<<w) if n else x
 def sext_n(x,n): x%=1<<n; return u(x-(1<<n) if x>>(n-1) else x)
 def rev8(x): return int.from_bytes(u(x).to_bytes(8,'little'),'big')
 def orcb(x): return sum((0xff if (x>>(8*i))&0xff else 0)<<(8*i) for i in range(8))
-ZR = {  # Zba / Zbb register-register
+ZR = {  # Zba / Zbb / Zbs register-register
  'sh1add':lambda a,b:u(b+(a<<1)),'sh2add':lambda a,b:u(b+(a<<2)),'sh3add':lambda a,b:u(b+(a<<3)),
  'add.uw':lambda a,b:u(b+u32(a)),'sh1add.uw':lambda a,b:u(b+(u32(a)<<1)),'sh2add.uw':lambda a,b:u(b+(u32(a)<<2)),'sh3add.uw':lambda a,b:u(b+(u32(a)<<3)),
  'andn':lambda a,b:a&~b%M,'orn':lambda a,b:u(a|(~b%M)),'xnor':lambda a,b:u(~(a^b)),
  'min':lambda a,b:a if s(a)<s(b) else b,'minu':lambda a,b:min(a,b),'max':lambda a,b:a if s(a)>s(b) else b,'maxu':lambda a,b:max(a,b),
  'rol':lambda a,b:rotl(a,b&63,64),'ror':lambda a,b:rotr(a,b&63,64),
  'rolw':lambda a,b:sx(rotl(a,b&31,32)),'rorw':lambda a,b:sx(rotr(a,b&31,32)),
+ 'bset':lambda a,b:a|(1<<(b&63)),'bclr':lambda a,b:a&~(1<<(b&63))%M,'binv':lambda a,b:a^(1<<(b&63)),'bext':lambda a,b:(a>>(b&63))&1,
 }
 ZI = {  # immediates
  'slli.uw':lambda a,i:u(u32(a)<<i),'rori':lambda a,i:rotr(a,i,64),'roriw':lambda a,i:sx(rotr(a,i,32)),
+ 'bseti':lambda a,i:a|(1<<i),'bclri':lambda a,i:a&~(1<<i)%M,'binvi':lambda a,i:a^(1<<i),'bexti':lambda a,i:(a>>i)&1,
 }
 ZU = {  # unary
  'clz':lambda a:clz(a),'ctz':lambda a:ctz(a),'cpop':lambda a:bin(u(a)).count('1'),
@@ -94,7 +96,7 @@ for op,f in I.items():
             n+=1; out.append(f"t{n}: # {op} {h(a)}, {i}"); out.append(f"    li   a0, {n}")
             out.append(f"    li   a1, {h(a)}"); out.append(f"    {op} a3, a1, {i}"); check('a3',f(a,i))
 for op,f in ZR.items():
-    for a,b in pairs[::5]:
+    for a,b in (pairs[::3] if op[0]=='b' else pairs[::5]):
         n+=1; out.append(f"t{n}: # {op} {h(a)}, {h(b)}"); out.append(f"    li   a0, {n}")
         out.append(f"    li   a1, {h(a)}"); out.append(f"    li   a2, {h(b)}"); out.append(f"    {op} a3, a1, a2"); check('a3',f(a,b))
 for op,f in ZI.items():
@@ -181,7 +183,7 @@ csr_case("cycle counter is read-only", ["    rdcycle t0", "    csrw cycle, zero"
 
 hdr=f"""# =============================================================================
 # tests/isa_selfcheck.s: AUTO-GENERATED self-checking test of every RV64IM +
-# Zicsr + Zba + Zbb + trap instruction ({n} test cases, expected values computed by an independent
+# Zicsr + Zba + Zbb + Zbs + trap instruction ({n} test cases, expected values computed by an independent
 # Python reference model). Uses the riscv-tests convention:
 #   PASS: tohost = 1           FAIL: tohost = (test number << 1) | 1
 # so the testbench prints "FAIL in test N": search for "tN:" below.

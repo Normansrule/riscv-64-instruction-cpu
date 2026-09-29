@@ -45,6 +45,10 @@ const OPS = [
   ['sh1add', true, 'B + (A << 1): address of element A in an array of 2-byte items starting at B (Zba).'],
   ['sh2add', true, 'B + (A << 2): 4-byte items (int).'],
   ['sh3add', true, 'B + (A << 3): 8-byte items (long, pointer). DECODE shifts A, the ALU only adds.'],
+  ['bset', true, 'Set bit B[5:0] of A (Zbs). A 6-to-64 decoder makes the single 1, then an OR.'],
+  ['bclr', true, 'Clear bit B[5:0] of A: AND with everything but that bit.'],
+  ['binv', true, 'Flip bit B[5:0] of A: XOR with the single 1.'],
+  ['bext', true, 'Read bit B[5:0] of A as 0 or 1 (the right shifter brings it down to bit 0).'],
 ];
 
 function bitGrid(v, cls = '', mark = () => '') {
@@ -79,11 +83,17 @@ function runBitOp() {
     markA = i => i < Number(r) ? 'lz' : '';
   } else if (name === 'cpop' || name === 'cpopw') {
     markA = (i, bit) => bit && (name === 'cpop' || i < 32) ? 'pop' : (name === 'cpopw' && i > 31 ? 'off' : '');
-    // the adder tree, level by level
-    let level = []; for (let i = 0; i < (name === 'cpopw' ? 32 : 64); i++) level.push(Number((A >> BigInt(i)) & 1n));
-    const rows = [];
-    while (level.length > 1) { const n = []; for (let i = 0; i < level.length; i += 2) n.push(level[i] + level[i + 1]); rows.push(n); level = n; }
-    extra = `<div class="poptree">${rows.map((row, k) => `<div class="prow" style="--k:${k}"><span>level ${k + 1}: ${row.length} sum${row.length > 1 ? 's' : ''}</span>${row.slice().reverse().map(x => `<b>${x}</b>`).join('')}</div>`).join('')}</div>`;
+    // src/Population_Count.sv: nibble lookups and quarter counts in EXECUTE, the total in MEMORY
+    const width = name === 'cpopw' ? 32 : 64, bitOf = i => Number((A >> BigInt(i)) & 1n);
+    const nibbles = []; for (let n = 0; n < width / 4; n++) nibbles.push(bitOf(4 * n) + bitOf(4 * n + 1) + bitOf(4 * n + 2) + bitOf(4 * n + 3));
+    const quarters = []; for (let q = 0; q < width / 16; q++) quarters.push(nibbles.slice(4 * q, 4 * q + 4).reduce((x, y) => x + y, 0));
+    const rows = [[`EXECUTE: ${nibbles.length} nibble counts (one lookup each)`, nibbles], [`EXECUTE: ${quarters.length} quarter counts (carry-save sums)`, quarters], ['MEMORY: the last addition', [quarters.reduce((x, y) => x + y, 0)]]];
+    extra = `<div class="poptree">${rows.map(([label, row], k) => `<div class="prow" style="--k:${k}"><span>${label}</span>${row.slice().reverse().map(x => `<b>${x}</b>`).join('')}</div>`).join('')}</div>`;
+  } else if (['bset', 'bclr', 'binv', 'bext'].includes(name)) {
+    const pos = Number(B & 63n);
+    markA = i => i === pos ? 'pop' : '';
+    if (name !== 'bext') markR = i => i === pos ? 'pop' : '';
+    extra = `<p class="small">Bit ${pos} (B mod 64). Every other bit of A passes straight through.</p>`;
   } else if (name === 'rev8') {
     extra = '<p class="small">Watch the bytes of A trade places: byte 7 goes to byte 0, byte 6 to byte 1, ...</p>';
   }
@@ -91,7 +101,7 @@ function runBitOp() {
   $('bt-out').innerHTML = `
     <div class="bt-row"><label>A</label>${bitGrid(A, 'a', markA)}<div class="bt-val">${bits(A)}</div></div>
     ${needsB ? `<div class="bt-row"><label>B</label>${bitGrid(B, 'b')}<div class="bt-val">${bits(B)}</div></div>` : ''}
-    ${c.aShift || c.aZext || c.invB ? `<div class="bt-note">DECODE prepared the operands: ${c.aShift ? `A &lt;&lt; ${c.aShift}` : ''}${c.aZext ? ' zext(A[31:0])' : ''}${c.invB ? ' B inverted' : ''} &rarr; the ALU does <b>${c.aluOp}</b></div>` : ''}
+    ${c.aShift || c.aZext || c.invB || c.oneB ? `<div class="bt-note">DECODE prepared the operands: ${c.aShift ? `A &lt;&lt; ${c.aShift}` : ''}${c.aZext ? ' zext(A[31:0])' : ''}${c.oneB ? ' B = 1 &lt;&lt; B[5:0]' : ''}${c.invB ? ' B inverted' : ''} &rarr; the ALU does <b>${c.aluOp}</b></div>` : ''}
     <div class="bt-row res ${name === 'rev8' ? 'rev' : ''}"><label>${name}</label>${bitGrid(r, 'r', markR)}<div class="bt-val">${bits(r)}</div></div>
     ${extra}
     <p class="bt-teach">${teach}</p>

@@ -9,6 +9,7 @@
 //   docs/img/animations/cache.svg      five accesses to a 2-way cache: miss, hit, conflict,
 //                                      least-recently-used eviction
 //   docs/img/animations/predictor.svg  a 2-bit counter against gshare on a loop branch
+//   docs/img/animations/boot.svg       the FPGA computer booting: firmware, upload, program, report
 //
 // Plain SVG + CSS keyframes (no JavaScript), so the files animate as <img> in a GitHub
 // README. Every frame is a <g> that is visible for exactly one time slot of the loop.
@@ -363,9 +364,97 @@ export function predictorAnimation() {
   return a.done();
 }
 
+// =============================================================================
+// 5. The FPGA computer booting: firmware, upload, program, report (real output)
+// =============================================================================
+// Runs the real boot firmware and program on the model with the device registers of
+// fpga/rtl/Sixfold_System.sv, and records what the serial port shows at each step.
+function bootTranscript(programName) {
+  const MMIO = 0x10000000n;
+  const firmware = assemble(fs.readFileSync(new URL('../fpga/firmware/bios.s', import.meta.url), 'utf8'));
+  const program = assemble(fs.readFileSync(new URL(`../programs/${programName}.s`, import.meta.url), 'utf8'));
+  let memory = new Uint8Array(65536); memory.set(firmware.bytes.slice(0, 0x1000));
+  const st = { rx: [], out: '', leds: 0, boot: false, bootAddress: 0x2000, reason: 0, lastTohost: 0n, lastCycles: 0, timer: 0 };
+  const devices = {
+    load(a) { const o = Number(a - MMIO); return o === 0x08 ? st.leds : o === 0x18 ? (st.rx.length ? 1 : 0) | 4 | ((st.rx[0] || 0) << 8) : o === 0x28 ? 40000000 : o === 0x30 ? st.lastTohost : o === 0x38 ? st.lastCycles : o === 0x40 ? st.reason : o === 0x48 ? st.timer : o === 0x50 ? st.bootAddress : 0; },
+    store(a, d, m) { const o = Number(a - MMIO); if (o === 0 && m) st.out += String.fromCharCode(Number(d & 0xffn)); else if (o === 8) st.leds = Number(d & 0xffn); else if (o === 0x18) st.rx.shift(); else if (o === 0x20) st.boot = true; },
+  };
+  let core = null;
+  const boot = (vector, reason) => { if (core) memory = core.mem.slice(); st.reason = reason; st.boot = false; core = new Core(memory, { ...CONFIGS.performance, devices, resetPc: vector }); };
+  const runUntil = (done, limit = 2e6) => { for (let i = 0; i < limit && !done(); i++) { core.step(); st.timer++; if (st.boot) boot(st.bootAddress, 2); else if (core.halted) { st.lastTohost = core.csr.tohost; st.lastCycles = core.stats.cycles; boot(0, 1); } } };
+  const snaps = [];
+  boot(0, 0);
+  runUntil(() => st.out.includes('sixfold> '));
+  snaps.push({ out: st.out, leds: st.leds });
+  const [lo, hi] = program.used, bytes = [...program.bytes.slice(lo, hi)], word = v => [v & 255, (v >>> 8) & 255, (v >>> 16) & 255, (v >>> 24) & 255];
+  st.rx.push(108, ...word(lo), ...word(hi - lo), ...bytes, ...word(bytes.reduce((a, b) => (a + b) >>> 0, 0)));
+  runUntil(() => st.out.split('sixfold> ').length > 2);
+  snaps.push({ out: st.out, leds: st.leds, bytes: bytes.length });
+  st.rx.push(114);
+  runUntil(() => core.opts.resetPc === 0x2000 && core.cycle > 0);
+  snaps.push({ out: st.out, leds: st.leds });
+  runUntil(() => st.reason === 1 && st.out.split('sixfold> ').length > 3);
+  snaps.push({ out: st.out, leds: st.leds, cycles: st.lastCycles });
+  return snaps;
+}
+
+export function bootAnimation() {
+  const W = 1200, H = 540, snaps = bootTranscript('01_hello');
+  const steps = [
+    { t: 'Power on: the PLL locks, reset is held, RESET_VECTOR = 0x0000', on: ['sys', 'core'], term: '', mem: 'fw' },
+    { t: 'The core fetches the boot firmware at 0x0000: an I-cache miss, then a line from block RAM', on: ['core', 'ic', 'mem'], term: '', mem: 'fw', arrow: ['mem', 'ic'] },
+    { t: 'The firmware prints its banner: each character is a store to PUTCHAR (0x1000_0000)', on: ['core', 'dev', 'uart', 'pc'], term: snaps[0].out, mem: 'fw', arrow: ['uart', 'pc'] },
+    { t: `Your PC sends 'l', the address, the length, ${snaps[1].bytes} program bytes and a checksum`, on: ['pc', 'uart', 'dev'], term: snaps[0].out, mem: 'fw', arrow: ['pc', 'uart'] },
+    { t: 'The firmware stores every byte at 0x2000..: write-through, straight into main memory', on: ['core', 'dc', 'mem'], term: snaps[1].out, mem: 'prog', arrow: ['dc', 'mem'] },
+    { t: "'r': the firmware clears the registers and stores to BOOT; the system resets the core and caches", on: ['core', 'dev', 'sys', 'ic', 'dc'], term: snaps[2].out, mem: 'prog' },
+    { t: 'The program runs from 0x2000, exactly as in simulation, and prints through the same UART', on: ['core', 'ic', 'dc', 'dev', 'uart'], term: snaps[3].out.split('[bios] program finished')[0], mem: 'prog', arrow: ['uart', 'pc'] },
+    { t: `It writes TOHOST, the core halts; the firmware comes back and reports the cycle count (${snaps[3].cycles}, the model's)`, on: ['sys', 'core', 'uart', 'pc'], term: snaps[3].out, mem: 'prog' },
+  ];
+  const a = animation(W, H, steps.length, 2.6), { add, text, rect, frame, progress } = a;
+  add(text(24, 34, 'The FPGA computer booting: firmware, upload, program, report', { size: 20, weight: 700 }));
+  add(text(24, 56, 'Real firmware (fpga/firmware/bios.s) and program (programs/01_hello.s) on the cycle-exact model; the serial output is what the board prints.', { size: 12.5, fill: C.sub }));
+  const B = { pc: [30, 90, 150, 70, 'Your PC', 'tools/fpga_load.py', C.sub], uart: [30, 200, 150, 70, 'UART', 'receive / transmit queues', C.F2],
+    dev: [220, 200, 170, 70, 'Device registers', '0x1000_0000', C.flush], core: [220, 90, 170, 80, 'Riscv64 core', 'RESET_VECTOR', C.E],
+    ic: [420, 90, 110, 50, 'I-cache', '', C.F1], dc: [420, 150, 110, 50, 'D-cache', 'write-through', C.M],
+    mem: [560, 90, 120, 180, 'Main memory', '64 KiB block RAM', C.ink], sys: [220, 300, 170, 60, 'Reset and boot', 'BOOT, halt, restart', C.flush] };
+  for (const [k, [x, y, w, h, t, s, col]] of Object.entries(B)) {
+    add(rect(x, y, w, h, { stroke: col, sw: 1.4 }));
+    add(text(x + w / 2, y + 22, t, { size: 13, weight: 700, anchor: 'middle', fill: col }));
+    if (s) add(text(x + w / 2, y + 40, s, { size: 10, anchor: 'middle', fill: C.sub, mono: k === 'dev' }));
+  }
+  // memory map inside main memory
+  add(rect(575, 148, 90, 30, { fill: '#EAF2FA', stroke: C.F1, rx: 3 })); add(text(620, 167, 'firmware 0x0', { size: 9.5, anchor: 'middle', mono: true }));
+  add(rect(575, 182, 90, 80, { fill: '#FFF', stroke: C.line, rx: 3 })); add(text(620, 226, 'programs', { size: 9.5, anchor: 'middle', mono: true }));
+  add(text(620, 240, '0x2000', { size: 9.5, anchor: 'middle', mono: true, fill: C.faint }));
+  // terminal
+  const tx = 720, ty = 80, tw = 450, th = 440;
+  add(rect(tx, ty, tw, th, { fill: '#0B1418', stroke: '#2A3E49', rx: 10 }));
+  add(text(tx + 14, ty + 20, 'serial console, 115200 baud', { size: 10.5, fill: '#6C818B', mono: true }));
+  const centre = k => [B[k][0] + B[k][2] / 2, B[k][1] + B[k][3] / 2];
+  steps.forEach((s, i) => {
+    let b = '';
+    for (const k of s.on) { const [x, y, w, h, , , col] = B[k]; b += rect(x - 3, y - 3, w + 6, h + 6, { fill: col, stroke: col, sw: 3, op: 0.12 }); }
+    if (s.mem === 'prog' && i >= 4) b += rect(575, 182, 90, 80, { fill: C.M, stroke: C.M, op: 0.25, rx: 3 });
+    if (s.arrow) { const [x1, y1] = centre(s.arrow[0]), [x2, y2] = centre(s.arrow[1]); b += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${C.pred}" stroke-width="5" stroke-dasharray="10 6" opacity="0.7"/>`; }
+    b += rect(30, 390, 650, 70, { fill: '#FFF8E1', stroke: '#E0B03A', rx: 8 });
+    b += text(46, 414, `step ${i + 1} of ${steps.length}`, { size: 11, weight: 700, fill: '#9A7B1F' });
+    const words = s.t.split(' '); let line = '', lines = [];
+    for (const w of words) { if ((line + ' ' + w).length > 88) { lines.push(line); line = w; } else line = line ? line + ' ' + w : w; }
+    lines.push(line);
+    lines.forEach((l, j) => { b += text(46, 434 + j * 17, l, { size: 13, weight: 600 }); });
+    const termLines = s.term.replace(/\r/g, '').split('\n').slice(-22);
+    // spaces as no-break spaces so the banner's ASCII art keeps its shape; long lines are cut at the edge
+    termLines.forEach((l, j) => { b += text(tx + 14, ty + 44 + j * 17.5, (l.length > 60 ? l.slice(0, 59) + '…' : l).replace(/ /g, '\u00a0'), { size: 11.5, mono: true, fill: '#9FF0B4' }); });
+    frame(i, b);
+  });
+  add(text(30, 494, 'The same sequence runs in simulation for every program (make fpga-sim) and in the browser on the site.', { size: 12, fill: C.sub }));
+  progress(24, H - 24, W - 48);
+  return a.done();
+}
+
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname);
 if (isMain) {
   fs.mkdirSync('docs/img/animations', { recursive: true });
-  const all = { pipeline: pipelineAnimation(), wallace: wallaceAnimation(), cache: cacheAnimation(), predictor: predictorAnimation() };
+  const all = { pipeline: pipelineAnimation(), wallace: wallaceAnimation(), cache: cacheAnimation(), predictor: predictorAnimation(), boot: bootAnimation() };
   for (const [n, svg] of Object.entries(all)) { fs.writeFileSync(`docs/img/animations/${n}.svg`, svg); console.log(`wrote docs/img/animations/${n}.svg (${(svg.length / 1024).toFixed(0)} KiB)`); }
 }

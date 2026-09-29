@@ -49,7 +49,7 @@ export function blockDiagramSVG() {
   add(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`);
   add(`<defs>${markers}</defs>`);
   add(`<rect width="100%" height="100%" rx="12" fill="${COL.paper}" stroke="#D5DBD0"/>`);
-  text(20, 28, 'Sixfold (src/Riscv64.sv): 6-stage RV64IM + Zba + Zbb + Zicsr pipeline with caches, BTB + tournament prediction, RAS, forwarding into DECODE, traps', { size: 17, weight: 600 });
+  text(20, 28, 'Sixfold (src/Riscv64.sv): 6-stage RV64IM + B (Zba Zbb Zbs) + Zicsr pipeline with caches, BTB + tournament prediction, RAS, forwarding into DECODE, traps', { size: 17, weight: 600 });
 
   // ---------------------------------------------------------------- stage bands
   const stages = [
@@ -137,7 +137,7 @@ export function blockDiagramSVG() {
   // ---------------------------------------------------------------- EXECUTE
   // ALU operands are chosen in DECODE and latched (EXECUTE_ALU_INPUT_A/B): no multiplexer in front of the adder
   mux(866, 176, 26, 60, 'A (Zba)', [[190, 'rs1'], [222, 'PC']]);
-  mux(866, 290, 26, 60, 'B (~rs2)', [[304, 'rs2'], [336, 'imm']]);
+  mux(866, 290, 26, 60, 'B (bit, ~)', [[304, 'rs2'], [336, 'imm']]);
   wire([[892, 206], [905, 206]]); wire([[892, 320], [905, 320]]);
   wire([[858, 500], [858, 336], [866, 336]]); dot(858, 500);
   add(`<polygon points="1000,160 1070,190 1070,300 1000,330 1000,262 1014,245 1000,228" fill="#FFF3E0" stroke="${COL.EXECUTE}" stroke-width="2"/>`);

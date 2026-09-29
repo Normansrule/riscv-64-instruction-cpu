@@ -16,6 +16,17 @@ jobs:
         run: make test
       - name: Verify the cycle equation
         run: make math
+      - name: FPGA system (lint, then boot + upload + run every program over the simulated UART)
+        run: make fpga-lint fpga-sim
+      - name: FPGA synthesis check (ECP5, yosys only; place and route takes too long for CI)
+        run: |
+          sudo apt-get install -y yosys
+          make build/sv2v
+          CORE=$(grep -v -e Scratchpad -e Riscv64_top src/sources.f)
+          node tools/fpga_image.mjs programs/20_leds_and_buttons.s --out build/ci_fpga
+          ./build/sv2v -DSIXFOLD_FPGA $CORE $(cat fpga/sources.f) > build/ci_fpga/system.v
+          sed -i 's#"[^"]*memory.hex"#"build/ci_fpga/memory.hex"#g' build/ci_fpga/system.v
+          yosys -q -p "read_verilog build/ci_fpga/system.v; synth_ecp5 -top SixfoldSystem" 
       - name: Generated docs and charts are up to date
         run: |
           make docs charts diagram diagrams animations arena && node tools/perf_report.mjs > /dev/null

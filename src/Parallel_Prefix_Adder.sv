@@ -24,6 +24,11 @@ module ParallelPrefixAdder #(
     output logic CARRY_OUT
 );
 
+`ifdef SIXFOLD_FPGA
+    // On an FPGA the fastest adder is the plain "+": synthesis maps it onto the dedicated carry chain
+    // (ECP5 CCU2C, Artix-7 CARRY4), a hard-wired ripple that beats any prefix tree built from LUTs.
+    assign {CARRY_OUT, SUM} = {1'b0, A} + {1'b0, B} + {{WIDTH{1'b0}}, CARRY_IN};
+`else
     localparam int LEVELS = $clog2(WIDTH + 1); // + 1 because the carry-in behaves like an extra bit below bit 0
 
     // Bit 0 of every level is the carry-in "bit", so position i of each level is adder bit i-1.
@@ -57,6 +62,7 @@ module ParallelPrefixAdder #(
     // prefix_level[LEVELS].GENERATE[i] = "a carry comes out of bit i-1" = the carry INTO adder bit i
     assign SUM = BIT_PROPAGATE ^ prefix_level[LEVELS].GENERATE[WIDTH-1:0];
     assign CARRY_OUT = prefix_level[LEVELS].GENERATE[WIDTH];
+`endif
 
 endmodule
 

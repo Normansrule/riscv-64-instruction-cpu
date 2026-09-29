@@ -24,7 +24,7 @@ formats sits in the same instruction bit (e.g. imm[10:5] is always bits 30:25 an
 always bit 31). That makes the immediate generator in `src/Immediate_Generator.sv` a set of simple wires,
 not a big multiplexer. Branch/jump offsets are always even, so bit 0 is not stored at all.
 
-## All 104 instructions
+## All 112 instructions
 
 Letters in the pattern are the variable fields: `d` rd, `s` rs1, `t` rs2, `i` immediate,
 `h` shift amount, `c` CSR address, `z` CSR immediate.
@@ -232,4 +232,17 @@ Letters in the pattern are the variable fields: `d` rd, `s` rs1, `t` rs2, `i` im
 | [`zext.h`](Zbb/zext.h.md) | I-unary | `0000100 00000 sssss 100 ddddd 0111011` | `rd = zext(rs1[15:0])` |
 | [`rev8`](Zbb/rev8.md) | I-unary | `0110101 11000 sssss 101 ddddd 0010011` | `rd = the 8 bytes of rs1 in reverse order (endianness swap)` |
 | [`orc.b`](Zbb/orc.b.md) | I-unary | `0010100 00111 sssss 101 ddddd 0010011` | `rd byte i = (rs1 byte i != 0) ? 0xFF : 0x00 (finds the 0 byte ending a string)` |
+
+### Single-bit
+
+| instruction | format | 32-bit pattern (bit 31 … bit 0) | meaning |
+|---|---|---|---|
+| [`bset`](Zbs/bset.md) | R | `0010100 ttttt sssss 001 ddddd 0110011` | `rd = rs1 \| (1 << rs2[5:0])` |
+| [`bclr`](Zbs/bclr.md) | R | `0100100 ttttt sssss 001 ddddd 0110011` | `rd = rs1 & ~(1 << rs2[5:0])` |
+| [`binv`](Zbs/binv.md) | R | `0110100 ttttt sssss 001 ddddd 0110011` | `rd = rs1 ^ (1 << rs2[5:0])` |
+| [`bext`](Zbs/bext.md) | R | `0100100 ttttt sssss 101 ddddd 0110011` | `rd = (rs1 >> rs2[5:0]) & 1` |
+| [`bseti`](Zbs/bseti.md) | I-sh64 | `001010h hhhhh sssss 001 ddddd 0010011` | `rd = rs1 \| (1 << shamt)` |
+| [`bclri`](Zbs/bclri.md) | I-sh64 | `010010h hhhhh sssss 001 ddddd 0010011` | `rd = rs1 & ~(1 << shamt)` |
+| [`binvi`](Zbs/binvi.md) | I-sh64 | `011010h hhhhh sssss 001 ddddd 0010011` | `rd = rs1 ^ (1 << shamt)` |
+| [`bexti`](Zbs/bexti.md) | I-sh64 | `010010h hhhhh sssss 101 ddddd 0010011` | `rd = (rs1 >> shamt) & 1` |
 

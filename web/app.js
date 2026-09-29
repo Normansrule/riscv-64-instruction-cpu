@@ -65,6 +65,7 @@ function render() {
   else st.textContent = '';
   renderStages(ev, prev); renderNarration(ev); renderChart(); renderListing(ev); renderRegs(ev); renderPredictor(ev); renderStats();
   $('output').textContent = core.output || '(nothing printed yet: programs print by storing a byte to 0x10000000)';
+  $('leds').innerHTML = [7, 6, 5, 4, 3, 2, 1, 0].map(i => `<span class="led${(core.leds >> i) & 1 ? ' on' : ''}" title="LED ${i}"></span>`).join('');
 }
 
 function renderStages(ev, prev) {

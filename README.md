@@ -3,34 +3,36 @@
 **Six stages. One instruction per clock. Watch a 64-bit RISC-V processor think.**
 
 Sixfold is a 64-bit RISC-V processor you can read, run, watch, and see as real silicon: a 6-stage pipelined
-RV64IM core with the Zba and Zbb bit-manipulation extensions, instruction and data caches, a tournament
-branch predictor, a branch target buffer, a return address stack, a Wallace-tree multiplier and
-hardware performance counters, written in SystemVerilog and built to **teach how a modern RISC-V CPU works
-and how to read its diagrams**.
+RV64IM core with the complete B bit-manipulation extension (Zba, Zbb, Zbs), instruction and data caches,
+a tournament branch predictor, a branch target buffer, a return address stack, a Wallace-tree multiplier
+and hardware performance counters, written in SystemVerilog and built to **teach how a modern RISC-V CPU
+works and how to read its diagrams**. It also runs **on an FPGA board** as a small computer with boot
+firmware, a serial console, LEDs and buttons ([FPGA.md](docs/FPGA.md)).
 
 ![The Sixfold datapath](docs/img/cpu_block_diagram.svg)
 
 | | |
 |---|---|
-| **Instruction set** | RV64I + M (multiply/divide) + **Zba + Zbb** (address generation and bit manipulation: `sh3add`, `clz`, `cpop`, `rev8`, `orc.b`, `min`/`max`, rotates, ...) + Zicsr: **104 instructions**, every one documented [in binary](binary/README.md) |
+| **Instruction set** | RV64I + M (multiply/divide) + **B = Zba + Zbb + Zbs** (address generation, bit manipulation, single bits: `sh3add`, `clz`, `cpop`, `rev8`, `orc.b`, `min`/`max`, rotates, `bset`/`bclr`/`binv`/`bext`, ...) + Zicsr: **112 instructions**, every one documented [in binary](binary/README.md) |
 | **Pipeline** | FETCH1 → FETCH2 → DECODE → EXECUTE → MEMORY → WRITEBACK, in order, one instruction per cycle |
-| **Hazards** | forwarding into DECODE from EXECUTE / MEMORY / WRITEBACK (the late EXECUTE value takes its own short path), 1-cycle `LOAD_STALL` for loads and the 2-cycle Zbb results (`cpop`, `min`, `max`) |
+| **Hazards** | forwarding into DECODE from EXECUTE / MEMORY / WRITEBACK (the late EXECUTE value takes its own short path), 1-cycle `LOAD_STALL` for loads and the 2-cycle Zbb results (`cpop`, which finishes its count in MEMORY, and `min`, `max`) |
 | **Branch prediction** | tournament: a per-branch Branch History Table and `GSharePredictor` (PC xor global history, checkpoint repair) with a chooser; a 16-entry Branch Target Buffer (known taken branches cost 0 cycles); an 8-entry Return Address Stack |
 | **Memory** | 4 KiB instruction cache with next-line prefetch and 4 KiB write-through data cache, both 2-way set-associative with LRU replacement and next-line prefetch (32-byte lines), in front of a 10-cycle main memory |
 | **Predictor arena** | the real branch stream of each program replayed through a per-branch table, gshare, the tournament, a perceptron and TAGE (the families in AMD Zen and other modern cores): [MODERN_CPUS.md](docs/MODERN_CPUS.md) |
 | **Traps** | `ecall`, `ebreak`, `mret` with `mtvec`, `mepc`, `mcause`, `mstatus`, `mscratch`: enough to run a tiny kernel ([`15_system_calls.s`](programs/15_system_calls.s)) |
 | **Performance counters** | `hpmcounter3..8` count the six bubble kinds of the cycle equation (load stalls, flushes, redirects, multiply/divide, instruction- and data-cache misses): a program can measure its own CPI stack ([`19_performance_counters.s`](programs/19_performance_counters.s)) |
 | **Multiply / divide** | iterative: a 64 x 16-bit Wallace-tree step with a carry-save accumulator (multiply in 8 cycles), 1 quotient bit per cycle after a leading-zero-counter skip (divide in 5 + significant bits) |
-| **Clock (logic only)** | about **234 MHz** on SkyWater 130 nm and **1.91 GHz** on the ASAP7 7 nm research kit, with the full M extension, Zba and Zbb (up from 1.37 GHz): [PERFORMANCE.md](docs/PERFORMANCE.md) |
+| **Clock (logic only)** | about **267 MHz** on SkyWater 130 nm and **1.87 GHz** on the ASAP7 7 nm research kit, with the full M and B extensions: [PERFORMANCE.md](docs/PERFORMANCE.md) |
+| **FPGA** | a complete computer around the core: 64 KiB block-RAM main memory, UART with queues, LEDs, buttons, memory-mapped device registers, boot firmware that loads programs over USB and reports PASS and cycles. Builds for the **ULX3S** (Lattice ECP5-85F, open-source tools: 43% of the chip, 25 MHz, placed and routed here) and the **Arty A7-100T** (Vivado): [FPGA.md](docs/FPGA.md) |
 | **Two builds** | the performance edition (default) and a simple baseline pipeline (`-DBASELINE`), both in the same RTL behind parameters |
-| **Verified** | 20 programs + a 1,428-case self-checking test (expected values from an independent Python model), predictor on and off, **both builds**: the RTL matches a software twin on **every clock cycle** (84 runs) |
+| **Verified** | 21 programs + a 1,624-case self-checking test (expected values from an independent Python model), predictor on and off, **both builds**: the RTL matches a software twin on **every clock cycle** (88 runs). The FPGA system, booted and fed over its simulated UART, reports the same cycle counts (`make fpga-sim`) |
 | **Silicon** | the original design's real sky130 layout, timing and area, plus sky130 synthesis of this RTL |
-| **Runs on** | Icarus Verilog, Verilator, Yosys, any web browser |
+| **Runs on** | Icarus Verilog, Verilator, Yosys, nextpnr, Vivado, an FPGA board, any web browser |
 
 ## Watch it move
 
 Animated straight from the design (they play right here in the README): the pipeline is a trace of the cycle-exact
-model, the multiplier uses real numbers and checks its answer. `make animations` redraws them.
+model, the multiplier uses real numbers and checks its answer, and the boot sequence runs the real firmware. `make animations` redraws them.
 
 ![The pipeline, cycle by cycle](docs/img/animations/pipeline.svg)
 
@@ -39,6 +41,8 @@ model, the multiplier uses real numbers and checks its answer. `make animations`
 | ![Wallace tree](docs/img/animations/wallace.svg) | ![Cache](docs/img/animations/cache.svg) |
 
 ![Branch predictors](docs/img/animations/predictor.svg)
+
+![The FPGA computer booting](docs/img/animations/boot.svg)
 
 ## How it works, in pictures
 
@@ -90,7 +94,7 @@ last, and the two Zbb operations too deep for the loop (`cpop`, `min`/`max`) get
 
 ![Performance counters](docs/img/diagrams/performance_counters.svg)
 
-### 7. The clock: from 7.5 MHz to 1.91 GHz, and what 2.5 GHz and 5 GHz take
+### 7. The clock: from 7.5 MHz to 1.87 GHz, and what 2.5 GHz and 5 GHz take
 
 ![Clock roadmap](docs/img/diagrams/clock_roadmap.svg)
 
@@ -99,6 +103,37 @@ with `tools/timing.sh` and verified cycle by cycle against the model; the "next"
 commercial 2.5 to 5 GHz cores get there (deeper pipelines, pipelined caches, out-of-order execution,
 custom circuits), each with its price in cycles or area: [PERFORMANCE.md](docs/PERFORMANCE.md).
 All these figures are drawn by `make diagrams` from the same parameters as the RTL.
+
+### 8. How the caches connect the pipeline, main memory and the devices
+
+![Cache interfaces](docs/img/diagrams/cache_interfaces.svg)
+
+The core has exactly two memory ports, one for instructions (FETCH1) and one for data (EXECUTE). Both
+answer in the same cycle on a hit and hold the pipeline on a miss. Behind each cache sits a refill port
+that asks main memory for a whole 32-byte line. Stores go straight through to memory. One address range
+is not memory at all: it is how the CPU drives the rest of the computer.
+
+### 9. The memory map: memory, device registers and CSRs
+
+![Memory map](docs/img/diagrams/memory_map.svg)
+
+A store to 0x1000_0008 lights the LEDs; a load from 0x1000_0010 reads the buttons; a store to 0x1000_0000
+sends a character. That is **memory-mapped I/O**: the same `ld`/`sd` instructions, a different address.
+The CSRs (`cycle`, the counters, the trap registers, `tohost`) are the other way in, through `csrr`/`csrw`.
+
+### 10. The FPGA computer and how it boots
+
+![The FPGA computer](docs/img/diagrams/fpga_system.svg)
+
+![Boot sequence](docs/img/diagrams/boot_sequence.svg)
+
+Like a PC's reset vector pointing into its BIOS, the core starts in boot firmware at address 0
+([`fpga/firmware/bios.s`](fpga/firmware/bios.s)). The firmware prints a banner, loads a program sent
+from your PC ([`tools/fpga_load.py`](tools/fpga_load.py)) and starts it with a store to the `BOOT`
+register. When the program finishes, it reports PASS and the cycle count, which is the same number the
+cycle-exact model gives. The whole sequence runs in simulation too: `make fpga-sim`.
+[FPGA.md](docs/FPGA.md) has the details and the build steps for both boards, and the board sheets are
+[ULX3S](docs/boards/ULX3S.md) and [Arty A7-100T](docs/boards/ARTY_A7.md).
 
 ## Open the live site
 
@@ -228,6 +263,7 @@ performance edition.
 | [`17_predictor_challenge`](programs/17_predictor_challenge.s) | branches that need history, and a branch that needs OTHER branches | 6277 | 1.24 | 8790 | 1.73 |
 | [`18_bit_tricks`](programs/18_bit_tricks.s) | the Zba and Zbb extensions, measured against plain RV64I code | 711 | 1.26 | 912 | 1.61 |
 | [`19_performance_counters`](programs/19_performance_counters.s) | the cycle equation, counted by the hardware itself | 231 | 1.96 | 258 | 2.19 |
+| [`20_leds_and_buttons`](programs/20_leds_and_buttons.s) | talking to devices (memory-mapped I/O) and Zbs | 1196 | 1.18 | 1449 | 1.43 |
 
 ## Down to silicon
 
@@ -250,19 +286,24 @@ the pipeline registers): [SILICON.md](docs/SILICON.md).
   [`model/core.js`](model/core.js). Their per-cycle traces (what is in each of the six stages), the
   cycle count, the output, `tohost` and all 32 registers must match exactly, with the predictor on
   and off. `# EXPECT:` lines in each program are checked too.
-* [`tests/isa_selfcheck.s`](tests/isa_selfcheck.s): 864 generated test cases whose expected values
+* [`tests/isa_selfcheck.s`](tests/isa_selfcheck.s): 1,624 generated test cases whose expected values
   come from an independent Python reference ([`tools/gen_selfcheck.py`](tools/gen_selfcheck.py)).
   It reports through the `tohost` CSR the way riscv-tests do.
-* `make lint`: Verilator with all warnings (except the naming style this code uses on purpose).
+* `make lint` and `make fpga-lint`: Verilator with all warnings (except the naming style this code uses on purpose).
+* `make fpga-sim`: the whole FPGA computer (block RAM memory, device registers, UART, boot firmware)
+  boots in simulation, receives every program over its serial port, runs it and reports. The
+  reported cycle count must equal the model's.
 * Continuous integration runs all of it on every push ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 ## Experiments
 
-Sixteen labs in [EXPERIMENTS.md](docs/EXPERIMENTS.md): history length, counter reset values, a
+Twenty labs in [EXPERIMENTS.md](docs/EXPERIMENTS.md): history length, counter reset values, a
 multi-cycle divider, removing false load stalls, a return address stack, a branch target buffer, a
 faster adder for the critical path, forwarding into EXECUTE, cache experiments, bigger and smarter
 predictors, chasing the 7 nm critical path, Booth recoding for the multiplier, your own CPI stack from
-the hardware counters, and rewriting a program with Zba and Zbb.
+the hardware counters, rewriting a program with Zba and Zbb, a bitmap allocator with Zbs, a new device
+register for the FPGA computer, a new command for its boot firmware, and a pipelined data cache for a
+faster FPGA clock.
 
 ## Repository map
 
@@ -270,6 +311,7 @@ the hardware counters, and rewriting a program with Zba and Zbb.
 |---|---|
 | [`src/`](src) | the SystemVerilog RTL: `Riscv64.sv` and one file per module ([file list](src/sources.f)) |
 | [`tb/`](tb) | the testbench (per-cycle trace, register dump, `+BP=0` to disable prediction) |
+| [`fpga/`](fpga) | the FPGA computer: `rtl/` (memory, UART, devices, boot control), `firmware/bios.s`, `sim/`, `boards/` (ULX3S, Arty A7) |
 | [`model/`](model) | ISA table, assembler, cycle-exact pipeline model (JavaScript) |
 | [`programs/`](programs), [`tests/`](tests) | example programs and the self-check |
 | [`binary/`](binary/README.md) | every instruction and every program in binary |

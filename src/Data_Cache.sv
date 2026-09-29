@@ -12,6 +12,10 @@
 // (no allocation on a store miss). Replacement: an empty way first, otherwise the least recently used.
 // Next-line prefetch: after a load miss fills line X, line X + 1 is fetched in the background (the
 // simplest of the hardware prefetchers that every modern CPU has; theirs also detect strides).
+// A background (prefetch) line that arrives in a cycle with a store waits one cycle: the store updates
+// the cache that cycle, and the line is read from main memory one cycle later, store included. So the
+// data arrays only ever take ONE write per cycle (what an FPGA block RAM or an SRAM macro offers) and
+// the cache can never hold a stale copy.
 // =====================================================================================================
 module DataCache #(
     parameter int MISS_LATENCY = 10
@@ -61,7 +65,7 @@ module DataCache #(
                            || (WAY1_VALID[PREFETCH_LINE_ADDRESS[10:5]] && (WAY1_TAG[PREFETCH_LINE_ADDRESS[10:5]] == PREFETCH_LINE_ADDRESS[31:11]));
     assign REFILL_SET = REFILL_LINE_ADDRESS[10:5];
     assign REFILL_VICTIM_WAY = !WAY0_VALID[REFILL_SET] ? 1'b0 : !WAY1_VALID[REFILL_SET] ? 1'b1 : LEAST_RECENTLY_USED[REFILL_SET];
-    assign INSTALL = REFILL_BUSY && (REFILL_CYCLES_LEFT == 6'd1);
+    assign INSTALL = REFILL_BUSY && (REFILL_CYCLES_LEFT == 6'd1) && !(|WRITE_MASK); // a store this cycle goes first
     assign STORE_HIT = (|WRITE_MASK) && LINE_PRESENT;
     assign REFILL_ADDRESS = REFILL_LINE_ADDRESS;
 
@@ -101,32 +105,35 @@ module DataCache #(
                     PREFETCH_PENDING <= 1'b1;
                     PREFETCH_LINE_ADDRESS <= REFILL_LINE_ADDRESS + 64'd32;
                 end
-            end else begin
+            end else if (REFILL_CYCLES_LEFT != 6'd1) begin // (at 1 with a store: hold, install next cycle)
                 REFILL_CYCLES_LEFT <= REFILL_CYCLES_LEFT - 6'd1;
             end
         end
     end
 
-    // Line data: refill writes a whole line; a store hit merges its bytes into the way that hit
-    // (stores never happen during a data refill: the missing load is holding EXECUTE)
-    logic [255:0] MERGED_LINE;
+    // Line data: a refill writes a whole line; a store hit writes only its own bytes, through per-byte write
+    // enables, so the store never has to read the line first (no read-modify-write in the store's path).
+    // Never both in one cycle: INSTALL waits for a store (see above), so one write port is enough.
+    logic [5:0] DATA_WRITE_SET;
+    logic [255:0] DATA_WRITE_LINE;
+    logic [31:0] WAY0_BYTE_ENABLES, WAY1_BYTE_ENABLES, STORE_BYTE_ENABLES;
     always_comb begin
-        MERGED_LINE = HIT_WAY1 ? WAY1_DATA[SET] : WAY0_DATA[SET];
-        for (int BYTE_LANE = 0; BYTE_LANE < 8; BYTE_LANE = BYTE_LANE + 1)
-            if (WRITE_MASK[BYTE_LANE]) MERGED_LINE[64*ADDRESS[4:3] + 8*BYTE_LANE +: 8] = WRITE_DATA[8*BYTE_LANE +: 8];
+        STORE_BYTE_ENABLES = 32'd0;
+        STORE_BYTE_ENABLES[8*ADDRESS[4:3] +: 8] = WRITE_MASK;
+        DATA_WRITE_SET = INSTALL ? REFILL_SET : SET;
+        DATA_WRITE_LINE = INSTALL ? REFILL_LINE : {4{WRITE_DATA}};
+        WAY0_BYTE_ENABLES = INSTALL ? {32{!REFILL_VICTIM_WAY}} : (STORE_HIT && HIT_WAY0) ? STORE_BYTE_ENABLES : 32'd0;
+        WAY1_BYTE_ENABLES = INSTALL ? {32{REFILL_VICTIM_WAY}} : (STORE_HIT && HIT_WAY1) ? STORE_BYTE_ENABLES : 32'd0;
     end
     always_ff @(posedge clk) begin
         if (!reset && !FREEZE) begin
             if (INSTALL) begin
-                if (REFILL_VICTIM_WAY) begin
-                    WAY1_TAG[REFILL_SET] <= REFILL_LINE_ADDRESS[31:11];
-                    WAY1_DATA[REFILL_SET] <= REFILL_LINE;
-                end else begin
-                    WAY0_TAG[REFILL_SET] <= REFILL_LINE_ADDRESS[31:11];
-                    WAY0_DATA[REFILL_SET] <= REFILL_LINE;
-                end
-            end else if (STORE_HIT) begin
-                if (HIT_WAY1) WAY1_DATA[SET] <= MERGED_LINE; else WAY0_DATA[SET] <= MERGED_LINE;
+                if (REFILL_VICTIM_WAY) WAY1_TAG[REFILL_SET] <= REFILL_LINE_ADDRESS[31:11];
+                else WAY0_TAG[REFILL_SET] <= REFILL_LINE_ADDRESS[31:11];
+            end
+            for (int BYTE_LANE = 0; BYTE_LANE < 32; BYTE_LANE = BYTE_LANE + 1) begin
+                if (WAY0_BYTE_ENABLES[BYTE_LANE]) WAY0_DATA[DATA_WRITE_SET][8*BYTE_LANE +: 8] <= DATA_WRITE_LINE[8*BYTE_LANE +: 8];
+                if (WAY1_BYTE_ENABLES[BYTE_LANE]) WAY1_DATA[DATA_WRITE_SET][8*BYTE_LANE +: 8] <= DATA_WRITE_LINE[8*BYTE_LANE +: 8];
             end
         end
     end

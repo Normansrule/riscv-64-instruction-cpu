@@ -9,17 +9,19 @@ introduction read the [learning path](learn/README.md) first.
 
 | property | value |
 |---|---|
-| instruction set | RV64I + M (multiply/divide) + Zicsr (CSR instructions) + machine-mode traps (`ecall`, `ebreak`, `mret`): 72 instructions, see [`binary/`](../binary/README.md) |
+| instruction set | RV64I + M (multiply/divide) + B (Zba address generation, Zbb bit manipulation, Zbs single-bit) + Zicsr (CSR instructions) + machine-mode traps (`ecall`, `ebreak`, `mret`): 112 instructions, see [`binary/`](../binary/README.md) |
 | traps | `ecall` / `ebreak` save the PC in `mepc` and the cause in `mcause` (11 / 3) and jump to `mtvec`; `mret` returns to `mepc`; `mstatus` MIE/MPIE are saved and restored |
 | pipeline | 6 stages, in order, single issue: FETCH1, FETCH2, DECODE, EXECUTE, MEMORY, WRITEBACK |
 | data hazards | forwarding **into DECODE** from EXECUTE, MEMORY, WRITEBACK; 1-cycle `LOAD_STALL` |
 | branch prediction | tournament: `TournamentChooser` (128-entry per-branch history table + 128-entry chooser) with `GSharePredictor` (2^`GSHARE_HISTORY_BITS` counters, default 6 bits = 64), speculative global history with checkpoint repair; a 16-entry `BranchTargetBuffer` in FETCH1; an 8-entry `ReturnAddressStack` in FETCH2 |
 | branch penalties | taken branch or JAL found in the BTB: 0 bubbles; otherwise a FETCH2 redirect: 1; predicted return: 1; wrong guess or unpredicted JALR: 3 (flush) |
 | multiply / divide | `IterativeMultiplyDivideUnit`: 64 x 16-bit Wallace-tree steps into a carry-save accumulator ([`Carry_Save_Multiplier.sv`](../src/Carry_Save_Multiplier.sv)), a leading-zero-counter skip for divides, a registered result: multiply 8 cycles, divide 5 + significant bits of the dividend (baseline build: single cycle) |
-| clock (logic only) | sky130 130 nm: 4.28 ns, about 234 MHz; ASAP7 7 nm: 0.52 ns, about 1.91 GHz; see [PERFORMANCE.md](PERFORMANCE.md) |
+| clock (logic only) | sky130 130 nm: 3.75 ns, about 267 MHz; ASAP7 7 nm: 0.536 ns, about 1.87 GHz; see [PERFORMANCE.md](PERFORMANCE.md) |
+| FPGA | the same core in a small computer (block RAM memory, UART, LEDs, buttons, boot firmware): see [FPGA.md](FPGA.md) |
 | builds | performance (default) and baseline (`-DBASELINE`, the plain pipeline); `make test` checks both |
 | memory | performance build: `InstructionCache` (4 KiB, 2-way set-associative with LRU replacement, 32-byte lines, next-line prefetch) and `DataCache` (4 KiB, 2-way LRU, next-line prefetch, write-through, no store allocation) in front of a 64 KiB main memory with a 10-cycle line refill; baseline: single-cycle 64 KiB `ScratchpadMemory` |
-| reset PC | `0x2000` (`PC_RESET` in [`src/const_pkg.sv`](../src/const_pkg.sv)) |
+| reset PC | the `RESET_VECTOR` input: `0x2000` (`PC_RESET` in [`src/const_pkg.sv`](../src/const_pkg.sv)) in simulation; the FPGA system starts its boot firmware at `0x0000` first |
+| memory-mapped I/O | 0x1000_0000 .. 0x1000_00FF are device registers, never RAM: `PUTCHAR` (0x00) prints, `LEDS` (0x08), `BUTTONS` (0x10) and the rest on the FPGA ([FPGA.md](FPGA.md#3-how-the-cpu-programs-the-rest-of-the-computer)) |
 | program end | write a nonzero value to the `tohost` CSR; the core halts when that instruction reaches WRITEBACK |
 | verification | every program, every cycle, RTL vs [`model/core.js`](../model/core.js), predictor on and off (`make test`) |
 
@@ -34,15 +36,15 @@ introduction read the [learning path](learn/README.md) first.
 | [`const_pkg.sv`](../src/const_pkg.sv) | `const_pkg` | | reset PC, memory size, MMIO and CSR addresses |
 | [`GShare_Branch_Predictor.sv`](../src/GShare_Branch_Predictor.sv) | `GSharePredictor` | FETCH1 (read), FETCH2 (history), EXECUTE (train/repair) | branch direction prediction |
 | [`Control_Unit.sv`](../src/Control_Unit.sv) | `ControlUnit` | DECODE | all control signals from the instruction bits |
-| [`ALUdec.sv`](../src/ALUdec.sv) | `ALUdec` | DECODE | opcode + funct3 + funct7 / funct12 to `alu_op_t`, plus the Zba/Zbb operand preparation (shift, zero-extend, invert) |
+| [`ALUdec.sv`](../src/ALUdec.sv) | `ALUdec` | DECODE | opcode + funct3 + funct7 / funct12 to `alu_op_t` (RV64I, M, Zba, Zbb, Zbs), plus the Zba/Zbb operand preparation (shift, zero-extend, invert) |
 | [`Immediate_Generator.sv`](../src/Immediate_Generator.sv) | `ImmediateGenerator` | DECODE | builds and sign-extends immediates to 64 bits |
 | [`Register_File.sv`](../src/Register_File.sv) | `RegisterFile` | DECODE (read), WRITEBACK (write) | x1..x31, 2 asynchronous reads, 1 synchronous write |
-| [`ALU.sv`](../src/ALU.sv) | `ALU` | EXECUTE | shared 65-bit adder, logic, shifts and rotates, 32-bit W variants, Zbb counters and byte operations; a fast output (forwarded) and a full one (2-cycle results) |
+| [`ALU.sv`](../src/ALU.sv) | `ALU` | EXECUTE | shared 65-bit adder, logic, shifts and rotates, 32-bit W variants, Zbb counters and byte operations, Zbs single-bit set / clear / invert / extract (a 6-to-64 decoder in front of the logic gates); a fast output (forwarded) and a full one (2-cycle results) |
 | [`Multiply_Divide_Unit.sv`](../src/Multiply_Divide_Unit.sv) | `MultiplyDivideUnit` | EXECUTE | M extension, single cycle (baseline build) |
 | [`Iterative_Multiply_Divide_Unit.sv`](../src/Iterative_Multiply_Divide_Unit.sv) | `IterativeMultiplyDivideUnit` | EXECUTE | M extension, one short step per cycle (performance build) |
 | [`Carry_Save_Multiplier.sv`](../src/Carry_Save_Multiplier.sv) | `CarrySaveMultiplyStep` | EXECUTE | one 64 x 16-bit multiply step: a Wallace tree of full adders, no carry propagation |
 | [`Leading_Zero_Counter.sv`](../src/Leading_Zero_Counter.sv) | `LeadingZeroCounter` | EXECUTE | 64-bit leading-zero count as a 6-level tree (clz, ctz, the divider's skip) |
-| [`Population_Count.sv`](../src/Population_Count.sv) | `PopulationCount` | EXECUTE | 64-bit count of 1 bits as a tree of small adders (cpop) |
+| [`Population_Count.sv`](../src/Population_Count.sv) | `PopulationCount`, `PopulationCountFinish` | EXECUTE, MEMORY | cpop in two halves: nibble lookups and four 16-bit quarter counts in EXECUTE, the last addition in MEMORY |
 | [`Parallel_Prefix_Adder.sv`](../src/Parallel_Prefix_Adder.sv) | `ParallelPrefixAdder` | EXECUTE, FETCH2 | Kogge-Stone adder: carries in log2(n) levels |
 | [`Prefix_Negate.sv`](../src/Prefix_Negate.sv) | `PrefixNegate` | EXECUTE | -x without a carry chain |
 | [`Branch_Target_Buffer.sv`](../src/Branch_Target_Buffer.sv) | `BranchTargetBuffer` | FETCH1 (read), EXECUTE (write) | zero-bubble taken branches and jumps |
@@ -56,9 +58,12 @@ introduction read the [learning path](learn/README.md) first.
 | [`Store_Control_Unit.sv`](../src/Store_Control_Unit.sv) | `StoreControl` | EXECUTE | byte lanes and write mask for sb sh sw sd |
 | [`Load_Control_Unit.sv`](../src/Load_Control_Unit.sv) | `LoadControl` | MEMORY | lane select and extension for all 7 loads |
 | [`Write_Control_Unit.sv`](../src/Write_Control_Unit.sv) | `WriteControl` | MEMORY | writeback multiplexer (also the MEMORY forward value) |
-| [`Scratchpad_Memory.sv`](../src/Scratchpad_Memory.sv) | `ScratchpadMemory` | FETCH1/EXECUTE | 64 KiB memory and the putchar port |
+| [`Scratchpad_Memory.sv`](../src/Scratchpad_Memory.sv) | `ScratchpadMemory` | FETCH1/EXECUTE | 64 KiB memory and the device page (putchar); simulation only |
 | [`Riscv64.sv`](../src/Riscv64.sv) | `Riscv64` | all | the pipeline: registers, hazards, forwarding |
-| [`Riscv64_top.sv`](../src/Riscv64_top.sv) | `riscv64_top` | | core + memory |
+| [`Riscv64_top.sv`](../src/Riscv64_top.sv) | `riscv64_top` | | core + memory (simulation) |
+
+The FPGA computer adds [`fpga/rtl/`](../fpga/rtl): `MainMemory` (block RAM), `UartTransmitter`,
+`UartReceiver`, `ByteFifo` and `SixfoldSystem` (devices, reset and boot control); see [FPGA.md](FPGA.md).
 
 ## Coding style
 
@@ -177,7 +182,7 @@ result: `tohost = 1` is PASS, `(n << 1) | 1` is FAIL in test n (the riscv-tests 
 | event | bubbles |
 |---|---:|
 | pipeline fill at reset | 5 |
-| `LOAD_STALL` (a load, or a 2-cycle Zbb result: `cpop`, `cpopw`, `min`, `minu`, `max`, `maxu`, needed right away) | 1 |
+| `LOAD_STALL` (a load, or a 2-cycle Zbb result: `cpop`, `cpopw`, `min`, `minu`, `max`, `maxu`, needed right away; or a Zbs `bset` / `bclr` / `binv` whose bit number the instruction just before computes) | 1 |
 | FETCH2 redirect (predicted-taken branch or JAL not in the BTB, predicted return) | 1 (0 if a flush squashes the redirecting instruction) |
 | taken branch or JAL found in the BTB | 0 |
 | flush (wrong branch guess, JALR not predicted or predicted wrong, `ecall`, `ebreak`, `mret`) | 3 |

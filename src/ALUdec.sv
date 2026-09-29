@@ -1,7 +1,7 @@
 `default_nettype none
 
 // Module: ALUdec
-// Desc:   Sets the ALU operation (RV64I, M, Zba, Zbb) and the operand preparation DECODE applies
+// Desc:   Sets the ALU operation (RV64I, M, Zba, Zbb, Zbs) and the operand preparation DECODE applies
 // Inputs:
 //   opcode   : instruction opcode
 //   funct    : funct3 field
@@ -11,11 +11,13 @@
 //   ALUop                  : selects the ALU operation
 //   OPERAND_A_ZERO_EXTEND  : Zba ".uw" forms use zext(rs1[31:0]) as operand A
 //   OPERAND_A_SHIFT        : Zba sh1add / sh2add / sh3add use rs1 << 1, 2 or 3 as operand A
-//   OPERAND_B_INVERT       : Zbb andn / orn / xnor use ~rs2 as operand B
+//   OPERAND_B_INVERT       : Zbb andn / orn / xnor use ~rs2 as operand B (Zbs bclr: ~(1 << rs2))
+//   OPERAND_B_SINGLE_BIT   : Zbs bset / bclr / binv use 1 << rs2[5:0] (or the immediate) as operand B
 //   FULL_WIDTH_RESULT      : in the 32-bit "W" opcode space but a 64-bit result (add.uw, shNadd.uw, slli.uw, zext.h)
 //
 // The operand preparation happens in DECODE, where the ALU operands are chosen anyway, so the ALU itself
-// only ever sees an ADD, SLL, AND, OR or XOR for these: no new logic in front of the adder.
+// only ever sees an ADD, SLL, AND, OR or XOR for these: no new logic in the ALU's one-cycle loop.
+//   bset = rs1 | (1 << n)     bclr = rs1 & ~(1 << n)     binv = rs1 ^ (1 << n)
 // (model/core.js aluDecode() is the bit-exact twin of this module.)
 
 import opcode_pkg::*;
@@ -30,6 +32,7 @@ module ALUdec (
   output logic        OPERAND_A_ZERO_EXTEND,
   output logic [1:0]  OPERAND_A_SHIFT,
   output logic        OPERAND_B_INVERT,
+  output logic        OPERAND_B_SINGLE_BIT,
   output logic        FULL_WIDTH_RESULT
 );
 
@@ -59,6 +62,7 @@ module ALUdec (
     OPERAND_A_ZERO_EXTEND = 1'b0;
     OPERAND_A_SHIFT = 2'd0;
     OPERAND_B_INVERT = 1'b0;
+    OPERAND_B_SINGLE_BIT = 1'b0;
     FULL_WIDTH_RESULT = 1'b0;
     unique case (opcode)
       OPC_LUI: ALUop = ALU_COPY_B;
@@ -76,12 +80,20 @@ module ALUdec (
             12'h602: ALUop = ALU_CPOP;
             12'h604: ALUop = ALU_SEXT_B;
             12'h605: ALUop = ALU_SEXT_H;
-            default: ALUop = ALU_SLL; // slli
+            default: begin
+              unique case (funct6)
+                6'b001010: begin ALUop = ALU_OR; OPERAND_B_SINGLE_BIT = 1'b1; end // bseti
+                6'b010010: begin ALUop = ALU_AND; OPERAND_B_SINGLE_BIT = 1'b1; OPERAND_B_INVERT = 1'b1; end // bclri
+                6'b011010: begin ALUop = ALU_XOR; OPERAND_B_SINGLE_BIT = 1'b1; end // binvi
+                default: ALUop = ALU_SLL; // slli
+              endcase
+            end
           endcase
         end else if (funct == FNC_SRL_SRA) begin
           if (funct12 == 12'h6B8) ALUop = ALU_REV8;
           else if (funct12 == 12'h287) ALUop = ALU_ORC_B;
           else if (funct6 == 6'b011000) ALUop = ALU_ROR; // rori
+          else if (funct6 == 6'b010010) ALUop = ALU_BEXT; // bexti
           else ALUop = base_operation; // srli, srai
         end else begin
           ALUop = base_operation;
@@ -153,6 +165,21 @@ module ALUdec (
           7'b0110000: begin // Zbb rol ror (rolw rorw in the W space)
             if (funct == FNC_SLL) ALUop = ALU_ROL;
             else if (funct == FNC_SRL_SRA) ALUop = ALU_ROR;
+          end
+          7'b0010100: if (opcode == OPC_ARI_RTYPE && funct == FNC_SLL) begin // Zbs bset
+            ALUop = ALU_OR;
+            OPERAND_B_SINGLE_BIT = 1'b1;
+          end
+          7'b0100100: begin // Zbs bclr bext
+            if (opcode == OPC_ARI_RTYPE && funct == FNC_SLL) begin
+              ALUop = ALU_AND;
+              OPERAND_B_SINGLE_BIT = 1'b1;
+              OPERAND_B_INVERT = 1'b1;
+            end else if (opcode == OPC_ARI_RTYPE && funct == FNC_SRL_SRA) ALUop = ALU_BEXT;
+          end
+          7'b0110100: if (opcode == OPC_ARI_RTYPE && funct == FNC_SLL) begin // Zbs binv
+            ALUop = ALU_XOR;
+            OPERAND_B_SINGLE_BIT = 1'b1;
           end
           7'b0000100: begin // Zba add.uw, Zbb zext.h (both W space, both 64-bit results)
             if (opcode == OPC_ARI_RTYPE_WORD && funct == FNC_ADD_SUB) begin

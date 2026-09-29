@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 1010" width="1300" height="1010">
+<defs><marker id="m-data" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2B3A31"/></marker><marker id="m-pred" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#00796B"/></marker><marker id="m-flush" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C2185B"/></marker><marker id="m-F1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2E86C1"/></marker><marker id="m-F2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#17A2B8"/></marker><marker id="m-D" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6A5ACD"/></marker><marker id="m-E" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#E08E0B"/></marker><marker id="m-M" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#27AE60"/></marker><marker id="m-tag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C9982E"/></marker><marker id="m-idx" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#17A2B8"/></marker><marker id="m-off" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6A5ACD"/></marker><marker id="m-hit" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1E8449"/></marker><marker id="m-miss" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C0392B"/></marker><marker id="m-sub" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4A5A50"/></marker></defs>
+<rect width="100%" height="100%" rx="12" fill="#FBFCF8" stroke="#D5DBD0"/>
+<text x="24" y="34" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="20" font-weight="700" fill="#17251D" text-anchor="start">Boot sequence of the FPGA computer: reset vector, firmware, program, and back</text>
+<text x="24" y="56" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="400" fill="#4A5A50" text-anchor="start">Like a PC: the reset vector points into firmware ("BIOS"), which loads the program and hands over. Checked end to end by tools/fpga_sim.mjs.</text>
+<rect x="35" y="78" width="190" height="48" rx="6" fill="#4A5A50" stroke="#4A5A50" stroke-width="1.5" fill-opacity="0.14"/>
+<text x="130" y="98" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13.5" font-weight="700" fill="#4A5A50" text-anchor="middle">Your PC</text>
+<text x="130" y="115" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="middle">tools/fpga_load.py</text>
+<line x1="130" y1="126" x2="130" y2="980" stroke="#4A5A50" stroke-width="1.4" stroke-dasharray="4 4" opacity="0.6"/>
+<rect x="290" y="78" width="190" height="48" rx="6" fill="#17A2B8" stroke="#17A2B8" stroke-width="1.5" fill-opacity="0.14"/>
+<text x="385" y="98" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13.5" font-weight="700" fill="#17A2B8" text-anchor="middle">UART</text>
+<text x="385" y="115" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="middle">receive / transmit queues</text>
+<line x1="385" y1="126" x2="385" y2="980" stroke="#17A2B8" stroke-width="1.4" stroke-dasharray="4 4" opacity="0.6"/>
+<rect x="545" y="78" width="190" height="48" rx="6" fill="#2E86C1" stroke="#2E86C1" stroke-width="1.5" fill-opacity="0.14"/>
+<text x="640" y="98" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13.5" font-weight="700" fill="#2E86C1" text-anchor="middle">Boot firmware</text>
+<text x="640" y="115" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="middle">core at 0x0000</text>
+<line x1="640" y1="126" x2="640" y2="980" stroke="#2E86C1" stroke-width="1.4" stroke-dasharray="4 4" opacity="0.6"/>
+<rect x="800" y="78" width="190" height="48" rx="6" fill="#C2185B" stroke="#C2185B" stroke-width="1.5" fill-opacity="0.14"/>
+<text x="895" y="98" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13.5" font-weight="700" fill="#C2185B" text-anchor="middle">System</text>
+<text x="895" y="115" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="middle">reset and boot control</text>
+<line x1="895" y1="126" x2="895" y2="980" stroke="#C2185B" stroke-width="1.4" stroke-dasharray="4 4" opacity="0.6"/>
+<rect x="1055" y="78" width="190" height="48" rx="6" fill="#27AE60" stroke="#27AE60" stroke-width="1.5" fill-opacity="0.14"/>
+<text x="1150" y="98" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13.5" font-weight="700" fill="#27AE60" text-anchor="middle">Program</text>
+<text x="1150" y="115" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="middle">core at 0x2000</text>
+<line x1="1150" y1="126" x2="1150" y2="980" stroke="#27AE60" stroke-width="1.4" stroke-dasharray="4 4" opacity="0.6"/>
+<rect x="757.15" y="180" width="275.7" height="40" rx="6" fill="#FFF" stroke="#C2185B" stroke-width="1.5"/>
+<text x="895" y="198" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="600" fill="#17251D" text-anchor="middle">1. power on: PLL locks, reset held ~1.6 ms</text>
+<text x="895" y="213" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="middle">RESET_VECTOR = 0x0000</text>
+<path d="M889,250 L648,250" fill="none" stroke="#C2185B" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-flush)"/>
+<text x="767.5" y="242" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="600" fill="#17251D" text-anchor="middle">2. core + caches leave reset at 0x0000</text>
+<text x="767.5" y="266" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="middle">the firmware is in the block RAM image</text>
+<path d="M634,300 L393,300" fill="none" stroke="#2E86C1" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-F1)"/>
+<text x="512.5" y="292" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="600" fill="#17251D" text-anchor="middle">3. banner, clock, memory, "sixfold&gt; "</text>
+<text x="512.5" y="316" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="middle">sb to PUTCHAR, after checking UART bit 1 (queue full)</text>
+<path d="M379,350 L138,350" fill="none" stroke="#17A2B8" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-F2)"/>
+<text x="257.5" y="342" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="600" fill="#17251D" text-anchor="middle">4. characters at 115200 baud</text>
+<path d="M136,400 L377,400" fill="none" stroke="#4A5A50" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-sub)"/>
+<text x="257.5" y="392" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="600" fill="#17251D" text-anchor="middle">5. 'l' address length bytes checksum</text>
+<text x="257.5" y="416" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="middle">little-endian words; the sum of the bytes mod 2^32</text>
+<path d="M391,450 L632,450" fill="none" stroke="#17A2B8" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-F2)"/>
+<text x="512.5" y="442" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="600" fill="#17251D" text-anchor="middle">6. getc: poll UART bit 0, read bits 15:8, sd to UART</text>
+<text x="512.5" y="466" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="middle">the store drops the byte from the receive queue</text>
+<rect x="499" y="480" width="282" height="40" rx="6" fill="#FFF" stroke="#2E86C1" stroke-width="1.5"/>
+<text x="640" y="498" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="600" fill="#17251D" text-anchor="middle">7. sb every byte to 0x2000..</text>
+<text x="640" y="513" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="middle">write-through: straight into main memory</text>
+<path d="M634,550 L138,550" fill="none" stroke="#2E86C1" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-F1)"/>
+<text x="385" y="542" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="600" fill="#17251D" text-anchor="middle">8. "loaded N bytes", then r from the PC</text>
+<rect x="489.55" y="580" width="300.9" height="40" rx="6" fill="#FFF" stroke="#2E86C1" stroke-width="1.5"/>
+<text x="640" y="598" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="600" fill="#17251D" text-anchor="middle">9. 'r': clear x1..x31 (all but tp), sd to BOOT</text>
+<text x="640" y="613" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="middle">registers as a simulation starts: all zero</text>
+<path d="M646,650 L887,650" fill="none" stroke="#2E86C1" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-F1)"/>
+<text x="767.5" y="642" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="600" fill="#17251D" text-anchor="middle">10. BOOT store</text>
+<text x="767.5" y="666" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="middle">RESET_VECTOR = BOOT_ADDRESS = 0x2000</text>
+<path d="M901,700 L1142,700" fill="none" stroke="#C2185B" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-flush)"/>
+<text x="1022.5" y="692" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="600" fill="#17251D" text-anchor="middle">11. reset core and both caches, start at 0x2000</text>
+<text x="1022.5" y="716" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="middle">cold caches, fresh CSRs and predictors</text>
+<path d="M1144,750 L393,750" fill="none" stroke="#27AE60" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-M)"/>
+<text x="767.5" y="742" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="600" fill="#17251D" text-anchor="middle">12. the program prints (PUTCHAR)</text>
+<text x="767.5" y="766" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="middle">the 2 KiB transmit queue absorbs bursts</text>
+<path d="M1144,800 L903,800" fill="none" stroke="#27AE60" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-M)"/>
+<text x="1022.5" y="792" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="600" fill="#17251D" text-anchor="middle">13. writes TOHOST: the core halts</text>
+<text x="1022.5" y="816" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="middle">the system counts the cycles from reset to halt</text>
+<rect x="731.95" y="830" width="326.09999999999997" height="40" rx="6" fill="#FFF" stroke="#C2185B" stroke-width="1.5"/>
+<text x="895" y="848" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="600" fill="#17251D" text-anchor="middle">14. wait for the transmit queue to drain</text>
+<text x="895" y="863" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="middle">latch LAST_TOHOST, LAST_CYCLES; BOOT_REASON = 1</text>
+<path d="M889,900 L648,900" fill="none" stroke="#C2185B" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-flush)"/>
+<text x="767.5" y="892" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="600" fill="#17251D" text-anchor="middle">15. restart the firmware at 0x0000</text>
+<path d="M634,950 L138,950" fill="none" stroke="#2E86C1" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-F1)"/>
+<text x="385" y="942" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="600" fill="#17251D" text-anchor="middle">16. "program finished: PASS in N cycles"</text>
+<text x="385" y="966" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="middle">N equals the cycle-exact model (tools/fpga_sim.mjs checks)</text>
+</svg>

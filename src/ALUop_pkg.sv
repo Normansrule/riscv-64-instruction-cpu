@@ -41,6 +41,7 @@ package alu_op_pkg;
     ALU_ZEXT_H = 6'd43,
     ALU_REV8   = 6'd44, // byte reverse
     ALU_ORC_B  = 6'd45, // OR-combine each byte
+    ALU_BEXT   = 6'd46, // Zbs: extract bit rs2[5:0] (bset / bclr / binv are OR / AND / XOR with a prepared operand)
     // (Zba needs no new operation: shNadd and .uw are an ADD or SLL with operand A prepared in DECODE,
     //  andn / orn / xnor are AND / OR / XOR with operand B inverted in DECODE)
     // ===============================================

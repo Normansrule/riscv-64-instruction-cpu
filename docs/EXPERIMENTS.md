@@ -127,7 +127,7 @@ costs with `make math`.
 `src/Carry_Save_Multiplier.sv` adds 16 partial products per step. Radix-4 Booth recoding looks at
 the multiplier bits in overlapping groups of three and produces 8 partial products from
 {-2, -1, 0, +1, +2} x the multiplicand. Write it, keep `CarrySaveMultiplyStep`'s ports, and compare
-the number of compressor levels, the delay (`tools/timing.sh`) and the area. The 864-case self-check
+the number of compressor levels, the delay (`tools/timing.sh`) and the area. The 1,624-case self-check
 (`make test`) covers MUL, MULH, MULHSU, MULHU and MULW with signed corner cases.
 
 ## Lab 15: your own CPI stack, from the hardware counters
@@ -144,3 +144,41 @@ values before you run it.
 `orc.b` + `ctz`. Take `06_bubble_sort.s` and use `sh3add` for the array addresses and `min`/`max` to
 swap without a branch. Count instructions and cycles with `rdcycle`/`rdinstret` before and after. Watch
 for the 2-cycle latency of `min`/`max`: put an independent instruction between the `max` and its use.
+
+## Lab 17: a bitmap allocator with Zbs
+
+A bitmap keeps one bit per resource (a page, a slot, a file-system block): 1 = in use. With the
+single-bit instructions it takes one instruction to allocate (`bset`), free (`bclr`) or test (`bext`)
+an entry, and `ctz` of the inverted map finds the first free one. Write `alloc` (find the first 0 bit,
+set it, return its index) and `free` for a 64-entry bitmap in one register. Then write the same thing in
+plain RV64I (`sll`, `or`, `and`, `not`, a loop instead of `ctz`) and count instructions and cycles.
+`programs/20_leds_and_buttons.s` shows every Zbs instruction once.
+
+## Lab 18: add a device register to the FPGA computer
+
+The device registers live in one `case` statement in `fpga/rtl/Sixfold_System.sv` (loads) and a few
+`if (DEVICE_STORE && ...)` lines (stores). Add one: for example a 32-bit `PWM` register at offset 0x58
+that dims the LEDs (compare it against a free-running counter), or a `RANDOM` register that returns a
+new linear-feedback shift register value on every load. Loads must not have side effects (a load can
+repeat while the data cache fetches its line), so "take" operations need a store. Add the register to
+the table in [FPGA.md](FPGA.md), use it from a program, and check `make fpga-sim` still passes.
+
+## Lab 19: teach the boot firmware a new command
+
+`fpga/firmware/bios.s` is ordinary RISC-V assembly running on the core. Add a command: `d` could dump
+16 bytes of memory in hexadecimal starting at an address typed in hex, or `c` could print the last
+program's CPI as `LAST_CYCLES` divided by an instruction count you pass back through a register. The
+firmware must stay below 0x1000 (`tools/fpga_image.mjs` checks). Test it in simulation first: put your
+command's bytes into the upload stream that `fpga/sim/system_testbench.sv` plays, or extend
+`tools/fpga_sim.mjs`.
+
+## Lab 20: a pipelined data cache for a faster FPGA clock
+
+On the FPGA the longest path is the data cache ([FPGA.md](FPGA.md#6-results)): the address add, both tag
+reads, the compare and a store's write enables all happen in EXECUTE. Real FPGA soft cores split this.
+Register the address at the end of EXECUTE, then read and compare the tags in MEMORY: loads get one
+more cycle of latency (a load-use now waits two cycles instead of one), and stores write the line one
+cycle later, from a small store buffer. Change `src/Data_Cache.sv`, `src/Riscv64.sv` and `model/core.js`
+together, keep `make test` cycle-exact, and compare two things: the clock `fpga/boards/ulx3s/build.sh`
+reports, and the cycles `make math` counts. Which programs get faster in microseconds, and which get
+slower?

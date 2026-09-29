@@ -31,6 +31,7 @@
     <a href="#caches">Caches</a>
     <a href="#bits">Bits</a>
     <a href="#multiply">Multiply</a>
+    <a href="#fpga">FPGA</a>
     <a href="#silicon">Silicon</a>
     <a href="#numbers">Numbers</a>
     <a href="#faster">Faster</a>
@@ -90,13 +91,14 @@
   <div class="wrap">
     <div class="copy narrow">
       <h2>Watch it move.</h2>
-      <p>Four animations, each drawn from the real design: the pipeline is a trace of the cycle-exact model (the one the RTL is checked against), the multiplier step uses real numbers and checks its answer, and the cache and predictor follow the same rules as the SystemVerilog. They are plain animated SVGs, so they also play in the README.</p>
+      <p>Five animations, each drawn from the real design: the pipeline is a trace of the cycle-exact model (the one the RTL is checked against), the multiplier step uses real numbers and checks its answer, the cache and predictor follow the same rules as the SystemVerilog, and the boot sequence runs the real firmware. They are plain animated SVGs, so they also play in the README.</p>
     </div>
     <div class="show-tabs" id="show-tabs" role="tablist">
       <button type="button" role="tab" data-k="pipeline" data-alt="Animated pipeline trace: instructions moving through six stages with a stall, a redirect and a flush" data-cap="28 cycles of a real loop: forwarding, a load stall, a FETCH2 redirect and the flush when the loop exits.">Pipeline</button>
       <button type="button" role="tab" data-k="wallace" data-alt="Animated Wallace tree compressing partial products level by level" data-cap="One multiply step: 10 rows of bits become 2 through full adders, then one final add.">Wallace tree</button>
       <button type="button" role="tab" data-k="cache" data-alt="Animated cache: address split, set lookup, hits, misses and an LRU eviction" data-cap="Five loads into a 2-way cache: miss, hit, a conflict that still fits, and an eviction.">Cache</button>
       <button type="button" role="tab" data-k="predictor" data-alt="Animated branch predictors: a 2-bit counter against gshare on a loop branch" data-cap="A loop branch (T T T N): one 2-bit counter misses every exit; gshare learns the pattern.">Predictor</button>
+      <button type="button" role="tab" data-k="boot" data-alt="Animated boot of the FPGA computer: firmware banner, program upload, run and report on a serial console" data-cap="The FPGA computer: boot firmware, a program sent over the serial port, its run, and the report with the model's cycle count.">Boot</button>
     </div>
     <figure class="showcase"><img id="show-img" src="docs/img/animations/pipeline.svg" alt="" loading="lazy"><figcaption id="show-cap"></figcaption></figure>
   </div>
@@ -206,7 +208,7 @@
   <div class="wrap">
     <div class="copy narrow">
       <h2>Bit tricks: one instruction instead of a loop.</h2>
-      <p>Sixfold implements <b>Zba</b> and <b>Zbb</b>, the bit-manipulation extensions every current RISC-V application processor has. Counting the 1 bits of a register takes a 64-trip loop in plain RV64I and one <code>cpop</code> here; finding the end of a string goes 8 bytes at a time with <code>orc.b</code>. Pick an operation and a value: the result comes from the same model code that is checked against the RTL.</p>
+      <p>Sixfold implements the complete <b>B</b> extension: <b>Zba</b>, <b>Zbb</b> and <b>Zbs</b>, the bit-manipulation instructions every current RISC-V application processor has. Counting the 1 bits of a register takes a 64-trip loop in plain RV64I and one <code>cpop</code> here; finding the end of a string goes 8 bytes at a time with <code>orc.b</code>. Pick an operation and a value: the result comes from the same model code that is checked against the RTL.</p>
     </div>
     <div class="bt-ctl">
       <label>Operation <select id="bt-op"></select></label>
@@ -225,7 +227,7 @@
     <div class="copy">
       <h2>Inside the multiplier: carries that never wait.</h2>
       <p>Adding 16 shifted copies of a number one after another would make each one wait for the carries of the last. A Wallace tree adds them in columns instead: every group of three rows goes through a row of full adders and comes out as two (sum bits stay put, carry bits move one column left). Rows shrink 16, 11, 8, 6, 4, 3, 2 and no carry ever travels far until one final add.</p>
-      <p>Sixfold's step does 64 x 16 bits plus a running total kept as two numbers, every clock cycle: <code>src/Carry_Save_Multiplier.sv</code>. That change moved the multiplier off the critical path (747 ps to under 523 ps at 7 nm).</p>
+      <p>Sixfold's step does 64 x 16 bits plus a running total kept as two numbers, every clock cycle: <code>src/Carry_Save_Multiplier.sv</code>. That change moved the multiplier off the critical path (747 ps to well under the rest of the core at 7 nm).</p>
       <div class="race-ctl">
         <label>A <input id="wt-a" type="number" min="0" max="65535" value="2931"></label>
         <label>B <input id="wt-b" type="number" min="0" max="65535" value="181"></label>
@@ -235,6 +237,41 @@
       <p id="wt-info" class="wt-info" aria-live="polite"></p>
     </div>
     <div class="wt-wrap"><svg id="wt-svg" role="img" aria-label="Partial product rows of the multiplication, compressed level by level"></svg></div>
+  </div>
+</section>
+
+<!-- ============================================================== FPGA -->
+<section class="band alt" id="fpga">
+  <div class="wrap">
+    <div class="copy narrow">
+      <h2>A whole computer: boot it right here.</h2>
+      <p>On an FPGA board Sixfold becomes a small computer. It has 64 KiB of memory, a serial port, LEDs and buttons, and boot firmware that starts at address 0, the way a PC starts in its BIOS. The firmware prints a banner, loads a program sent from your PC, runs it, and reports PASS and the cycle count. Below, that same firmware runs on the cycle-exact model at 1 MHz, with this page acting as the board: the terminal is the serial port, and the lights and buttons are the device registers at <code>0x1000_0000</code>. Click the terminal to type, or upload a program.</p>
+    </div>
+    <div class="fc">
+      <div class="fc-board">
+        <div class="fc-top"><span class="fc-title">sixfold &mdash; serial console, 115200 baud</span><span id="fc-status" class="fc-status"></span></div>
+        <pre id="fc-term" class="fc-term" tabindex="0" aria-label="Serial console: click and type a command" aria-live="polite"></pre>
+        <div class="fc-row"><span class="fc-label">LEDS 0x1000_0008</span><div id="fc-leds" class="fc-leds"></div></div>
+        <div class="fc-row"><span class="fc-label">BUTTONS 0x1000_0010</span><div id="fc-buttons" class="fc-buttons"></div></div>
+      </div>
+      <div class="fc-side">
+        <label>Program <select id="fc-program"></select></label>
+        <button type="button" class="primary" id="fc-upload">Upload and run</button>
+        <div class="fc-keys">
+          <button type="button" id="fc-help">h help</button>
+          <button type="button" id="fc-info">i info</button>
+          <button type="button" id="fc-run">r run again</button>
+          <button type="button" id="fc-memtest">m memory test</button>
+          <button type="button" id="fc-reset">Reset button</button>
+        </div>
+        <p class="small">Try <code>20_leds_and_buttons</code> and hold a button to stop the light. The cycle count the firmware reports is the one in the table under Numbers. <a data-repo-doc="docs/FPGA.md" href="docs/FPGA.md">How the FPGA version works</a>, and the board sheets for the <a data-repo-doc="docs/boards/ULX3S.md" href="docs/boards/ULX3S.md">ULX3S</a> and the <a data-repo-doc="docs/boards/ARTY_A7.md" href="docs/boards/ARTY_A7.md">Arty A7-100T</a>.</p>
+      </div>
+    </div>
+    <div class="fc-figs">
+      <figure class="fig"><a href="docs/img/diagrams/boot_sequence.svg" target="_blank" rel="noopener"><img src="docs/img/diagrams/boot_sequence.svg" alt="Boot sequence: power on, firmware at 0x0000, load over the UART, BOOT store, program at 0x2000, halt, report" loading="lazy"></a><figcaption>How it boots: reset vector, firmware, program, and back (click to enlarge).</figcaption></figure>
+      <figure class="fig"><a href="docs/img/diagrams/memory_map.svg" target="_blank" rel="noopener"><img src="docs/img/diagrams/memory_map.svg" alt="Memory map: firmware, stack, programs, device registers, control and status registers" loading="lazy"></a><figcaption>How the CPU drives the rest of the computer: memory-mapped device registers.</figcaption></figure>
+      <figure class="fig"><a href="docs/img/diagrams/cache_interfaces.svg" target="_blank" rel="noopener"><img src="docs/img/diagrams/cache_interfaces.svg" alt="Every port between the pipeline, the caches, main memory and the devices" loading="lazy"></a><figcaption>How the caches connect the pipeline to memory and to the devices.</figcaption></figure>
+    </div>
   </div>
 </section>
 
@@ -289,13 +326,13 @@
       <p>The baseline computes a whole 64-bit division in one clock cycle: 64 subtractions in a row, 133 ns. The performance edition divides one bit per cycle, multiplies with a Wallace tree, adds carry-lookahead (Kogge-Stone) adders, and wins cycles back with a tournament branch predictor, a branch target buffer, a return address stack and precise load stalls, behind instruction and data caches with prefetching. Both designs are in the repository and both are checked cycle by cycle.</p>
     </div>
     <div class="facts">
-      <div><strong>234 MHz</strong><span>logic-only estimate on SkyWater 130 nm with the multiply/divide unit (the baseline: about 7.5 MHz)</span></div>
-      <div><strong>1.91 GHz</strong><span>the same RTL mapped onto ASAP7, a 7 nm-class research library (729 ps &rarr; 523 ps, now with Zba, Zbb and performance counters)</span></div>
+      <div><strong>267 MHz</strong><span>logic-only estimate on SkyWater 130 nm with the multiply/divide unit (the baseline: about 7.5 MHz)</span></div>
+      <div><strong>1.87 GHz</strong><span>the same RTL mapped onto ASAP7, a 7 nm-class research library (729 ps &rarr; 536 ps, now with the whole B extension and performance counters)</span></div>
       <div><strong>1.03</strong><span>cycles per instruction on the branch-pattern program, caches included (baseline 1.38)</span></div>
     </div>
     <figure class="cp"><img src="docs/img/charts/performance.svg" alt="Cycles per instruction per program, original design versus performance edition" loading="lazy"></figure>
-    <figure class="cp fig"><img src="docs/img/diagrams/clock_roadmap.svg" alt="Clock roadmap: measured clock periods from 133 ns to 523 ps against the 400 ps and 200 ps needed for 2.5 and 5 GHz" loading="lazy"><figcaption>From 7.5 MHz to 1.91 GHz, one measured step at a time, and what 2.5 GHz and 5 GHz would take.</figcaption></figure>
-    <p class="small">Why not higher? In 130 nm one carry step of an adder takes about 330 ps; in 7 nm the whole core's longest path is 523 ps; 2.5 GHz needs 400 ps and 5 GHz 200 ps. Smaller processes are faster, but a process node is chosen by the foundry, not written in RTL. <a data-repo-doc="docs/PERFORMANCE.md" href="docs/PERFORMANCE.md">How every number was measured</a>.</p>
+    <figure class="cp fig"><img src="docs/img/diagrams/clock_roadmap.svg" alt="Clock roadmap: measured clock periods from 133 ns to 536 ps against the 400 ps and 200 ps needed for 2.5 and 5 GHz" loading="lazy"><figcaption>From 7.5 MHz to 1.87 GHz, one measured step at a time, and what 2.5 GHz and 5 GHz would take.</figcaption></figure>
+    <p class="small">Why not higher? In 130 nm one carry step of an adder takes about 330 ps; in 7 nm the whole core's longest path is 536 ps; 2.5 GHz needs 400 ps and 5 GHz 200 ps. Smaller processes are faster, but a process node is chosen by the foundry, not written in RTL. <a data-repo-doc="docs/PERFORMANCE.md" href="docs/PERFORMANCE.md">How every number was measured</a>.</p>
   </div>
 </section>
 
@@ -330,5 +367,6 @@
 
 <script type="module" src="site/main.js"></script>
 <script type="module" src="site/extras.js"></script>
+<script type="module" src="site/console.js"></script>
 </body>
 </html>
