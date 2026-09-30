@@ -56,6 +56,8 @@ function render() {
   const st = $('status'); st.className = 'status';
   if (!ev) st.textContent = 'reset: pipeline empty, FETCH1_PC = 0x2000';
   else if (ev.halt) { st.textContent = `halted: tohost = ${core.csr.tohost}${core.csr.tohost === 1n ? ' (PASS)' : ` (FAIL in test ${core.csr.tohost >> 1n})`}`; st.classList.add('halt'); }
+  else if (ev.interrupt) { st.textContent = `interrupt in EXECUTE (${ev.trap.kind}): trap to mtvec, the replaced instruction runs after mret`; st.classList.add('flush'); }
+  else if (ev.interruptTaken) { st.textContent = 'DECODE_TAKES_INTERRUPT: the instruction in DECODE is replaced by the interrupt'; st.classList.add('flush'); }
   else if (ev.stall) { st.textContent = `LOAD_STALL${ev.loadStallReal ? '' : ' (false stall)'}`; st.classList.add('stall'); }
   else if (ev.busy) { st.textContent = 'MULTIPLY_DIVIDE_STALL: the M unit is iterating'; st.classList.add('stall'); }
   else if (ev.dmiss) { st.textContent = 'DATA_CACHE_STALL: the load waits for its cache line'; st.classList.add('stall'); }
@@ -206,7 +208,7 @@ function renderStats() {
     ['cycles', s.cycles, true], ['instructions retired', s.retired], ['CPI', s.retired ? (s.cycles / s.retired).toFixed(3) : '-', true],
     ['load stalls (false)', `${s.loadStalls} (${s.falseLoadStalls})`], ['flushes: wrong guess / JALR', `${s.mispredicts} / ${s.jalrFlushes}`],
     ['FETCH2 redirects / BTB hits', `${s.redirects} / ${s.btbRedirects}`], ['multiply/divide busy cycles', s.multiplyDivideBusy], ['cache misses: instruction / data', `${s.icacheMisses} / ${s.dcacheMisses}`], ['branch accuracy', s.branches ? (100 * (1 - s.mispredicts / s.branches)).toFixed(1) + '%' : '-'], ['operands forwarded', s.forwards],
-    ['hardware counters hpm3..8 (L F R K I D)', core.hpm ? ['stall', 'flush', 'redirect', 'busy', 'imiss', 'dmiss'].map(k => String(core.hpm[k])).join(' · ') : '-'],
+    ['hardware counters hpm3..9 (L F R K I D X)', core.hpm ? ['stall', 'flush', 'redirect', 'busy', 'imiss', 'dmiss', 'intr'].map(k => String(core.hpm[k])).join(' · ') : '-'],
   ];
   if (core.halted) {
     const pred = s.retired + 5 + s.loadStalls + 3 * s.flushes + b.redirect + b.muldiv + b.imiss + b.dmiss;

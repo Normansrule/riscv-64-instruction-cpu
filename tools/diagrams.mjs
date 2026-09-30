@@ -10,6 +10,7 @@
 //   docs/img/diagrams/memory_map.svg         addresses: firmware, programs, device registers, CSRs
 //   docs/img/diagrams/boot_sequence.svg      reset vector -> firmware -> program -> firmware (FPGA)
 //   docs/img/diagrams/fpga_system.svg        the FPGA computer on its board (docs/fpga_results.json)
+//   docs/img/diagrams/interrupt.svg          an interrupt taken in DECODE, cycle by cycle (real model trace)
 //
 // Every number in these figures comes from the RTL parameters (src/*.sv) or from
 // docs/PERFORMANCE.md; the figures are redrawn by `make diagrams`.
@@ -739,6 +740,59 @@ export function performanceCounters(values) {
   return g.done();
 }
 
+// An interrupt in the pipeline, cycle by cycle, from the model running programs/21_timer_interrupts.s
+export async function interruptDiagram() {
+  const { assemble } = await import('../model/asm.js');
+  const { Core, CONFIGS, STAGES } = await import('../model/core.js');
+  const core = new Core(assemble(fs.readFileSync(new URL('../programs/21_timer_interrupts.s', import.meta.url), 'utf8')), CONFIGS.performance);
+  const evs = core.run(200000, true);
+  // the second interrupt (the first one is still paying cold-cache misses in its handler)
+  const hits = evs.map((e, i) => (e.interruptTaken ? i : -1)).filter(i => i >= 0);
+  const i0 = hits[1], first = i0 - 2, last = Math.min(evs.length - 1, i0 + 21);
+  const window = evs.slice(first, last + 1);
+  const ids = [];
+  for (const e of window) for (const st of STAGES) { const x = e.stages[st]; if (x && !ids.includes(x.id)) ids.push(x.id); }
+  ids.sort((a, b) => a - b);
+  const col = { FETCH1: C.F1, FETCH2: C.F2, DECODE: C.D, EXECUTE: C.E, MEMORY: C.M, WRITEBACK: C.W };
+  const SH = { FETCH1: 'F1', FETCH2: 'F2', DECODE: 'D', EXECUTE: 'E', MEMORY: 'M', WRITEBACK: 'W' };
+  const lx = 330, cw = 38, rh = 22, top = 120, W = lx + window.length * cw + 40, H = top + ids.length * rh + 200;
+  const g = canvas(W, H, 'An interrupt, cycle by cycle: replace the DECODE instruction, trap, handle, return',
+    `programs/21_timer_interrupts.s on the cycle-exact model (performance build), cycles ${first + 1} to ${last + 1}. Every cell is what the RTL does too (make test).`);
+  const { add, text, rect } = g;
+  window.forEach((e, k) => text(lx + k * cw + cw / 2, top - 10, String(e.cycle), { size: 9.5, anchor: 'middle', mono: true, fill: C.faint }));
+  text(lx - 10, top - 10, 'cycle', { size: 10, anchor: 'end', fill: C.faint });
+  const intCycle = i0 - first;
+  add(`<rect x="${lx + intCycle * cw}" y="${top - 4}" width="${cw}" height="${ids.length * rh + 8}" fill="${C.flush}" fill-opacity="0.07"/>`);
+  add(`<rect x="${lx + (intCycle + 1) * cw}" y="${top - 4}" width="${cw}" height="${ids.length * rh + 8}" fill="${C.flush}" fill-opacity="0.13"/>`);
+  ids.forEach((id, r) => {
+    const ins = core.instrs[id], y = top + r * rh;
+    const isReplaced = window.some(e => e.interruptTaken && e.stages.DECODE && e.stages.DECODE.id === id);
+    const label = `${(ins.pc >>> 0).toString(16).padStart(4, '0')}  ${ins.text}`;
+    text(lx - 10, y + 15, label.length > 42 ? label.slice(0, 41) + '…' : label, { size: 10.5, anchor: 'end', mono: true, fill: ins.squashed ? C.faint : C.ink });
+    if (isReplaced) text(18, y + 15, 'replaced', { size: 9.5, fill: C.flush, weight: 700 });
+    window.forEach((e, k) => {
+      for (const st of STAGES) {
+        const x = e.stages[st];
+        if (!x || x.id !== id) continue;
+        const pseudo = st === 'EXECUTE' && e.interrupt && isReplaced;
+        const c = pseudo ? C.flush : col[st];
+        add(`<rect x="${lx + k * cw + 2}" y="${y + 2}" width="${cw - 4}" height="${rh - 4}" rx="4" fill="${c}" fill-opacity="${ins.squashed && !pseudo ? 0.25 : 0.9}"/>`);
+        text(lx + k * cw + cw / 2, y + 15, pseudo ? 'INT' : SH[st], { size: 9.5, anchor: 'middle', weight: 700, fill: ins.squashed && !pseudo ? c : '#FFF' });
+      }
+    });
+  });
+  const ny = top + ids.length * rh + 30;
+  const notes = [
+    [C.flush, `cycle ${evs[i0].cycle}: the timer interrupt is pending and enabled, so the instruction in DECODE does not go on: an interrupt pseudo-instruction takes its place.`],
+    [C.flush, `cycle ${evs[i0 + 1].cycle}: in EXECUTE it traps like ecall: mepc = the replaced instruction, mcause = 2^63 + 7, MIE off, jump to mtvec; FETCH1..DECODE are flushed.`],
+    [C.E, 'It never retires (MEMORY gets a bubble): an interrupt costs 4 cycles, the X term of cycles = N + 5 + L + 3F + R + K + I + D + X.'],
+    [C.M, 'The handler moves MTIMECMP forward and runs mret, a flush back to mepc: the replaced instruction runs now, and the loop never notices.'],
+    [C.faint, 'Faded rows were fetched and then squashed; their slots are the bubbles the equation counts.'],
+  ];
+  notes.forEach(([c, t], i) => { add(`<circle cx="30" cy="${ny + i * 22 - 4}" r="5" fill="${c}"/>`); text(44, ny + i * 22, t, { size: 11.5, fill: C.sub }); });
+  return g.done();
+}
+
 export const FPGA_RESULTS = JSON.parse(fs.readFileSync(new URL('../docs/fpga_results.json', import.meta.url), 'utf8'));
 export const CLOCK_DATA = JSON.parse(fs.readFileSync(new URL('../docs/clock_roadmap.json', import.meta.url), 'utf8'));
 
@@ -759,7 +813,7 @@ if (isMain) {
   fs.mkdirSync('docs/img/diagrams', { recursive: true });
   const figs = { branch_prediction: branchPrediction(), cache: cache(), memory_hierarchy: hierarchy(), clock_roadmap: clockRoadmap(CLOCK_DATA),
     multiply_divide: multiplyDivideUnit(), operands_and_alu: operandsAndAlu(), performance_counters: performanceCounters(await program19Counters()),
-    cache_interfaces: cacheInterfaces(), memory_map: memoryMap(), boot_sequence: bootSequence(), fpga_system: fpgaSystem(FPGA_RESULTS) };
+    cache_interfaces: cacheInterfaces(), memory_map: memoryMap(), boot_sequence: bootSequence(), fpga_system: fpgaSystem(FPGA_RESULTS), interrupt: await interruptDiagram() };
   for (const [n, svg] of Object.entries(figs)) { fs.writeFileSync(`docs/img/diagrams/${n}.svg`, svg); console.log(`wrote docs/img/diagrams/${n}.svg`); }
 }
 
@@ -832,7 +886,7 @@ export function cacheInterfaces() {
 
 // The address space: memory, the firmware's area, programs, device registers, and the CSRs
 export function memoryMap() {
-  const W = 1300, H = 780;
+  const W = 1300, H = 840;
   const g = canvas(W, H, 'Memory map: what each address means',
     'Loads and stores reach memory and devices; CSR instructions reach the registers inside the core. Same map in simulation and on the FPGA.');
   const { add, text, rect, pill } = g;
@@ -866,6 +920,8 @@ export function memoryMap() {
     ['0x40', 'BOOT_REASON', '0 power-on, 1 program ended, 2 BOOT', '-'],
     ['0x48', 'TIMER', 'cycles since power-on', '-'],
     ['0x50', 'BOOT_ADDRESS', 'where BOOT starts (0x2000)', 'set it'],
+    ['0x58', 'MTIME', 'the machine timer (cycles)', '-'],
+    ['0x60', 'MTIMECMP', 'the timer interrupt time', 'set it: interrupt at MTIME >= it'],
   ];
   const cols = [[0, 'offset'], [60, 'register'], [180, 'a load returns'], [500, 'a store does']];
   rect(tx - 12, ty - 4, 780, 48 + rows.length * 26, { fill: '#FFF', stroke: C.flush, rx: 8 });
@@ -879,16 +935,17 @@ export function memoryMap() {
     text(tx + 180, yy, r[2], { size: 11, fill: C.sub });
     text(tx + 500, yy, r[3], { size: 11, fill: C.sub });
   });
-  text(tx, ty + 70 + rows.length * 26, 'In simulation every device load returns 0 and only PUTCHAR (and LEDS, in the model) do anything, so the', { size: 10.5, fill: C.faint });
-  text(tx, ty + 84 + rows.length * 26, 'same program runs unchanged on the model, the RTL and the board.', { size: 10.5, fill: C.faint });
+  text(tx, ty + 70 + rows.length * 26, 'In simulation the timer works everywhere; the other device loads return 0 and only PUTCHAR (and LEDS, in the', { size: 10.5, fill: C.faint });
+  text(tx, ty + 84 + rows.length * 26, 'model) do anything, so the same program runs unchanged on the model, the RTL and the board.', { size: 10.5, fill: C.faint });
 
   // CSR box
-  const cy = 520;
-  rect(tx - 12, cy, 780, 212, { fill: '#FFF', stroke: C.D, rx: 8 });
+  const cy = 580;
+  rect(tx - 12, cy, 780, 238, { fill: '#FFF', stroke: C.D, rx: 8 });
   text(tx, cy + 22, 'Control and status registers: a separate address space, inside the core (csrr / csrw)', { size: 12.5, weight: 700, fill: C.D });
   const csrs = [['0xC00 cycle', '0xC02 instret', 'counters since reset (rdcycle, rdinstret)'], ['0xC03..0xC08', 'hpmcounter3..8', 'L F R K I D: the bubble counters of the cycle equation'],
     ['0x300 mstatus', '0x305 mtvec', 'trap setup: interrupt enable bits, handler address'], ['0x341 mepc', '0x342 mcause', 'where a trap happened and why (ecall, ebreak)'],
-    ['0x340 mscratch', '0x50A status', 'scratch registers for software'], ['0x51E tohost', '', 'write 1: PASS, (n << 1) | 1: FAIL test n. Halts the core']];
+    ['0x304 mie', '0x344 mip', 'interrupt enables / pending: bit 7 timer, bit 11 external'],
+    ['0x340 mscratch', '0x50A status', 'scratch registers for software'], ['0x51E tohost', '0xC09 hpm9', 'write 1: PASS, (n << 1) | 1: FAIL test n / interrupts taken']];
   csrs.forEach(([a, b, s], i) => {
     const yy = cy + 50 + i * 26;
     text(tx, yy, a, { size: 11, mono: true, weight: 700 });
@@ -974,7 +1031,7 @@ export function fpgaSystem(results) {
   box(720, 460, 140, 110, 'D-cache', ['4 KiB 2-way', 'write-through', 'per-byte writes'], { stroke: C.M });
   box(560, 640, 300, 200, 'Main memory: 64 KiB block RAM', ['2 copies x 2048 lines x 256 bits', '(ECP5 DP16KD / Artix-7 RAMB36)', 'copy A: instruction refills', 'copy B: data refills', 'every store writes both', 'initial image: firmware + a demo', 'program (tools/fpga_image.mjs)'], { stroke: C.edge, file: 'fpga/rtl/Main_Memory.sv' });
   box(300, 640, 190, 200, 'Boot firmware', ['software, 2 KiB', 'fpga/firmware/bios.s', 'banner, info, memory test', "l: load over the UART", "r: clear registers, BOOT", 'after a program:', 'PASS / FAIL, cycles'], { stroke: C.F1 });
-  box(920, 130, 280, 330, 'Device registers', ['address[63:8] = 0x1000_00', '', '0x00 PUTCHAR   -> transmit queue', '0x08 LEDS      -> 8 LEDs', '0x10 BUTTONS   <- buttons, switches', '0x18 UART      status / receive', '0x20 BOOT      -> restart the core', '0x28 CLOCK     = CLOCK_HZ', '0x30 LAST_TOHOST 0x38 LAST_CYCLES', '0x40 BOOT_REASON 0x48 TIMER', '0x50 BOOT_ADDRESS'], { stroke: C.flush, lsize: 10.5 });
+  box(920, 130, 280, 330, 'Device registers', ['address[63:8] = 0x1000_00', '', '0x00 PUTCHAR   -> transmit queue', '0x08 LEDS      -> 8 LEDs', '0x10 BUTTONS   <- buttons, switches', '0x18 UART      status / receive', '0x20 BOOT      -> restart the core', '0x28 CLOCK     = CLOCK_HZ', '0x30 LAST_TOHOST 0x38 LAST_CYCLES', '0x40 BOOT_REASON 0x48 TIMER', '0x50 BOOT_ADDRESS', '0x58 MTIME  0x60 MTIMECMP'], { stroke: C.flush, lsize: 10.5 });
   box(920, 500, 280, 130, 'UART', ['receiver: 16-byte queue', 'transmitter: 2 KiB queue', '115200 baud, 8N1', 'divider = CLOCK_HZ / BAUD'], { stroke: C.F2, file: 'fpga/rtl/Uart.sv' });
   box(1270, 130, 200, 220, 'Your PC', ['a serial terminal', '(screen, minicom, PuTTY)', 'at 115200 baud', '', 'tools/fpga_load.py:', 'program.s -> the board', '-> PASS in N cycles'], { stroke: C.sub });
 
@@ -989,6 +1046,7 @@ export function fpgaSystem(results) {
   wire([[790, 570], [790, 640]], 'M'); lbl(796, 610, 'refill / stores', C.M, 'start');
   wire([[860, 250], [920, 250]], 'flush'); lbl(890, 243, 'ld / sd', C.flush);
   wire([[920, 300], [860, 300]], 'flush'); lbl(890, 318, 'value', C.flush);
+  wire([[920, 390], [860, 390]], 'flush', { dash: '4 3' }); lbl(890, 383, 'timer', C.flush); lbl(890, 408, 'UART irq', C.flush);
   wire([[1060, 460], [1060, 500]], 'F2');
   wire([[940, 130], [940, 121], [520, 121], [520, 355], [490, 355]], 'flush', { dash: '5 3' }); lbl(730, 116, 'BOOT store, or a halt -> restart the core', C.flush);
   wire([[490, 740], [560, 740]], 'F1', { dash: '4 3' }); lbl(525, 733, 'at 0x0', C.F1);

@@ -1,6 +1,6 @@
 # Learning path: from "what is a CPU?" to your own chip
 
-Eight short chapters. Each one explains one idea, shows a picture, points at the exact
+Nine short chapters. Each one explains one idea, shows a picture, points at the exact
 lines of SystemVerilog that implement it, and gives you a program to run so you can
 **see** it happen. Read them in order the first time.
 
@@ -14,6 +14,7 @@ lines of SystemVerilog that implement it, and gives you a program to run so you 
 | 6 | [Measuring performance](06_performance.md) | compute CPI and account for every cycle; see also [PERFORMANCE.md](../PERFORMANCE.md) | `make run PROG=12_measure_cpi` |
 | 7 | [From RTL to silicon](07_silicon.md) | read a layout, a timing report and an area report | `make synth` |
 | 8 | [Using the CPU: write and run your own program](08_using_the_cpu.md) | write, assemble, simulate and debug RISC-V assembly | `make run PROG=my_program` |
+| 9 | [Devices, interrupts and booting](09_devices_and_interrupts.md) | drive devices through memory-mapped registers, handle a timer interrupt, explain how a computer boots | `make run PROG=21_timer_interrupts` |
 
 Every chapter uses the same names as the code: stages are `FETCH1`, `FETCH2`, `DECODE`,
 `EXECUTE`, `MEMORY`, `WRITEBACK`, and signals are written exactly as in

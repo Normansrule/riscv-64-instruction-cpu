@@ -21,6 +21,8 @@ package const_pkg;
   localparam logic [63:0] MMIO_PUTCHAR = 64'h0000_0000_1000_0000; // store: print one character (the FPGA's UART)
   localparam logic [63:0] MMIO_LEDS    = 64'h0000_0000_1000_0008; // store: the 8 LEDs (low byte); load: what was stored
   localparam logic [63:0] MMIO_BUTTONS = 64'h0000_0000_1000_0010; // load: the board's buttons / switches (0 in simulation)
+  localparam logic [63:0] MMIO_MTIME    = 64'h0000_0000_1000_0058; // load: the machine timer (counts clock cycles)
+  localparam logic [63:0] MMIO_MTIMECMP = 64'h0000_0000_1000_0060; // load / store: timer interrupt when mtime >= mtimecmp
 
   // -----------------------------
   // PC address on reset
@@ -53,6 +55,7 @@ package const_pkg;
   localparam logic [11:0] CSR_HPMCOUNTER6 = 12'hC06; // K: cycles the multiply/divide unit holds EXECUTE
   localparam logic [11:0] CSR_HPMCOUNTER7 = 12'hC07; // I: instruction-cache miss cycles
   localparam logic [11:0] CSR_HPMCOUNTER8 = 12'hC08; // D: data-cache miss cycles
+  localparam logic [11:0] CSR_HPMCOUNTER9 = 12'hC09; // X: interrupts taken (each costs one bubble more than a flush)
   // ===============================================
   // Machine-mode trap CSRs (RISC-V privileged specification):
   localparam logic [11:0] CSR_MSTATUS  = 12'h300; // bit 3 MIE (interrupts enabled), bit 7 MPIE (MIE before the trap)
@@ -60,8 +63,12 @@ package const_pkg;
   localparam logic [11:0] CSR_MSCRATCH = 12'h340; // free register for the handler
   localparam logic [11:0] CSR_MEPC     = 12'h341; // address of the instruction that trapped
   localparam logic [11:0] CSR_MCAUSE   = 12'h342; // why: 3 = breakpoint (ebreak), 11 = environment call (ecall)
+  localparam logic [11:0] CSR_MIE      = 12'h304; // interrupt enables: bit 7 MTIE (timer), bit 11 MEIE (external)
+  localparam logic [11:0] CSR_MIP      = 12'h344; // interrupts pending (read-only here): bit 7 MTIP, bit 11 MEIP
   localparam logic [63:0] CAUSE_BREAKPOINT = 64'd3;
   localparam logic [63:0] CAUSE_ENVIRONMENT_CALL = 64'd11;
+  localparam logic [63:0] CAUSE_MACHINE_TIMER_INTERRUPT = 64'h8000_0000_0000_0007;    // bit 63 = an interrupt, not an exception
+  localparam logic [63:0] CAUSE_MACHINE_EXTERNAL_INTERRUPT = 64'h8000_0000_0000_000B;
   // ===============================================
 
 endpackage : const_pkg

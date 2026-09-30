@@ -67,4 +67,4 @@ system gets control. [`15_system_calls.s`](../../programs/15_system_calls.s) is 
 * The [web simulator](../../web/index.html): paste your code into **Edit source**, press
   **Assemble and load**, then Step forward and **Back**.
 
-Back to the [learning path](README.md).
+Next: [9. Devices, interrupts and booting](09_devices_and_interrupts.md). Back to the [learning path](README.md).

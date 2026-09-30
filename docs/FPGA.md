@@ -80,6 +80,17 @@ the device's value, and the store never reaches the RAM.
 | 0x40 | `BOOT_REASON` | 0 power-on or reset button, 1 a program finished, 2 a `BOOT` store | nothing |
 | 0x48 | `TIMER` | cycles since power-on | nothing |
 | 0x50 | `BOOT_ADDRESS` | where `BOOT` starts the core (0x2000 after power-on) | sets it |
+| 0x58 | `MTIME` | the machine timer: cycles since power-on | nothing |
+| 0x60 | `MTIMECMP` | when the timer interrupt fires | sets it: the timer interrupt line is up while `MTIME >= MTIMECMP` (every program starts with it at "never") |
+
+Two of these devices can **interrupt** the CPU instead of waiting to be polled: the timer (`MTIME >=
+MTIMECMP`) and the UART, whose external interrupt line is up while a received byte is waiting. Software
+enables them in `mie` (bit 7 timer, bit 11 external) and turns interrupts on with `mstatus.MIE`; the core
+then jumps to `mtvec` between two instructions, with the cause in `mcause`
+([ARCHITECTURE.md](ARCHITECTURE.md#interrupts) shows how, cycle by cycle).
+[`fpga/examples/interrupt_echo.s`](../fpga/examples/interrupt_echo.s) does all its work in the interrupt
+handler: it echoes what you type in upper case and blinks an LED from the timer, while the main program
+sleeps in a `wfi` loop. `make fpga-sim` runs it with typed input and checks what it prints.
 
 Reading never changes a device, and only stores have effects. That matters because a load can execute
 more than once: it repeats while the data cache fetches the line. So "take the received byte" is a
@@ -177,11 +188,11 @@ python3 tools/fpga_load.py programs/05_fibonacci.s --port /dev/ttyUSB1
 | | ULX3S: ECP5 LFE5U-85F, speed grade 6 | Arty A7-100T: Artix-7 XC7A100T-1 |
 |---|---|---|
 | tools | Yosys 0.33 + nextpnr-ecp5 0.6 (placed, routed, timed) | Yosys `synth_xilinx` estimate (Vivado reports its own) |
-| logic | 36,347 LUT4 (43%) | about 16,900 LUT6 (27%), 472 CARRY4 |
-| flip-flops | 5,424 (6%) | 4,952 (4%) |
+| logic | 36,988 LUT4 (44%) | about 16,900 LUT6 (27%), 472 CARRY4 |
+| flip-flops | 5,621 (6%) | 4,952 (4%) |
 | LUT RAM | 705 RAM slices (caches, register file) | 420 RAM64M + 46 RAM32M |
 | block RAM | 85 of 208 DP16KD (40%) | 32 RAMB36 + 1 RAMB18 (24%) |
-| clock | **25 MHz**; nextpnr: maximum 25.06 MHz | 25 MHz (a safe start; raise it if Vivado's slack allows) |
+| clock | **25 MHz**; nextpnr: maximum 26.6 MHz | 25 MHz (a safe start; raise it if Vivado's slack allows) |
 | a program's speed | 01_hello: 147 cycles = 5.9 µs; 09_primes_sieve: 16,899 cycles = 0.68 ms | the same cycles, at its clock |
 
 The bitstream is about 1 MB (`build/ulx3s/sixfold.bit`), and the whole build takes about 8 minutes.
@@ -190,7 +201,7 @@ Where the logic goes: the core's 64-bit datapath, the two caches (4 KiB of data 
 because a cache hit must answer in the same cycle), and the register file (LUT RAM, three read ports).
 Main memory uses block RAM.
 
-An FPGA clock is far below a chip's. The same core reaches 267 MHz on a 130 nm chip and about 1.87 GHz
+An FPGA clock is far below a chip's. The same core reaches about 244 MHz on a 130 nm chip and about 1.95 GHz
 on a 7 nm chip ([PERFORMANCE.md](PERFORMANCE.md)), because an FPGA builds every gate from programmable
 lookup tables and routes every wire through programmable switches.
 

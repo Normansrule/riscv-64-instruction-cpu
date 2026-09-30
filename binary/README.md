@@ -24,7 +24,7 @@ formats sits in the same instruction bit (e.g. imm[10:5] is always bits 30:25 an
 always bit 31). That makes the immediate generator in `src/Immediate_Generator.sv` a set of simple wires,
 not a big multiplexer. Branch/jump offsets are always even, so bit 0 is not stored at all.
 
-## All 112 instructions
+## All 113 instructions
 
 Letters in the pattern are the variable fields: `d` rd, `s` rs1, `t` rs2, `i` immediate,
 `h` shift amount, `c` CSR address, `z` CSR immediate.
@@ -156,6 +156,7 @@ Letters in the pattern are the variable fields: `d` rd, `s` rs1, `t` rs2, `i` im
 | [`ecall`](RV64I/ecall.md) | SYS | `0000000 00000 00000 000 00000 1110011` | `trap: mepc = pc, mcause = 11, jump to mtvec (a system call)` |
 | [`ebreak`](RV64I/ebreak.md) | SYS | `0000000 00001 00000 000 00000 1110011` | `trap: mepc = pc, mcause = 3, jump to mtvec (a breakpoint)` |
 | [`mret`](Priv/mret.md) | SYS | `0000000 00000 00000 000 00000 1110011` | `return from a trap: pc = mepc, mstatus.MIE = mstatus.MPIE` |
+| [`wfi`](Priv/wfi.md) | SYS | `0000000 00000 00000 000 00000 1110011` | `a hint that nothing is left to do until an interrupt: Sixfold simply continues (a nop), so it sits in a loop` |
 
 ### CSR
 

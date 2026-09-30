@@ -1,0 +1,302 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1282 936" width="1282" height="936">
+<defs><marker id="m-data" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2B3A31"/></marker><marker id="m-pred" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#00796B"/></marker><marker id="m-flush" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C2185B"/></marker><marker id="m-F1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2E86C1"/></marker><marker id="m-F2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#17A2B8"/></marker><marker id="m-D" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6A5ACD"/></marker><marker id="m-E" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#E08E0B"/></marker><marker id="m-M" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#27AE60"/></marker><marker id="m-tag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C9982E"/></marker><marker id="m-idx" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#17A2B8"/></marker><marker id="m-off" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6A5ACD"/></marker><marker id="m-hit" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1E8449"/></marker><marker id="m-miss" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C0392B"/></marker><marker id="m-sub" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4A5A50"/></marker></defs>
+<rect width="100%" height="100%" rx="12" fill="#FBFCF8" stroke="#D5DBD0"/>
+<text x="24" y="34" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="20" font-weight="700" fill="#17251D" text-anchor="start">An interrupt, cycle by cycle: replace the DECODE instruction, trap, handle, return</text>
+<text x="24" y="56" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="400" fill="#4A5A50" text-anchor="start">programs/21_timer_interrupts.s on the cycle-exact model (performance build), cycles 830 to 853. Every cell is what the RTL does too (make test).</text>
+<text x="349" y="110" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">830</text>
+<text x="387" y="110" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">831</text>
+<text x="425" y="110" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">832</text>
+<text x="463" y="110" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">833</text>
+<text x="501" y="110" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">834</text>
+<text x="539" y="110" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">835</text>
+<text x="577" y="110" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">836</text>
+<text x="615" y="110" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">837</text>
+<text x="653" y="110" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">838</text>
+<text x="691" y="110" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">839</text>
+<text x="729" y="110" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">840</text>
+<text x="767" y="110" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">841</text>
+<text x="805" y="110" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">842</text>
+<text x="843" y="110" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">843</text>
+<text x="881" y="110" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">844</text>
+<text x="919" y="110" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">845</text>
+<text x="957" y="110" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">846</text>
+<text x="995" y="110" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">847</text>
+<text x="1033" y="110" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">848</text>
+<text x="1071" y="110" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">849</text>
+<text x="1109" y="110" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">850</text>
+<text x="1147" y="110" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">851</text>
+<text x="1185" y="110" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">852</text>
+<text x="1223" y="110" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">853</text>
+<text x="320" y="110" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#8A968E" text-anchor="end">cycle</text>
+<rect x="406" y="116" width="38" height="624" fill="#C2185B" fill-opacity="0.07"/>
+<rect x="444" y="116" width="38" height="624" fill="#C2185B" fill-opacity="0.13"/>
+<text x="320" y="135" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="end">2040  add a0, a0, t1</text>
+<rect x="332" y="122" width="34" height="18" rx="4" fill="#C0392B" fill-opacity="0.9"/>
+<text x="349" y="135" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">W</text>
+<text x="320" y="157" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="end">2044  blt t1, t2, 0x203c</text>
+<rect x="332" y="144" width="34" height="18" rx="4" fill="#27AE60" fill-opacity="0.9"/>
+<text x="349" y="157" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">M</text>
+<rect x="370" y="144" width="34" height="18" rx="4" fill="#C0392B" fill-opacity="0.9"/>
+<text x="387" y="157" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">W</text>
+<text x="320" y="179" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="end">203c  addi t1, t1, 1</text>
+<rect x="332" y="166" width="34" height="18" rx="4" fill="#E08E0B" fill-opacity="0.9"/>
+<text x="349" y="179" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">E</text>
+<rect x="370" y="166" width="34" height="18" rx="4" fill="#27AE60" fill-opacity="0.9"/>
+<text x="387" y="179" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">M</text>
+<rect x="408" y="166" width="34" height="18" rx="4" fill="#C0392B" fill-opacity="0.9"/>
+<text x="425" y="179" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">W</text>
+<text x="320" y="201" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="end">2040  add a0, a0, t1</text>
+<rect x="332" y="188" width="34" height="18" rx="4" fill="#6A5ACD" fill-opacity="0.9"/>
+<text x="349" y="201" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">D</text>
+<rect x="370" y="188" width="34" height="18" rx="4" fill="#E08E0B" fill-opacity="0.9"/>
+<text x="387" y="201" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">E</text>
+<rect x="408" y="188" width="34" height="18" rx="4" fill="#27AE60" fill-opacity="0.9"/>
+<text x="425" y="201" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">M</text>
+<rect x="446" y="188" width="34" height="18" rx="4" fill="#C0392B" fill-opacity="0.9"/>
+<text x="463" y="201" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">W</text>
+<text x="320" y="223" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="end">2044  blt t1, t2, 0x203c</text>
+<rect x="332" y="210" width="34" height="18" rx="4" fill="#17A2B8" fill-opacity="0.9"/>
+<text x="349" y="223" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F2</text>
+<rect x="370" y="210" width="34" height="18" rx="4" fill="#6A5ACD" fill-opacity="0.9"/>
+<text x="387" y="223" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">D</text>
+<rect x="408" y="210" width="34" height="18" rx="4" fill="#E08E0B" fill-opacity="0.9"/>
+<text x="425" y="223" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">E</text>
+<rect x="446" y="210" width="34" height="18" rx="4" fill="#27AE60" fill-opacity="0.9"/>
+<text x="463" y="223" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">M</text>
+<rect x="484" y="210" width="34" height="18" rx="4" fill="#C0392B" fill-opacity="0.9"/>
+<text x="501" y="223" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">W</text>
+<text x="320" y="245" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#8A968E" text-anchor="end">203c  addi t1, t1, 1</text>
+<text x="18" y="245" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#C2185B" text-anchor="start">replaced</text>
+<rect x="332" y="232" width="34" height="18" rx="4" fill="#2E86C1" fill-opacity="0.25"/>
+<text x="349" y="245" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#2E86C1" text-anchor="middle">F1</text>
+<rect x="370" y="232" width="34" height="18" rx="4" fill="#17A2B8" fill-opacity="0.25"/>
+<text x="387" y="245" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#17A2B8" text-anchor="middle">F2</text>
+<rect x="408" y="232" width="34" height="18" rx="4" fill="#6A5ACD" fill-opacity="0.25"/>
+<text x="425" y="245" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#6A5ACD" text-anchor="middle">D</text>
+<rect x="446" y="232" width="34" height="18" rx="4" fill="#C2185B" fill-opacity="0.9"/>
+<text x="463" y="245" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">INT</text>
+<text x="320" y="267" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#8A968E" text-anchor="end">2040  add a0, a0, t1</text>
+<rect x="370" y="254" width="34" height="18" rx="4" fill="#2E86C1" fill-opacity="0.25"/>
+<text x="387" y="267" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#2E86C1" text-anchor="middle">F1</text>
+<rect x="408" y="254" width="34" height="18" rx="4" fill="#17A2B8" fill-opacity="0.25"/>
+<text x="425" y="267" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#17A2B8" text-anchor="middle">F2</text>
+<rect x="446" y="254" width="34" height="18" rx="4" fill="#6A5ACD" fill-opacity="0.25"/>
+<text x="463" y="267" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#6A5ACD" text-anchor="middle">D</text>
+<text x="320" y="289" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#8A968E" text-anchor="end">2044  blt t1, t2, 0x203c</text>
+<rect x="408" y="276" width="34" height="18" rx="4" fill="#2E86C1" fill-opacity="0.25"/>
+<text x="425" y="289" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#2E86C1" text-anchor="middle">F1</text>
+<rect x="446" y="276" width="34" height="18" rx="4" fill="#17A2B8" fill-opacity="0.25"/>
+<text x="463" y="289" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#17A2B8" text-anchor="middle">F2</text>
+<text x="320" y="311" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#8A968E" text-anchor="end">203c  addi t1, t1, 1</text>
+<rect x="446" y="298" width="34" height="18" rx="4" fill="#2E86C1" fill-opacity="0.25"/>
+<text x="463" y="311" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#2E86C1" text-anchor="middle">F1</text>
+<text x="320" y="333" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="end">2068  addi s1, s1, 1</text>
+<rect x="484" y="320" width="34" height="18" rx="4" fill="#2E86C1" fill-opacity="0.9"/>
+<text x="501" y="333" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F1</text>
+<rect x="522" y="320" width="34" height="18" rx="4" fill="#17A2B8" fill-opacity="0.9"/>
+<text x="539" y="333" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F2</text>
+<rect x="560" y="320" width="34" height="18" rx="4" fill="#6A5ACD" fill-opacity="0.9"/>
+<text x="577" y="333" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">D</text>
+<rect x="598" y="320" width="34" height="18" rx="4" fill="#E08E0B" fill-opacity="0.9"/>
+<text x="615" y="333" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">E</text>
+<rect x="636" y="320" width="34" height="18" rx="4" fill="#27AE60" fill-opacity="0.9"/>
+<text x="653" y="333" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">M</text>
+<rect x="674" y="320" width="34" height="18" rx="4" fill="#C0392B" fill-opacity="0.9"/>
+<text x="691" y="333" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">W</text>
+<text x="320" y="355" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="end">206c  csrrs a2, mcause, zero</text>
+<rect x="522" y="342" width="34" height="18" rx="4" fill="#2E86C1" fill-opacity="0.9"/>
+<text x="539" y="355" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F1</text>
+<rect x="560" y="342" width="34" height="18" rx="4" fill="#17A2B8" fill-opacity="0.9"/>
+<text x="577" y="355" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F2</text>
+<rect x="598" y="342" width="34" height="18" rx="4" fill="#6A5ACD" fill-opacity="0.9"/>
+<text x="615" y="355" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">D</text>
+<rect x="636" y="342" width="34" height="18" rx="4" fill="#E08E0B" fill-opacity="0.9"/>
+<text x="653" y="355" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">E</text>
+<rect x="674" y="342" width="34" height="18" rx="4" fill="#27AE60" fill-opacity="0.9"/>
+<text x="691" y="355" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">M</text>
+<rect x="712" y="342" width="34" height="18" rx="4" fill="#C0392B" fill-opacity="0.9"/>
+<text x="729" y="355" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">W</text>
+<text x="320" y="377" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="end">2070  ld t3, 96(s0)</text>
+<rect x="560" y="364" width="34" height="18" rx="4" fill="#2E86C1" fill-opacity="0.9"/>
+<text x="577" y="377" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F1</text>
+<rect x="598" y="364" width="34" height="18" rx="4" fill="#17A2B8" fill-opacity="0.9"/>
+<text x="615" y="377" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F2</text>
+<rect x="636" y="364" width="34" height="18" rx="4" fill="#6A5ACD" fill-opacity="0.9"/>
+<text x="653" y="377" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">D</text>
+<rect x="674" y="364" width="34" height="18" rx="4" fill="#E08E0B" fill-opacity="0.9"/>
+<text x="691" y="377" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">E</text>
+<rect x="712" y="364" width="34" height="18" rx="4" fill="#27AE60" fill-opacity="0.9"/>
+<text x="729" y="377" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">M</text>
+<rect x="750" y="364" width="34" height="18" rx="4" fill="#C0392B" fill-opacity="0.9"/>
+<text x="767" y="377" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">W</text>
+<text x="320" y="399" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="end">2074  addi t3, t3, 400</text>
+<rect x="598" y="386" width="34" height="18" rx="4" fill="#2E86C1" fill-opacity="0.9"/>
+<text x="615" y="399" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F1</text>
+<rect x="636" y="386" width="34" height="18" rx="4" fill="#17A2B8" fill-opacity="0.9"/>
+<text x="653" y="399" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F2</text>
+<rect x="674" y="386" width="34" height="18" rx="4" fill="#6A5ACD" fill-opacity="0.9"/>
+<text x="691" y="399" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">D</text>
+<rect x="712" y="386" width="34" height="18" rx="4" fill="#6A5ACD" fill-opacity="0.9"/>
+<text x="729" y="399" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">D</text>
+<rect x="750" y="386" width="34" height="18" rx="4" fill="#E08E0B" fill-opacity="0.9"/>
+<text x="767" y="399" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">E</text>
+<rect x="788" y="386" width="34" height="18" rx="4" fill="#27AE60" fill-opacity="0.9"/>
+<text x="805" y="399" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">M</text>
+<rect x="826" y="386" width="34" height="18" rx="4" fill="#C0392B" fill-opacity="0.9"/>
+<text x="843" y="399" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">W</text>
+<text x="320" y="421" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="end">2078  sd t3, 96(s0)</text>
+<rect x="636" y="408" width="34" height="18" rx="4" fill="#2E86C1" fill-opacity="0.9"/>
+<text x="653" y="421" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F1</text>
+<rect x="674" y="408" width="34" height="18" rx="4" fill="#17A2B8" fill-opacity="0.9"/>
+<text x="691" y="421" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F2</text>
+<rect x="712" y="408" width="34" height="18" rx="4" fill="#17A2B8" fill-opacity="0.9"/>
+<text x="729" y="421" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F2</text>
+<rect x="750" y="408" width="34" height="18" rx="4" fill="#6A5ACD" fill-opacity="0.9"/>
+<text x="767" y="421" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">D</text>
+<rect x="788" y="408" width="34" height="18" rx="4" fill="#E08E0B" fill-opacity="0.9"/>
+<text x="805" y="421" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">E</text>
+<rect x="826" y="408" width="34" height="18" rx="4" fill="#27AE60" fill-opacity="0.9"/>
+<text x="843" y="421" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">M</text>
+<rect x="864" y="408" width="34" height="18" rx="4" fill="#C0392B" fill-opacity="0.9"/>
+<text x="881" y="421" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">W</text>
+<text x="320" y="443" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="end">207c  mret</text>
+<rect x="674" y="430" width="34" height="18" rx="4" fill="#2E86C1" fill-opacity="0.9"/>
+<text x="691" y="443" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F1</text>
+<rect x="712" y="430" width="34" height="18" rx="4" fill="#2E86C1" fill-opacity="0.9"/>
+<text x="729" y="443" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F1</text>
+<rect x="750" y="430" width="34" height="18" rx="4" fill="#17A2B8" fill-opacity="0.9"/>
+<text x="767" y="443" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F2</text>
+<rect x="788" y="430" width="34" height="18" rx="4" fill="#6A5ACD" fill-opacity="0.9"/>
+<text x="805" y="443" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">D</text>
+<rect x="826" y="430" width="34" height="18" rx="4" fill="#E08E0B" fill-opacity="0.9"/>
+<text x="843" y="443" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">E</text>
+<rect x="864" y="430" width="34" height="18" rx="4" fill="#27AE60" fill-opacity="0.9"/>
+<text x="881" y="443" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">M</text>
+<rect x="902" y="430" width="34" height="18" rx="4" fill="#C0392B" fill-opacity="0.9"/>
+<text x="919" y="443" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">W</text>
+<text x="320" y="465" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#8A968E" text-anchor="end">2080  (empty memory, not code)</text>
+<rect x="750" y="452" width="34" height="18" rx="4" fill="#2E86C1" fill-opacity="0.25"/>
+<text x="767" y="465" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#2E86C1" text-anchor="middle">F1</text>
+<rect x="788" y="452" width="34" height="18" rx="4" fill="#17A2B8" fill-opacity="0.25"/>
+<text x="805" y="465" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#17A2B8" text-anchor="middle">F2</text>
+<rect x="826" y="452" width="34" height="18" rx="4" fill="#6A5ACD" fill-opacity="0.25"/>
+<text x="843" y="465" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#6A5ACD" text-anchor="middle">D</text>
+<text x="320" y="487" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#8A968E" text-anchor="end">2084  (empty memory, not code)</text>
+<rect x="788" y="474" width="34" height="18" rx="4" fill="#2E86C1" fill-opacity="0.25"/>
+<text x="805" y="487" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#2E86C1" text-anchor="middle">F1</text>
+<rect x="826" y="474" width="34" height="18" rx="4" fill="#17A2B8" fill-opacity="0.25"/>
+<text x="843" y="487" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#17A2B8" text-anchor="middle">F2</text>
+<text x="320" y="509" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#8A968E" text-anchor="end">2088  (empty memory, not code)</text>
+<rect x="826" y="496" width="34" height="18" rx="4" fill="#2E86C1" fill-opacity="0.25"/>
+<text x="843" y="509" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#2E86C1" text-anchor="middle">F1</text>
+<text x="320" y="531" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="end">203c  addi t1, t1, 1</text>
+<rect x="864" y="518" width="34" height="18" rx="4" fill="#2E86C1" fill-opacity="0.9"/>
+<text x="881" y="531" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F1</text>
+<rect x="902" y="518" width="34" height="18" rx="4" fill="#17A2B8" fill-opacity="0.9"/>
+<text x="919" y="531" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F2</text>
+<rect x="940" y="518" width="34" height="18" rx="4" fill="#6A5ACD" fill-opacity="0.9"/>
+<text x="957" y="531" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">D</text>
+<rect x="978" y="518" width="34" height="18" rx="4" fill="#E08E0B" fill-opacity="0.9"/>
+<text x="995" y="531" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">E</text>
+<rect x="1016" y="518" width="34" height="18" rx="4" fill="#27AE60" fill-opacity="0.9"/>
+<text x="1033" y="531" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">M</text>
+<rect x="1054" y="518" width="34" height="18" rx="4" fill="#C0392B" fill-opacity="0.9"/>
+<text x="1071" y="531" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">W</text>
+<text x="320" y="553" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="end">2040  add a0, a0, t1</text>
+<rect x="902" y="540" width="34" height="18" rx="4" fill="#2E86C1" fill-opacity="0.9"/>
+<text x="919" y="553" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F1</text>
+<rect x="940" y="540" width="34" height="18" rx="4" fill="#17A2B8" fill-opacity="0.9"/>
+<text x="957" y="553" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F2</text>
+<rect x="978" y="540" width="34" height="18" rx="4" fill="#6A5ACD" fill-opacity="0.9"/>
+<text x="995" y="553" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">D</text>
+<rect x="1016" y="540" width="34" height="18" rx="4" fill="#E08E0B" fill-opacity="0.9"/>
+<text x="1033" y="553" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">E</text>
+<rect x="1054" y="540" width="34" height="18" rx="4" fill="#27AE60" fill-opacity="0.9"/>
+<text x="1071" y="553" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">M</text>
+<rect x="1092" y="540" width="34" height="18" rx="4" fill="#C0392B" fill-opacity="0.9"/>
+<text x="1109" y="553" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">W</text>
+<text x="320" y="575" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="end">2044  blt t1, t2, 0x203c</text>
+<rect x="940" y="562" width="34" height="18" rx="4" fill="#2E86C1" fill-opacity="0.9"/>
+<text x="957" y="575" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F1</text>
+<rect x="978" y="562" width="34" height="18" rx="4" fill="#17A2B8" fill-opacity="0.9"/>
+<text x="995" y="575" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F2</text>
+<rect x="1016" y="562" width="34" height="18" rx="4" fill="#6A5ACD" fill-opacity="0.9"/>
+<text x="1033" y="575" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">D</text>
+<rect x="1054" y="562" width="34" height="18" rx="4" fill="#E08E0B" fill-opacity="0.9"/>
+<text x="1071" y="575" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">E</text>
+<rect x="1092" y="562" width="34" height="18" rx="4" fill="#27AE60" fill-opacity="0.9"/>
+<text x="1109" y="575" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">M</text>
+<rect x="1130" y="562" width="34" height="18" rx="4" fill="#C0392B" fill-opacity="0.9"/>
+<text x="1147" y="575" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">W</text>
+<text x="320" y="597" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="end">203c  addi t1, t1, 1</text>
+<rect x="978" y="584" width="34" height="18" rx="4" fill="#2E86C1" fill-opacity="0.9"/>
+<text x="995" y="597" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F1</text>
+<rect x="1016" y="584" width="34" height="18" rx="4" fill="#17A2B8" fill-opacity="0.9"/>
+<text x="1033" y="597" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F2</text>
+<rect x="1054" y="584" width="34" height="18" rx="4" fill="#6A5ACD" fill-opacity="0.9"/>
+<text x="1071" y="597" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">D</text>
+<rect x="1092" y="584" width="34" height="18" rx="4" fill="#E08E0B" fill-opacity="0.9"/>
+<text x="1109" y="597" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">E</text>
+<rect x="1130" y="584" width="34" height="18" rx="4" fill="#27AE60" fill-opacity="0.9"/>
+<text x="1147" y="597" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">M</text>
+<rect x="1168" y="584" width="34" height="18" rx="4" fill="#C0392B" fill-opacity="0.9"/>
+<text x="1185" y="597" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">W</text>
+<text x="320" y="619" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="end">2040  add a0, a0, t1</text>
+<rect x="1016" y="606" width="34" height="18" rx="4" fill="#2E86C1" fill-opacity="0.9"/>
+<text x="1033" y="619" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F1</text>
+<rect x="1054" y="606" width="34" height="18" rx="4" fill="#17A2B8" fill-opacity="0.9"/>
+<text x="1071" y="619" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F2</text>
+<rect x="1092" y="606" width="34" height="18" rx="4" fill="#6A5ACD" fill-opacity="0.9"/>
+<text x="1109" y="619" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">D</text>
+<rect x="1130" y="606" width="34" height="18" rx="4" fill="#E08E0B" fill-opacity="0.9"/>
+<text x="1147" y="619" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">E</text>
+<rect x="1168" y="606" width="34" height="18" rx="4" fill="#27AE60" fill-opacity="0.9"/>
+<text x="1185" y="619" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">M</text>
+<rect x="1206" y="606" width="34" height="18" rx="4" fill="#C0392B" fill-opacity="0.9"/>
+<text x="1223" y="619" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">W</text>
+<text x="320" y="641" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="end">2044  blt t1, t2, 0x203c</text>
+<rect x="1054" y="628" width="34" height="18" rx="4" fill="#2E86C1" fill-opacity="0.9"/>
+<text x="1071" y="641" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F1</text>
+<rect x="1092" y="628" width="34" height="18" rx="4" fill="#17A2B8" fill-opacity="0.9"/>
+<text x="1109" y="641" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F2</text>
+<rect x="1130" y="628" width="34" height="18" rx="4" fill="#6A5ACD" fill-opacity="0.9"/>
+<text x="1147" y="641" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">D</text>
+<rect x="1168" y="628" width="34" height="18" rx="4" fill="#E08E0B" fill-opacity="0.9"/>
+<text x="1185" y="641" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">E</text>
+<rect x="1206" y="628" width="34" height="18" rx="4" fill="#27AE60" fill-opacity="0.9"/>
+<text x="1223" y="641" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">M</text>
+<text x="320" y="663" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="end">203c  addi t1, t1, 1</text>
+<rect x="1092" y="650" width="34" height="18" rx="4" fill="#2E86C1" fill-opacity="0.9"/>
+<text x="1109" y="663" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F1</text>
+<rect x="1130" y="650" width="34" height="18" rx="4" fill="#17A2B8" fill-opacity="0.9"/>
+<text x="1147" y="663" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F2</text>
+<rect x="1168" y="650" width="34" height="18" rx="4" fill="#6A5ACD" fill-opacity="0.9"/>
+<text x="1185" y="663" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">D</text>
+<rect x="1206" y="650" width="34" height="18" rx="4" fill="#E08E0B" fill-opacity="0.9"/>
+<text x="1223" y="663" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">E</text>
+<text x="320" y="685" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="end">2040  add a0, a0, t1</text>
+<rect x="1130" y="672" width="34" height="18" rx="4" fill="#2E86C1" fill-opacity="0.9"/>
+<text x="1147" y="685" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F1</text>
+<rect x="1168" y="672" width="34" height="18" rx="4" fill="#17A2B8" fill-opacity="0.9"/>
+<text x="1185" y="685" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F2</text>
+<rect x="1206" y="672" width="34" height="18" rx="4" fill="#6A5ACD" fill-opacity="0.9"/>
+<text x="1223" y="685" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">D</text>
+<text x="320" y="707" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="end">2044  blt t1, t2, 0x203c</text>
+<rect x="1168" y="694" width="34" height="18" rx="4" fill="#2E86C1" fill-opacity="0.9"/>
+<text x="1185" y="707" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F1</text>
+<rect x="1206" y="694" width="34" height="18" rx="4" fill="#17A2B8" fill-opacity="0.9"/>
+<text x="1223" y="707" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F2</text>
+<text x="320" y="729" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="end">203c  addi t1, t1, 1</text>
+<rect x="1206" y="716" width="34" height="18" rx="4" fill="#2E86C1" fill-opacity="0.9"/>
+<text x="1223" y="729" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="9.5" font-weight="700" fill="#FFF" text-anchor="middle">F1</text>
+<circle cx="30" cy="762" r="5" fill="#C2185B"/>
+<text x="44" y="766" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4A5A50" text-anchor="start">cycle 832: the timer interrupt is pending and enabled, so the instruction in DECODE does not go on: an interrupt pseudo-instruction takes its place.</text>
+<circle cx="30" cy="784" r="5" fill="#C2185B"/>
+<text x="44" y="788" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4A5A50" text-anchor="start">cycle 833: in EXECUTE it traps like ecall: mepc = the replaced instruction, mcause = 2^63 + 7, MIE off, jump to mtvec; FETCH1..DECODE are flushed.</text>
+<circle cx="30" cy="806" r="5" fill="#E08E0B"/>
+<text x="44" y="810" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4A5A50" text-anchor="start">It never retires (MEMORY gets a bubble): an interrupt costs 4 cycles, the X term of cycles = N + 5 + L + 3F + R + K + I + D + X.</text>
+<circle cx="30" cy="828" r="5" fill="#27AE60"/>
+<text x="44" y="832" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4A5A50" text-anchor="start">The handler moves MTIMECMP forward and runs mret, a flush back to mepc: the replaced instruction runs now, and the loop never notices.</text>
+<circle cx="30" cy="850" r="5" fill="#8A968E"/>
+<text x="44" y="854" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4A5A50" text-anchor="start">Faded rows were fetched and then squashed; their slots are the bubbles the equation counts.</text>
+</svg>

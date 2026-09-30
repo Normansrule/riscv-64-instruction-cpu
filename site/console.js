@@ -10,7 +10,8 @@
 // =============================================================================
 import { assemble } from '../model/asm.js';
 import { Core, CONFIGS, MMIO_BASE } from '../model/core.js';
-import { PROGRAMS, FIRMWARE } from '../web/programs.js';
+import { PROGRAMS, FIRMWARE, FPGA_EXAMPLES } from '../web/programs.js';
+const ALL_PROGRAMS = { ...FPGA_EXAMPLES, ...PROGRAMS };
 
 const $ = id => document.getElementById(id);
 const CLOCK_HZ = 1_000_000;
@@ -55,6 +56,7 @@ class EmulatedSystem {
         else if (offset === 0x20) self.pendingBoot = true;
         else if (offset === 0x50) self.bootAddress = Number(data & 0xffffffffn);
       },
+      externalInterrupt() { return self.rx.length > 0; }, // the UART receive interrupt line (MTIME/MTIMECMP live in the model)
     };
     this.powerOn();
   }
@@ -114,9 +116,9 @@ function setup() {
   });
 
   const select = $('fc-program');
-  for (const name of Object.keys(PROGRAMS)) { const o = document.createElement('option'); o.value = name; o.textContent = name; select.appendChild(o); }
+  for (const name of Object.keys(ALL_PROGRAMS)) { const o = document.createElement('option'); o.value = name; o.textContent = name; select.appendChild(o); }
   select.value = '20_leds_and_buttons';
-  $('fc-upload').addEventListener('click', () => { system.send(uploadStream(PROGRAMS[select.value])); term.focus(); });
+  $('fc-upload').addEventListener('click', () => { system.send(uploadStream(ALL_PROGRAMS[select.value])); term.focus(); });
   $('fc-reset').addEventListener('click', () => { text += '\n'; system.powerOn(); term.focus(); });
   term.addEventListener('keydown', e => {
     if (e.ctrlKey || e.metaKey || e.altKey) return;

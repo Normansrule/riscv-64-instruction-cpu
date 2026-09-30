@@ -264,13 +264,14 @@
           <button type="button" id="fc-memtest">m memory test</button>
           <button type="button" id="fc-reset">Reset button</button>
         </div>
-        <p class="small">Try <code>20_leds_and_buttons</code> and hold a button to stop the light. The cycle count the firmware reports is the one in the table under Numbers. <a data-repo-doc="docs/FPGA.md" href="docs/FPGA.md">How the FPGA version works</a>, and the board sheets for the <a data-repo-doc="docs/boards/ULX3S.md" href="docs/boards/ULX3S.md">ULX3S</a> and the <a data-repo-doc="docs/boards/ARTY_A7.md" href="docs/boards/ARTY_A7.md">Arty A7-100T</a>.</p>
+        <p class="small">Try <code>20_leds_and_buttons</code> and hold a button to stop the light, or <code>interrupt_echo</code>, which does all its work in interrupt handlers: type into the terminal. The cycle count the firmware reports is the one in the table under Numbers. <a data-repo-doc="docs/FPGA.md" href="docs/FPGA.md">How the FPGA version works</a>, and the board sheets for the <a data-repo-doc="docs/boards/ULX3S.md" href="docs/boards/ULX3S.md">ULX3S</a> and the <a data-repo-doc="docs/boards/ARTY_A7.md" href="docs/boards/ARTY_A7.md">Arty A7-100T</a>.</p>
       </div>
     </div>
     <div class="fc-figs">
       <figure class="fig"><a href="docs/img/diagrams/boot_sequence.svg" target="_blank" rel="noopener"><img src="docs/img/diagrams/boot_sequence.svg" alt="Boot sequence: power on, firmware at 0x0000, load over the UART, BOOT store, program at 0x2000, halt, report" loading="lazy"></a><figcaption>How it boots: reset vector, firmware, program, and back (click to enlarge).</figcaption></figure>
       <figure class="fig"><a href="docs/img/diagrams/memory_map.svg" target="_blank" rel="noopener"><img src="docs/img/diagrams/memory_map.svg" alt="Memory map: firmware, stack, programs, device registers, control and status registers" loading="lazy"></a><figcaption>How the CPU drives the rest of the computer: memory-mapped device registers.</figcaption></figure>
       <figure class="fig"><a href="docs/img/diagrams/cache_interfaces.svg" target="_blank" rel="noopener"><img src="docs/img/diagrams/cache_interfaces.svg" alt="Every port between the pipeline, the caches, main memory and the devices" loading="lazy"></a><figcaption>How the caches connect the pipeline to memory and to the devices.</figcaption></figure>
+      <figure class="fig"><a href="docs/img/diagrams/interrupt.svg" target="_blank" rel="noopener"><img src="docs/img/diagrams/interrupt.svg" alt="A timer interrupt cycle by cycle: the DECODE instruction is replaced, the trap flushes, the handler runs, mret returns" loading="lazy"></a><figcaption>How a device interrupts the program, cycle by cycle, precisely.</figcaption></figure>
     </div>
   </div>
 </section>
@@ -326,13 +327,13 @@
       <p>The baseline computes a whole 64-bit division in one clock cycle: 64 subtractions in a row, 133 ns. The performance edition divides one bit per cycle, multiplies with a Wallace tree, adds carry-lookahead (Kogge-Stone) adders, and wins cycles back with a tournament branch predictor, a branch target buffer, a return address stack and precise load stalls, behind instruction and data caches with prefetching. Both designs are in the repository and both are checked cycle by cycle.</p>
     </div>
     <div class="facts">
-      <div><strong>267 MHz</strong><span>logic-only estimate on SkyWater 130 nm with the multiply/divide unit (the baseline: about 7.5 MHz)</span></div>
-      <div><strong>1.87 GHz</strong><span>the same RTL mapped onto ASAP7, a 7 nm-class research library (729 ps &rarr; 536 ps, now with the whole B extension and performance counters)</span></div>
+      <div><strong>244 MHz</strong><span>logic-only estimate on SkyWater 130 nm with the multiply/divide unit (the baseline: about 7.5 MHz)</span></div>
+      <div><strong>1.95 GHz</strong><span>the same RTL mapped onto ASAP7, a 7 nm-class research library (729 ps &rarr; 513 ps, now with the whole B extension, interrupts and performance counters)</span></div>
       <div><strong>1.03</strong><span>cycles per instruction on the branch-pattern program, caches included (baseline 1.38)</span></div>
     </div>
     <figure class="cp"><img src="docs/img/charts/performance.svg" alt="Cycles per instruction per program, original design versus performance edition" loading="lazy"></figure>
-    <figure class="cp fig"><img src="docs/img/diagrams/clock_roadmap.svg" alt="Clock roadmap: measured clock periods from 133 ns to 536 ps against the 400 ps and 200 ps needed for 2.5 and 5 GHz" loading="lazy"><figcaption>From 7.5 MHz to 1.87 GHz, one measured step at a time, and what 2.5 GHz and 5 GHz would take.</figcaption></figure>
-    <p class="small">Why not higher? In 130 nm one carry step of an adder takes about 330 ps; in 7 nm the whole core's longest path is 536 ps; 2.5 GHz needs 400 ps and 5 GHz 200 ps. Smaller processes are faster, but a process node is chosen by the foundry, not written in RTL. <a data-repo-doc="docs/PERFORMANCE.md" href="docs/PERFORMANCE.md">How every number was measured</a>.</p>
+    <figure class="cp fig"><img src="docs/img/diagrams/clock_roadmap.svg" alt="Clock roadmap: measured clock periods from 133 ns to 513 ps against the 400 ps and 200 ps needed for 2.5 and 5 GHz" loading="lazy"><figcaption>From 7.5 MHz to 1.95 GHz, one measured step at a time, and what 2.5 GHz and 5 GHz would take.</figcaption></figure>
+    <p class="small">Why not higher? In 130 nm one carry step of an adder takes about 330 ps; in 7 nm the whole core's longest path is 513 ps; 2.5 GHz needs 400 ps and 5 GHz 200 ps. Smaller processes are faster, but a process node is chosen by the foundry, not written in RTL. <a data-repo-doc="docs/PERFORMANCE.md" href="docs/PERFORMANCE.md">How every number was measured</a>.</p>
   </div>
 </section>
 
@@ -340,7 +341,7 @@
 <section class="band" id="learn">
   <div class="wrap">
     <div class="copy narrow">
-      <h2>Learn it in eight short chapters.</h2>
+      <h2>Learn it in nine short chapters.</h2>
       <p>Each chapter explains one idea, shows the picture that goes with it, points at the lines of SystemVerilog that do it, and gives you a program to run.</p>
     </div>
     <ol class="chapters" id="chapters"></ol>

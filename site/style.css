@@ -352,7 +352,7 @@ label { font-size: .88rem; color: var(--ink2); display: inline-flex; gap: .5em; 
 .fc-side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .fc-side select { width: 100%; }
 .fc-keys { display: flex; flex-wrap: wrap; gap: 8px; }
-.fc-figs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 30px; }
+.fc-figs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 30px; }
 .fc-figs figure { margin: 0; }
 .fc-figs img { width: 100%; height: auto; display: block; border-radius: 8px; background: #FBFCF8; }
 .fc-figs figcaption { font-size: .85rem; color: var(--ink2); margin-top: 8px; }

@@ -33,6 +33,11 @@ import const_pkg::*;
 //   0x40    BOOT_REASON   0 = power on / reset button, 1 = a program finished, 2 = BOOT store
 //   0x48    TIMER         cycles since power on (for delays)          -
 //   0x50    BOOT_ADDRESS  where BOOT starts the core (0x2000)         set it
+//   0x58    MTIME         the machine timer (= TIMER)                 -
+//   0x60    MTIMECMP      the timer interrupt time                    set it: interrupt when MTIME >= MTIMECMP
+//
+// Interrupt lines into the core: the timer (MTIME >= MTIMECMP) and the external one (a byte is waiting in
+// the UART's receive queue), both enabled by software through mie and mstatus.MIE.
 //
 // Boot sequence (like a PC: reset vector -> BIOS -> load the program -> run it -> back to the BIOS):
 //   1. Power on or reset button: the core starts at RESET_VECTOR = 0x0000, the boot firmware
@@ -66,6 +71,9 @@ module SixfoldSystem #(
     localparam int CLOCKS_PER_BIT = CLOCK_HZ / BAUD;
 
     // ------------------------------------------------------------------ the core and its caches
+    logic [63:0] TIMER, MACHINE_TIME_COMPARE; // cycles since power on (MTIME), and MTIMECMP
+    logic TX_QUEUE_EMPTY, TX_QUEUE_FULL, TX_BUSY, TX_POPPED, TX_SEND;
+    logic RX_RECEIVED, RX_QUEUE_EMPTY, RX_QUEUE_FULL, RX_POP;
     logic CORE_RESET;
     logic [63:0] RESET_VECTOR;
     logic [63:0] dcache_addr, dcache_din, dcache_dout, icache_addr, CACHE_DATA, TOHOST;
@@ -81,6 +89,7 @@ module SixfoldSystem #(
         .ITERATIVE_MULTIPLY_DIVIDE (1'b1), .TOURNAMENT_PREDICTOR (1'b1)
     ) core (
         .clk (clk), .reset (CORE_RESET), .BRANCH_PREDICTION_ENABLE (1'b1), .RESET_VECTOR (RESET_VECTOR),
+        .TIMER_INTERRUPT_LINE (TIMER >= MACHINE_TIME_COMPARE), .EXTERNAL_INTERRUPT_LINE (!RX_QUEUE_EMPTY),
         .dcache_addr (dcache_addr), .icache_addr (icache_addr), .dcache_we (dcache_we), .dcache_din (dcache_din),
         .dcache_dout (dcache_dout), .icache_dout (icache_dout), .icache_hit (icache_hit), .dcache_re (dcache_re),
         .dcache_hit (dcache_hit), .csr (TOHOST), .HALTED (HALTED),
@@ -121,9 +130,7 @@ module SixfoldSystem #(
 
     // UART with a 2 KiB transmit queue (programs print faster than 115200 baud can carry) and a
     // 16-byte receive queue (the firmware empties it far faster than bytes arrive)
-    logic TX_QUEUE_EMPTY, TX_QUEUE_FULL, TX_BUSY, TX_POPPED, TX_SEND;
     logic [7:0] TX_QUEUE_BYTE;
-    logic RX_RECEIVED, RX_QUEUE_EMPTY, RX_QUEUE_FULL, RX_POP;
     logic [7:0] RX_BYTE, RX_QUEUE_BYTE;
     ByteFifo #(.DEPTH (2048), .SYNCHRONOUS_READ (1'b1)) transmit_queue (
         .clk (clk), .reset (reset),
@@ -148,7 +155,7 @@ module SixfoldSystem #(
 
     // Registers
     logic [7:0] LED_REGISTER;
-    logic [63:0] LAST_TOHOST, LAST_CYCLES, PROGRAM_CYCLES, TIMER, BOOT_ADDRESS;
+    logic [63:0] LAST_TOHOST, LAST_CYCLES, PROGRAM_CYCLES, BOOT_ADDRESS;
     logic [1:0] BOOT_REASON;
     assign LEDS = LED_REGISTER;
 
@@ -165,6 +172,8 @@ module SixfoldSystem #(
             5'd8: DEVICE_DATA = {62'd0, BOOT_REASON};
             5'd9: DEVICE_DATA = TIMER;
             5'd10: DEVICE_DATA = BOOT_ADDRESS;
+            5'd11: DEVICE_DATA = TIMER; // MTIME
+            5'd12: DEVICE_DATA = MACHINE_TIME_COMPARE;
             default: DEVICE_DATA = 64'd0;
         endcase
     end
@@ -188,10 +197,15 @@ module SixfoldSystem #(
             PROGRAM_CYCLES <= 64'd0;
             TIMER <= 64'd0;
             BOOT_ADDRESS <= PC_RESET;
+            MACHINE_TIME_COMPARE <= 64'hFFFF_FFFF_FFFF_FFFF;
         end else begin
             TIMER <= TIMER + 64'd1;
             if (DEVICE_STORE && (DEVICE_REGISTER == 5'd1)) LED_REGISTER <= dcache_din[7:0];
             if (DEVICE_STORE && (DEVICE_REGISTER == 5'd10)) BOOT_ADDRESS <= dcache_din;
+            if (CORE_RESET) MACHINE_TIME_COMPARE <= 64'hFFFF_FFFF_FFFF_FFFF; // every program starts with no timer set
+            else if (DEVICE_STORE && (DEVICE_REGISTER == 5'd12))
+                for (int BYTE_LANE = 0; BYTE_LANE < 8; BYTE_LANE = BYTE_LANE + 1)
+                    if (dcache_we[BYTE_LANE]) MACHINE_TIME_COMPARE[8*BYTE_LANE +: 8] <= dcache_din[8*BYTE_LANE +: 8];
             unique case (BOOT_STATE)
                 RUN: begin
                     CORE_RESET <= 1'b0;

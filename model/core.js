@@ -23,10 +23,13 @@ export const STAGES = ['FETCH1', 'FETCH2', 'DECODE', 'EXECUTE', 'MEMORY', 'WRITE
 export const SHORT = { FETCH1: 'F1', FETCH2: 'F2', DECODE: 'D', EXECUTE: 'E', MEMORY: 'M', WRITEBACK: 'W' };
 export const RESET_PC = 0x2000;
 export const MMIO_BASE = 0x10000000n, MMIO_PUTCHAR = 0x10000000n, MMIO_LEDS = 0x10000008n, MMIO_BUTTONS = 0x10000010n;
+export const MMIO_MTIME = 0x10000058n, MMIO_MTIMECMP = 0x10000060n; // the machine timer (src/Riscv64_top.sv)
 export const isMmio = a => (a >> 8n) === (MMIO_BASE >> 8n); // 0x1000_0000 .. 0x1000_00FF: devices, never RAM
-export const HPM = { 0xC03: 'stall', 0xC04: 'flush', 0xC05: 'redirect', 0xC06: 'busy', 0xC07: 'imiss', 0xC08: 'dmiss' }; // hpmcounter3..8 = L F R K I D
+export const HPM = { 0xC03: 'stall', 0xC04: 'flush', 0xC05: 'redirect', 0xC06: 'busy', 0xC07: 'imiss', 0xC08: 'dmiss', 0xC09: 'intr' }; // hpmcounter3..9 = L F R K I D X
 export const CSR = { TOHOST: 0x51E, STATUS: 0x50A, HARTID: 0x50B, CYCLE: 0xC00, INSTRET: 0xC02, MHARTID: 0xF14,
-  MSTATUS: 0x300, MTVEC: 0x305, MSCRATCH: 0x340, MEPC: 0x341, MCAUSE: 0x342 };
+  MSTATUS: 0x300, MTVEC: 0x305, MSCRATCH: 0x340, MEPC: 0x341, MCAUSE: 0x342, MIE: 0x304, MIP: 0x344 };
+// mcause values for the two interrupts (bit 63 set: an interrupt, not an exception)
+export const CAUSE_TIMER_INTERRUPT = (1n << 63n) | 7n, CAUSE_EXTERNAL_INTERRUPT = (1n << 63n) | 11n;
 export const DEFAULT_HISTORY_BITS = 6; // GSHARE_HISTORY_BITS in src/Riscv64.sv
 // The two builds `make test` checks (parameters of src/Riscv64.sv):
 export const CONFIGS = {
@@ -340,8 +343,10 @@ export class Core {
     this.mem.set((image.bytes || image).slice(0, 65536)); // absolute addresses: code starts at RESET_PC
     this.regs = new Array(32).fill(0n);
     this.bp = new GShare(historyBits, bp);
-    this.csr = { tohost: 0n, status: 0n, cycle: 0n, instret: 0n, mstatus: 0n, mtvec: 0n, mscratch: 0n, mepc: 0n, mcause: 0n };
-    this.hpm = { stall: 0n, flush: 0n, redirect: 0n, busy: 0n, imiss: 0n, dmiss: 0n };
+    this.csr = { tohost: 0n, status: 0n, cycle: 0n, instret: 0n, mstatus: 0n, mtvec: 0n, mscratch: 0n, mepc: 0n, mcause: 0n, mie: 0n };
+    this.hpm = { stall: 0n, flush: 0n, redirect: 0n, busy: 0n, imiss: 0n, dmiss: 0n, intr: 0n };
+    this.mtime = 0n; this.mtimecmp = (1n << 64n) - 1n; // the machine timer device
+    this.mip = { timer: false, external: false }; // the interrupt lines as the CSR file registered them
     this.F1PC = resetPc;
     this.f2 = BUBBLE('fill'); this.d = BUBBLE('fill'); this.e = BUBBLE('fill'); this.m = BUBBLE('fill'); this.w = BUBBLE('fill');
     this.cycle = 0; this.halted = false; this.output = ''; this.leds = 0;
@@ -349,7 +354,7 @@ export class Core {
     this.stats = { cycles: 0, retired: 0, loadStalls: 0, falseLoadStalls: 0, flushes: 0, mispredicts: 0, jalrFlushes: 0,
       redirects: 0, branches: 0, predictedTaken: 0, forwards: 0, btbRedirects: 0, returnsPredicted: 0, multiplyDivideBusy: 0,
       icacheMisses: 0, dcacheMisses: 0, choseGshare: 0,
-      bubbles: { fill: 0, loaduse: 0, flush: 0, redirect: 0, muldiv: 0, imiss: 0, dmiss: 0 } };
+      interrupts: 0, bubbles: { fill: 0, loaduse: 0, flush: 0, redirect: 0, muldiv: 0, imiss: 0, dmiss: 0, interrupt: 0 } };
   }
 
   cacheSlot(c, addr) { // way * 64 + set of the line holding addr, or -1 (InstructionCache / DataCache lookup)
@@ -390,6 +395,8 @@ export class Core {
   }
   fetch(pc) { const m = this.mem, a = pc & 0xffff; return (m[a] | (m[(a + 1) & 0xffff] << 8) | (m[(a + 2) & 0xffff] << 16) | (m[(a + 3) & 0xffff] << 24)) >>> 0; }
   readDouble(addr) {
+    if (addr === MMIO_MTIME) return this.mtime;
+    if (addr === MMIO_MTIMECMP) return this.mtimecmp;
     if (isMmio(addr)) return this.opts.devices ? BigInt.asUintN(64, BigInt(this.opts.devices.load(addr))) : 0n; // devices read 0 in simulation
     const base = Number(addr & 0xfff8n); let v = 0n;
     for (let k = 7; k >= 0; k--) v = (v << 8n) | BigInt(this.mem[(base + k) & 0xffff]);
@@ -401,7 +408,9 @@ export class Core {
       case CSR.STATUS: return this.csr.status;
       case CSR.CYCLE: return this.csr.cycle;
       case CSR.INSTRET: return this.csr.instret;
-      case 0xC03: case 0xC04: case 0xC05: case 0xC06: case 0xC07: case 0xC08: return this.hpm[HPM[addr]];
+      case 0xC03: case 0xC04: case 0xC05: case 0xC06: case 0xC07: case 0xC08: case 0xC09: return this.hpm[HPM[addr]];
+      case CSR.MIE: return this.csr.mie;
+      case CSR.MIP: return (this.mip.timer ? 0x80n : 0n) | (this.mip.external ? 0x800n : 0n);
       case CSR.MSTATUS: return this.csr.mstatus;
       case CSR.MTVEC: return this.csr.mtvec;
       case CSR.MSCRATCH: return this.csr.mscratch;
@@ -440,7 +449,13 @@ export class Core {
     // ================= EXECUTE =================
     let FLUSH = false, adjust = 0, fwdE = 0n, exNext = null, storeOp = null, csrWrite = null, bpTrain = null, restoreGhr = null, btbWrite = null, MDU_STALL = false, mduSteps = 0;
     let dReq = false, dHit = true, dAddr = 0n, D_STALL = false, trap = null, mret = false, dStoreSlot = -1;
-    if (e.valid) {
+    if (e.valid && e.isInterrupt) { // the interrupt pseudo-instruction: trap to mtvec, retire nothing (src/Riscv64.sv)
+      FLUSH = true; adjust = Number(this.csr.mtvec & 0xfffffffcn);
+      trap = { pc: e.pc, cause: e.external ? CAUSE_EXTERNAL_INTERRUPT : CAUSE_TIMER_INTERRUPT };
+      ev.trap = { kind: e.external ? 'external interrupt' : 'timer interrupt', to: adjust }; ev.interrupt = true;
+      restoreGhr = e.ckpt;
+      ev.stages.EXECUTE = { id: e.id, pc: e.pc };
+    } else if (e.valid) {
       const A = e.aIsPC ? BigInt(e.pc) : prepareA(e.rs1v, e), B = prepareB(e.bIsImm ? e.imm : e.rs2v, e);
       const aluOut = alu(A, B, e.aluOp, e.isWord);
       const result = e.isMulDiv ? multiplyDivide(e.rs1v, e.rs2v, e.aluOp, e.isWord) : aluOut;
@@ -511,6 +526,10 @@ export class Core {
       if (LOAD_STALL) ev.loadStallReal = SINGLE_BIT_STALL || (useD.rs1 && e.rd === rs1f) || (useD.rs2 && e.rd === rs2f);
     }
 
+    // Interrupt: replace the DECODE instruction (src/Riscv64.sv DECODE_TAKES_INTERRUPT)
+    const mieBit = (this.csr.mstatus >> 3n) & 1n, INTERRUPT_EXTERNAL = !!((this.csr.mie >> 11n) & 1n) && this.mip.external;
+    const INTERRUPT_REQUEST = mieBit === 1n && ((!!((this.csr.mie >> 7n) & 1n) && this.mip.timer) || INTERRUPT_EXTERNAL);
+
     // ================= FETCH2 =================
     let REDIRECT = false, f2Target = 0, f2IsBranch = false, f2Call = false, f2Return = false, f2ReturnPredicted = false;
     if (f2.valid) {
@@ -546,6 +565,7 @@ export class Core {
     ev.predict = pred;
 
     const ADVANCE = !FLUSH && !D_STALL && !LOAD_STALL && !MDU_STALL;
+    const TAKE_INTERRUPT = INTERRUPT_REQUEST && d.valid && ADVANCE && !(e.valid && (e.csrWrite || e.isEcall || e.isEbreak || e.isMret || e.isInterrupt));
     ev.stall = LOAD_STALL && !FLUSH && !D_STALL;
     ev.busy = MDU_STALL && !FLUSH;
     ev.dmiss = D_STALL && !FLUSH;
@@ -567,18 +587,26 @@ export class Core {
       if (storeOp.addr === MMIO_PUTCHAR) { this.output += String.fromCharCode(Number(storeOp.data & 0xffn)); ev.putchar = true; }
       else if (storeOp.addr === MMIO_LEDS && (storeOp.mask & 1)) { this.leds = Number(storeOp.data & 0xffn); ev.leds = this.leds; }
       else if (isMmio(storeOp.addr)) { /* other device addresses: only the devices hook sees them */ }
-      if (isMmio(storeOp.addr) && this.opts.devices) this.opts.devices.store(storeOp.addr, storeOp.data, storeOp.mask);
+      if (isMmio(storeOp.addr)) { if (this.opts.devices) this.opts.devices.store(storeOp.addr, storeOp.data, storeOp.mask); }
       else { const base = Number(storeOp.addr & 0xfff8n); for (let k = 0; k < 8; k++) if (storeOp.mask & (1 << k)) this.mem[(base + k) & 0xffff] = Number((storeOp.data >> BigInt(8 * k)) & 0xffn); }
     }
+    if (storeOp && storeOp.mask && storeOp.addr === MMIO_MTIMECMP) { let v = this.mtimecmp; for (let k = 0; k < 8; k++) if (storeOp.mask & (1 << k)) { const sh = BigInt(8 * k); v = (v & ~(0xffn << sh)) | (storeOp.data & (0xffn << sh)); } this.mtimeCmpNext = v; }
+    // the CSR file registers the interrupt lines from this cycle's timer values; then the timer ticks
+    this.mip.timer = this.mtime >= this.mtimecmp;
+    this.mip.external = !!(this.opts.devices && this.opts.devices.externalInterrupt && this.opts.devices.externalInterrupt());
+    this.mtime++;
+    if (this.mtimeCmpNext !== undefined) { this.mtimecmp = this.mtimeCmpNext; this.mtimeCmpNext = undefined; }
     if (trap) { this.csr.mepc = BigInt(trap.pc) & ~1n; this.csr.mcause = trap.cause; const mie = (this.csr.mstatus >> 3n) & 1n; this.csr.mstatus = (this.csr.mstatus & ~0x88n) | (mie << 7n); this.stats.traps = (this.stats.traps || 0) + 1; }
     else if (mret) { const mpie = (this.csr.mstatus >> 7n) & 1n; this.csr.mstatus = (this.csr.mstatus & ~0x88n) | (mpie << 3n) | 0x80n; }
     if (csrWrite) {
       const v = csrWrite.value, a = csrWrite.addr, c = this.csr;
       if (a === CSR.TOHOST) c.tohost = v; else if (a === CSR.STATUS) c.status = v; else if (a === CSR.MSTATUS) c.mstatus = v;
       else if (a === CSR.MTVEC) c.mtvec = v; else if (a === CSR.MSCRATCH) c.mscratch = v; else if (a === CSR.MEPC) c.mepc = v & ~1n; else if (a === CSR.MCAUSE) c.mcause = v;
+      else if (a === CSR.MIE) c.mie = v;
     }
     this.csr.cycle++; if (w.valid) this.csr.instret++;
-    for (const k of ['stall', 'flush', 'redirect', 'busy', 'imiss', 'dmiss']) if (ev[k]) this.hpm[k]++; // performance counters (CSRFile EventCounter)
+    if (ev.interrupt) ev.intr = true;
+    for (const k of ['stall', 'flush', 'redirect', 'busy', 'imiss', 'dmiss', 'intr']) if (ev[k]) this.hpm[k]++; // performance counters (CSRFile EventCounter)
     if (bpTrain) {
       ev.bpUpdate = { ...this.bp.train(bpTrain.idx, bpTrain.taken), taken: bpTrain.taken }; this.stats.branches++;
       if (this.opts.tournament) {
@@ -615,7 +643,8 @@ export class Core {
 
     // statistics
     if (ev.stall) { this.stats.loadStalls++; if (!ev.loadStallReal) this.stats.falseLoadStalls++; }
-    if (FLUSH) { this.stats.flushes++; if (e.isJalr) this.stats.jalrFlushes++; else if (!(e.isEcall || e.isEbreak || e.isMret)) this.stats.mispredicts++; }
+    if (FLUSH) { this.stats.flushes++; if (e.isJalr) this.stats.jalrFlushes++; else if (!(e.isEcall || e.isEbreak || e.isMret || e.isInterrupt)) this.stats.mispredicts++; }
+    if (ev.interrupt) this.stats.interrupts++;
     if (ev.redirect) this.stats.redirects++;
     if (ev.busy) this.stats.multiplyDivideBusy++;
     if (ADVANCE && !REDIRECT && F1_BTB_REDIRECT) this.stats.btbRedirects++;
@@ -638,7 +667,10 @@ export class Core {
     } else if (MDU_STALL) {
       this.m = BUBBLE('muldiv'); // Execute holds the M instruction; Memory gets a bubble
     } else {
-      if (deNext) { this.e = deNext; if (ev.fwd.a) this.stats.forwards++; if (ev.fwd.b) this.stats.forwards++; }
+      if (deNext && TAKE_INTERRUPT) { // the interrupt takes the DECODE instruction's place; that one runs after mret
+        this.e = { valid: true, id: d.id, pc: d.pc, isInterrupt: 1, external: INTERRUPT_EXTERNAL, cause: 'interrupt', ckpt: d.ckpt, rasCkpt: d.rasCkpt, isCall: false, isReturn: false };
+        squash(d.id); ev.interruptTaken = { pc: d.pc, external: INTERRUPT_EXTERNAL };
+      } else if (deNext) { this.e = deNext; if (ev.fwd.a) this.stats.forwards++; if (ev.fwd.b) this.stats.forwards++; }
       else this.e = BUBBLE(d.cause);
       this.d = f2.valid ? { valid: true, id: f2.id, pc: f2.pc, word: f2.word, pred: f2.pred, idx: f2.idx, ckpt: ev.ghr, target: f2Target,
         returnPredicted: f2ReturnPredicted, isCall: this.opts.ras && f2Call, isReturn: this.opts.ras && f2Return, rasCkpt: rasTopBefore, gTaken: f2.gTaken, bTaken: f2.bTaken } : BUBBLE(f2.cause);

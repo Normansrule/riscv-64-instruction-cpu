@@ -127,7 +127,7 @@ costs with `make math`.
 `src/Carry_Save_Multiplier.sv` adds 16 partial products per step. Radix-4 Booth recoding looks at
 the multiplier bits in overlapping groups of three and produces 8 partial products from
 {-2, -1, 0, +1, +2} x the multiplicand. Write it, keep `CarrySaveMultiplyStep`'s ports, and compare
-the number of compressor levels, the delay (`tools/timing.sh`) and the area. The 1,624-case self-check
+the number of compressor levels, the delay (`tools/timing.sh`) and the area. The 1,630-case self-check
 (`make test`) covers MUL, MULH, MULHSU, MULHU and MULW with signed corner cases.
 
 ## Lab 15: your own CPI stack, from the hardware counters
@@ -157,7 +157,7 @@ plain RV64I (`sll`, `or`, `and`, `not`, a loop instead of `ctz`) and count instr
 ## Lab 18: add a device register to the FPGA computer
 
 The device registers live in one `case` statement in `fpga/rtl/Sixfold_System.sv` (loads) and a few
-`if (DEVICE_STORE && ...)` lines (stores). Add one: for example a 32-bit `PWM` register at offset 0x58
+`if (DEVICE_STORE && ...)` lines (stores). Add one: for example a 32-bit `PWM` register at offset 0x68
 that dims the LEDs (compare it against a free-running counter), or a `RANDOM` register that returns a
 new linear-feedback shift register value on every load. Loads must not have side effects (a load can
 repeat while the data cache fetches its line), so "take" operations need a store. Add the register to
@@ -182,3 +182,14 @@ cycle later, from a small store buffer. Change `src/Data_Cache.sv`, `src/Riscv64
 together, keep `make test` cycle-exact, and compare two things: the clock `fpga/boards/ulx3s/build.sh`
 reports, and the cycles `make math` counts. Which programs get faster in microseconds, and which get
 slower?
+
+## Lab 21: interrupt latency and vectored interrupts
+
+How long does an interrupt take to *start*? Put `rdcycle` at the top of the handler in
+`programs/21_timer_interrupts.s`, read `MTIME` there too, and compare with the `MTIMECMP` that fired: the
+difference is the latency, from the timer line going up (registered into `mip` one cycle later) to the first
+handler instruction. When is it longest? Try a long divide in the main loop: an interrupt waits for an
+instruction that holds EXECUTE. Then implement `mtvec`'s **vectored** mode (bit 0 = 1: an interrupt with
+cause *n* jumps to `BASE + 4n`) in `src/Riscv64.sv`, `src/Control_Status_Register_File.sv` and
+`model/core.js` together, so the handler no longer has to read `mcause` to tell the timer from the UART.
+`tests/interrupt_stress.s` and `make test` check that you kept every interrupt precise.

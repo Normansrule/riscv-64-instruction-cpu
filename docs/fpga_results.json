@@ -1,4 +1,27 @@
 {
-  "ulx3s": { "device": "LFE5U-85F-6BG381C", "tools": "Yosys 0.33, nextpnr-ecp5 0.6, Project Trellis 1.4", "lut4": 36347, "lutPercent": 43, "ff": 5424, "ffPercent": 6, "bram": 85, "bramPercent": 40, "ramw": 705, "fmax": 25.06, "clock": 25 },
-  "arty": { "device": "XC7A100TCSG324-1", "tools": "Yosys 0.33 synth_xilinx (estimate; Vivado reports its own)", "lut6": 16878, "lutPercent": 27, "ff": 4952, "ffPercent": 4, "ramb36": 32, "ramb18": 1, "bramPercent": 24, "clock": 25 }
+  "ulx3s": {
+    "device": "LFE5U-85F-6BG381C",
+    "tools": "Yosys 0.33, nextpnr-ecp5 0.6, Project Trellis 1.4",
+    "lut4": 36988,
+    "lutPercent": 44,
+    "ff": 5621,
+    "ffPercent": 6,
+    "bram": 85,
+    "bramPercent": 40,
+    "ramw": 705,
+    "fmax": 26.58,
+    "clock": 25
+  },
+  "arty": {
+    "device": "XC7A100TCSG324-1",
+    "tools": "Yosys 0.33 synth_xilinx (estimate; Vivado reports its own)",
+    "lut6": 16878,
+    "lutPercent": 27,
+    "ff": 4952,
+    "ffPercent": 4,
+    "ramb36": 32,
+    "ramb18": 1,
+    "bramPercent": 24,
+    "clock": 25
+  }
 }

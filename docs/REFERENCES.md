@@ -206,7 +206,7 @@ RVA23 requires the whole B extension).
 
 **[51]** A. Yasin, "A Top-Down Method for Performance Analysis and Counters Architecture," *IEEE
 International Symposium on Performance Analysis of Systems and Software (ISPASS)*, 2014. How Intel
-cores break cycles down into categories from hardware counters (the idea behind hpmcounter3..8 here).
+cores break cycles down into categories from hardware counters (the idea behind hpmcounter3..9 here).
 
 **[52]** RISC-V International, *The RISC-V Instruction Set Manual, Volume II: Privileged Architecture*,
 and the *RISC-V Platform Specification* drafts, https://github.com/riscv/riscv-isa-manual . Reset vectors,
@@ -227,3 +227,12 @@ timing report quoted in [FPGA.md](FPGA.md).
 **[56]** Radiona.org, *ULX3S* (open hardware), https://github.com/emard/ulx3s ; Digilent, *Arty A7 Reference
 Manual*, https://digilent.com/reference/programmable-logic/arty-a7/reference-manual . The boards
 summarized in [boards/ULX3S.md](boards/ULX3S.md) and [boards/ARTY_A7.md](boards/ARTY_A7.md).
+
+**[57]** RISC-V International, *RISC-V Advanced Core Local Interruptor (ACLINT) Specification* and the
+machine timer (`mtime`, `mtimecmp`) in the Privileged Architecture, https://github.com/riscv/riscv-aclint .
+The memory-mapped timer that `MTIME` / `MTIMECMP` model, and the interrupt enables (`mie`), pending bits
+(`mip`) and causes (`mcause` with bit 63 set) used by `programs/21_timer_interrupts.s`.
+
+**[58]** J. E. Smith and A. R. Pleszkun, "Implementing Precise Interrupts in Pipelined Processors," *IEEE
+Transactions on Computers*, 37(5), 1988. Why an interrupt must look as if it happened between two
+instructions, and the reorder-buffer technique out-of-order cores use for it.

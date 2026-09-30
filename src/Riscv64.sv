@@ -37,6 +37,8 @@ module Riscv64 #(
   input  logic        clk,
   input  logic        reset,
   input  logic        BRANCH_PREDICTION_ENABLE, // 1 = GShare predictor, 0 = always predict not taken
+  input  logic        TIMER_INTERRUPT_LINE, // the machine timer: mtime >= mtimecmp
+  input  logic        EXTERNAL_INTERRUPT_LINE, // a device wants attention (FPGA: the UART received a byte)
 
   // Where the first instruction is fetched after reset (PC_RESET = 0x2000 for programs; the FPGA system
   // points it at its boot firmware at 0x0000 first, like a PC's reset vector pointing into its BIOS ROM)
@@ -66,6 +68,8 @@ module Riscv64 #(
 
   logic LOAD_STALL; // Load Hazard: Instead of a full stall only hold the Fetch and Decode, send a NOP to Execute, and advance the load logic for the Memory and Writeback
   logic FLUSH_FETCH1_FETCH2_DECODE; // Control Hazard: Fetch1 & Fetch2 & Decode FLUSH for mispredicted branching
+  logic INTERRUPT_REQUEST, INTERRUPT_IS_EXTERNAL; // from the CSR file: an enabled interrupt is pending
+  logic DECODE_TAKES_INTERRUPT; // the instruction in DECODE is replaced by the interrupt (see below)
   logic ADVANCE_FRONT_END; // Fetch1, Fetch2 and Decode move forward this cycle (no flush and no stall)
   logic FRONT_END_NOT_STALLED; // No stall (a flush may still be happening): enough for anything a flush overrides anyway
   logic MULTIPLY_DIVIDE_STALL; // An M instruction in Execute is still iterating: hold Fetch1 to Execute, bubble into Memory
@@ -458,6 +462,7 @@ module Riscv64 #(
   logic EXECUTE_PREDICTED_BRANCH_TAKEN; // Store Fetch prediction at the Execute Stage
   logic EXECUTE_RETURN_PREDICTED; // FETCH2 redirected this return using the Return Address Stack
   logic EXECUTE_IS_AN_ECALL, EXECUTE_IS_AN_EBREAK, EXECUTE_IS_AN_MRET;
+  logic EXECUTE_IS_AN_INTERRUPT, EXECUTE_INTERRUPT_IS_EXTERNAL; // an interrupt travelling as a pseudo-instruction
   logic EXECUTE_TAKES_TRAP; // ecall or ebreak: jump to mtvec
   logic EXECUTE_RETURNS_FROM_TRAP; // mret: jump to mepc
   logic [63:0] TRAP_VECTOR, EXCEPTION_PC; // mtvec, mepc
@@ -563,10 +568,23 @@ module Riscv64 #(
   );
 
   // Traps: ecall / ebreak jump to mtvec, mret jumps back to mepc. Both flush like a mispredicted branch.
-  assign EXECUTE_TAKES_TRAP = EXECUTE_VALID && (EXECUTE_IS_AN_ECALL || EXECUTE_IS_AN_EBREAK);
+  assign EXECUTE_TAKES_TRAP = EXECUTE_VALID && (EXECUTE_IS_AN_ECALL || EXECUTE_IS_AN_EBREAK || EXECUTE_IS_AN_INTERRUPT);
   assign EXECUTE_RETURNS_FROM_TRAP = EXECUTE_VALID && EXECUTE_IS_AN_MRET;
   assign EXECUTE_REDIRECT_PC = EXECUTE_TAKES_TRAP ? TRAP_VECTOR : EXECUTE_RETURNS_FROM_TRAP ? EXCEPTION_PC : EXECUTE_ADJUST_NEXT_PC;
-  assign FLUSH_FETCH1_FETCH2_DECODE = EXECUTE_VALID && (EXECUTE_FLUSH || EXECUTE_IS_AN_ECALL || EXECUTE_IS_AN_EBREAK || EXECUTE_IS_AN_MRET); // Control Hazard: misprediction, JALR, or a trap
+  assign FLUSH_FETCH1_FETCH2_DECODE = EXECUTE_VALID && (EXECUTE_FLUSH || EXECUTE_IS_AN_ECALL || EXECUTE_IS_AN_EBREAK || EXECUTE_IS_AN_MRET || EXECUTE_IS_AN_INTERRUPT); // Control Hazard: misprediction, JALR, or a trap
+
+  // ========== Interrupts: precise, by replacing the instruction in DECODE ==========
+  // When an enabled interrupt is pending, the instruction in DECODE does not go on to EXECUTE. A
+  // pseudo-instruction with its PC takes its place: it does nothing but trap, like an ecall with the
+  // interrupt's cause. Everything older (EXECUTE, MEMORY, WRITEBACK) finishes normally, everything younger is
+  // flushed by the trap, and mret later returns to the replaced instruction, which then runs for real.
+  // It is not taken while EXECUTE holds a CSR write, a trap or mret (they may be changing mstatus or mie
+  // right now), and it only acts when DECODE advances: the pipeline-register code below applies it in the
+  // "no stall, no flush" branch, so the stall and flush signals never enter this (early, registered) logic.
+  // The pseudo-instruction never retires: MEMORY gets a bubble, so an interrupt costs 4 bubbles (the flush's
+  // 3, plus its own slot): the X term of the equation.
+  assign DECODE_TAKES_INTERRUPT = INTERRUPT_REQUEST && DECODE_VALID
+    && !(EXECUTE_VALID && (EXECUTE_CSR_WRITE_ENABLE || EXECUTE_IS_AN_ECALL || EXECUTE_IS_AN_EBREAK || EXECUTE_IS_AN_MRET || EXECUTE_IS_AN_INTERRUPT));
   assign dcache_re = EXECUTE_VALID && EXECUTE_MEMORY_READ_ENABLE;
   assign DATA_CACHE_STALL = dcache_re && !dcache_hit;
   assign FRONT_END_NOT_STALLED = !DATA_CACHE_STALL && !LOAD_STALL && !MULTIPLY_DIVIDE_STALL;
@@ -602,10 +620,15 @@ module Riscv64 #(
     .CSR_OPERATION (EXECUTE_FUNCT3),
     .CSR_WRITE_DATA (EXECUTE_CSR_WRITE_DATA),
     .INSTRUCTION_RETIRED (WRITEBACK_VALID),
-    .PERFORMANCE_EVENTS ({TRACE_DATA_MISS, TRACE_INSTRUCTION_MISS, TRACE_MULTIPLY_DIVIDE_STALL, TRACE_REDIRECT, TRACE_FLUSH, TRACE_LOAD_STALL}),
+    .PERFORMANCE_EVENTS ({EXECUTE_VALID && EXECUTE_IS_AN_INTERRUPT, TRACE_DATA_MISS, TRACE_INSTRUCTION_MISS, TRACE_MULTIPLY_DIVIDE_STALL, TRACE_REDIRECT, TRACE_FLUSH, TRACE_LOAD_STALL}),
     .TAKE_TRAP (!FREEZE && EXECUTE_TAKES_TRAP),
     .TRAP_PC (EXECUTE_PC),
-    .TRAP_CAUSE (EXECUTE_IS_AN_EBREAK ? CAUSE_BREAKPOINT : CAUSE_ENVIRONMENT_CALL),
+    .TRAP_CAUSE (EXECUTE_IS_AN_INTERRUPT ? (EXECUTE_INTERRUPT_IS_EXTERNAL ? CAUSE_MACHINE_EXTERNAL_INTERRUPT : CAUSE_MACHINE_TIMER_INTERRUPT)
+                 : EXECUTE_IS_AN_EBREAK ? CAUSE_BREAKPOINT : CAUSE_ENVIRONMENT_CALL),
+    .TIMER_INTERRUPT_LINE (TIMER_INTERRUPT_LINE),
+    .EXTERNAL_INTERRUPT_LINE (EXTERNAL_INTERRUPT_LINE),
+    .INTERRUPT_REQUEST (INTERRUPT_REQUEST),
+    .INTERRUPT_IS_EXTERNAL (INTERRUPT_IS_EXTERNAL),
     .RETURN_FROM_TRAP (!FREEZE && EXECUTE_RETURNS_FROM_TRAP),
     .TRAP_VECTOR (TRAP_VECTOR),
     .EXCEPTION_PC (EXCEPTION_PC),
@@ -751,6 +774,8 @@ module Riscv64 #(
       EXECUTE_IS_AN_ECALL <= 1'b0;
       EXECUTE_IS_AN_EBREAK <= 1'b0;
       EXECUTE_IS_AN_MRET <= 1'b0;
+      EXECUTE_IS_AN_INTERRUPT <= 1'b0;
+      EXECUTE_INTERRUPT_IS_EXTERNAL <= 1'b0;
       // ========== Memory ==========
       MEMORY_VALID <= 1'b0;
       MEMORY_PC <= 64'd0;
@@ -781,7 +806,7 @@ module Riscv64 #(
     end
     else begin
       // Advance Execute to Memory (always: the Execute instruction is never flushed, even when it causes a flush)
-      MEMORY_VALID <= EXECUTE_VALID;
+      MEMORY_VALID <= EXECUTE_VALID && !EXECUTE_IS_AN_INTERRUPT; // the interrupt pseudo-instruction never retires
       MEMORY_PC <= EXECUTE_PC; // Update Memory Program Counter
       MEMORY_DESTINATION_REGISTER_ADDRESS <= EXECUTE_DESTINATION_REGISTER_ADDRESS; // Update Memory Destination Register Address
       MEMORY_FUNCT3 <= EXECUTE_FUNCT3; // Update Memory Funct3
@@ -827,8 +852,8 @@ module Riscv64 #(
           EXECUTE_GLOBAL_HISTORY_CHECKPOINT <= DECODE_GLOBAL_HISTORY_CHECKPOINT;
           EXECUTE_WRITEBACK_SELECT <= DECODE_WRITEBACK_SELECT;
           EXECUTE_ALU_OPERATION <= DECODE_ALU_OPERATION;
-          EXECUTE_LATE_RESULT <= (DECODE_ALU_OPERATION == ALU_CPOP) || (DECODE_ALU_OPERATION == ALU_MIN) || (DECODE_ALU_OPERATION == ALU_MINU)
-            || (DECODE_ALU_OPERATION == ALU_MAX) || (DECODE_ALU_OPERATION == ALU_MAXU);
+          EXECUTE_LATE_RESULT <= !DECODE_TAKES_INTERRUPT && ((DECODE_ALU_OPERATION == ALU_CPOP) || (DECODE_ALU_OPERATION == ALU_MIN) || (DECODE_ALU_OPERATION == ALU_MINU)
+            || (DECODE_ALU_OPERATION == ALU_MAX) || (DECODE_ALU_OPERATION == ALU_MAXU));
           EXECUTE_ALU_SUBTRACT <= (DECODE_ALU_OPERATION == ALU_SUB) || (DECODE_ALU_OPERATION == ALU_SLT) || (DECODE_ALU_OPERATION == ALU_SLTU)
             || (DECODE_ALU_OPERATION == ALU_MIN) || (DECODE_ALU_OPERATION == ALU_MINU) || (DECODE_ALU_OPERATION == ALU_MAX) || (DECODE_ALU_OPERATION == ALU_MAXU);
           EXECUTE_MULTIPLY_DIVIDE_PREDECODED <= {
@@ -881,6 +906,7 @@ module Riscv64 #(
         EXECUTE_IS_AN_ECALL <= 1'b0;
         EXECUTE_IS_AN_EBREAK <= 1'b0;
         EXECUTE_IS_AN_MRET <= 1'b0;
+        EXECUTE_IS_AN_INTERRUPT <= 1'b0;
         // Fetch 2 transition to Decode: the Decode instruction was on the wrong path
         DECODE_VALID <= 1'b0;
         // Fetch 1 Transition to Fetch 2 with Program Counter Update for Fetch 1 and Fetch 2 and Decode Flush
@@ -908,6 +934,7 @@ module Riscv64 #(
         EXECUTE_IS_AN_ECALL <= 1'b0;
         EXECUTE_IS_AN_EBREAK <= 1'b0;
         EXECUTE_IS_AN_MRET <= 1'b0;
+        EXECUTE_IS_AN_INTERRUPT <= 1'b0;
       end
       else if (MULTIPLY_DIVIDE_STALL) begin // The M instruction in Execute needs more cycles:
         // Fetch 1, Fetch 2, Decode and Execute all hold; a bubble goes into Memory (overrides the advance above)
@@ -933,6 +960,25 @@ module Riscv64 #(
         EXECUTE_IS_AN_ECALL <= DECODE_IS_AN_ECALL;
         EXECUTE_IS_AN_EBREAK <= DECODE_IS_AN_EBREAK;
         EXECUTE_IS_AN_MRET <= DECODE_IS_AN_MRET;
+        EXECUTE_IS_AN_INTERRUPT <= 1'b0;
+        EXECUTE_INTERRUPT_IS_EXTERNAL <= INTERRUPT_IS_EXTERNAL;
+        if (DECODE_TAKES_INTERRUPT) begin // the DECODE instruction stays behind; the interrupt goes in its place
+          EXECUTE_REGISTER_WRITE_ENABLE <= 1'b0;
+          EXECUTE_MEMORY_READ_ENABLE <= 1'b0;
+          EXECUTE_MEMORY_WRITE_ENABLE <= 1'b0;
+          EXECUTE_CSR_WRITE_ENABLE <= 1'b0;
+          EXECUTE_IS_A_MULTIPLY_DIVIDE_INSTRUCTION <= 1'b0;
+          EXECUTE_IS_A_BRANCH_INSTRUCTION <= 1'b0;
+          EXECUTE_IS_A_JAL_INSTRUCTION <= 1'b0;
+          EXECUTE_IS_A_JALR_INSTRUCTION <= 1'b0;
+          EXECUTE_RETURN_PREDICTED <= 1'b0;
+          EXECUTE_IS_A_CALL <= 1'b0; // so the flush restores the return address stack to before this instruction
+          EXECUTE_IS_A_RETURN <= 1'b0;
+          EXECUTE_IS_AN_ECALL <= 1'b0;
+          EXECUTE_IS_AN_EBREAK <= 1'b0;
+          EXECUTE_IS_AN_MRET <= 1'b0;
+          EXECUTE_IS_AN_INTERRUPT <= 1'b1;
+        end
 
         // Fetch 2 to Decode
         DECODE_VALID <= FETCH2_VALID;

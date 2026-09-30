@@ -66,7 +66,7 @@ export function summary(core) {
   const s = core.stats, b = s.bubbles;
   return [
     `cycles ${s.cycles}   instructions ${s.retired}   CPI ${(s.cycles / s.retired).toFixed(3)}   tohost ${core.csr.tohost}${core.csr.tohost === 1n ? ' (PASS)' : ` (FAIL in test ${core.csr.tohost >> 1n})`}`,
-    `cycles = instructions + bubbles:  ${s.cycles} = ${s.retired} + ${b.fill} fill + ${b.loaduse} load-stall + ${b.flush} flush + ${b.redirect} redirect + ${b.muldiv} multiply/divide busy + ${b.imiss} I-cache + ${b.dmiss} D-cache`,
+    `cycles = instructions + bubbles:  ${s.cycles} = ${s.retired} + ${b.fill} fill + ${b.loaduse} load-stall + ${b.flush} flush + ${b.redirect} redirect + ${b.muldiv} multiply/divide busy + ${b.imiss} I-cache + ${b.dmiss} D-cache${b.interrupt ? ` + ${b.interrupt} interrupt` : ''}`,
     `load stalls ${s.loadStalls} (${s.falseLoadStalls} false)   flushes ${s.flushes} (${s.mispredicts} branch mispredicts, ${s.jalrFlushes} JALR)   FETCH2 redirects ${s.redirects}   forwards ${s.forwards}`,
     `BTB redirects ${s.btbRedirects}   returns predicted ${s.returnsPredicted}   I-cache misses ${s.icacheMisses} (+${s.prefetches || 0} prefetches)   D-cache misses ${s.dcacheMisses}   build: ${core.opts.btb ? 'performance' : 'baseline'}`,
     `branches ${s.branches}   predictor accuracy ${s.branches ? (100 * (1 - s.mispredicts / s.branches)).toFixed(1) + '%' : '-'}   (${core.bp.enabled ? `gshare, ${core.bp.historyBits} history bits, ${1 << core.bp.historyBits} counters` : 'predictor off: always not taken'})`,

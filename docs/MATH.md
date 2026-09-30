@@ -14,8 +14,8 @@ For the original chip, 1 / 26 ns = **38.5 MHz**. A program with CPI 1.3 then exe
 ## 2. Exact cycle count
 
 ```text
-cycles = N + (S - 1) + L + P * F + R + K + I + D
-       = N + 5       + L + 3 * F + R + K + I + D
+cycles = N + (S - 1) + L + P * F + R + K + I + D + X
+       = N + 5       + L + 3 * F + R + K + I + D + X
 ```
 
 | symbol | meaning | source in the RTL | hardware counter |
@@ -28,10 +28,19 @@ cycles = N + (S - 1) + L + P * F + R + K + I + D
 | K | cycles the iterative M unit holds EXECUTE (performance build) | `MULTIPLY_DIVIDE_STALL` | `hpmcounter6` |
 | I | bubbles sent to FETCH2 while the instruction cache refills | `icache_hit` | `hpmcounter7` |
 | D | cycles a load waits in EXECUTE for its data-cache line | `DATA_CACHE_STALL` | `hpmcounter8` |
+| X | interrupts taken: the pseudo-instruction that replaced a DECODE instruction never retires, 1 bubble each (its flush is already in F) | `EXECUTE_IS_AN_INTERRUPT` | `hpmcounter9` |
 
 **Why 3 for a flush:** when EXECUTE flushes, FETCH1, FETCH2 and DECODE all hold wrong-path
 instructions. They are replaced by bubbles, and the correct instruction starts in FETCH1 on the next
 cycle, reaching EXECUTE 3 cycles after the branch left it.
+
+**Why an interrupt costs 4:** the interrupt replaces the instruction in DECODE with a pseudo-instruction
+that traps in EXECUTE. Its flush squashes FETCH1, FETCH2 and DECODE (3 bubbles, counted in F), and its own
+slot never retires (1 more, X). The replaced instruction is not lost: `mepc` points at it, and it runs
+after `mret`. [`programs/21_timer_interrupts.s`](../programs/21_timer_interrupts.s) takes 25 timer
+interrupts, and [`tests/interrupt_stress.s`](../tests/interrupt_stress.s) takes 388, on every kind of
+instruction. Both are cycle-exact against the RTL, and the checksum comes out the same as without
+interrupts.
 
 **Why only surviving redirects:** a redirect bubble sitting in FETCH2 or DECODE when a flush happens is
 overwritten, so it is counted inside the flush's 3. The model tags every bubble with its cause and

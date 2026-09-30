@@ -1,6 +1,6 @@
 # =============================================================================
 # tests/isa_selfcheck.s: AUTO-GENERATED self-checking test of every RV64IM +
-# Zicsr + Zba + Zbb + Zbs + trap instruction (1624 test cases, expected values computed by an independent
+# Zicsr + Zba + Zbb + Zbs + trap + interrupt instruction (1630 test cases, expected values computed by an independent
 # Python reference model). Uses the riscv-tests convention:
 #   PASS: tohost = 1           FAIL: tohost = (test number << 1) | 1
 # so the testbench prints "FAIL in test N": search for "tN:" below.
@@ -14146,16 +14146,92 @@ t1623_pass:
     beq  a3, t6, t1623_ok
     j    fail
 t1623_ok:
-t1624: # cycle counter is read-only
+t1624: # mie keeps what is written
     li   a0, 1624
+    li   t0, 0x888
+    csrw mie, t0
+    csrr a3, mie
+    csrw mie, zero
+    li   t6, 0x888
+    beq  a3, t6, t1624_ok
+    j    fail
+t1624_ok:
+t1625: # mip is 0 while MTIMECMP is 'never'
+    li   a0, 1625
+    csrr a3, mip
+    li   t6, 0x0
+    beq  a3, t6, t1625_ok
+    j    fail
+t1625_ok:
+t1626: # mip.MTIP rises when MTIME >= MTIMECMP (no interrupt: mie is 0)
+    li   a0, 1626
+    li   t1, 0x10000000
+    sd   zero, 0x60(t1)
+    nop
+    nop
+    nop
+    csrr a3, mip
+    li   t0, -1
+    sd   t0, 0x60(t1)
+    li   t6, 0x80
+    beq  a3, t6, t1626_ok
+    j    fail
+t1626_ok:
+t1627: # MTIME counts up
+    li   a0, 1627
+    li   t1, 0x10000000
+    ld   t0, 0x58(t1)
+    nop
+    ld   t2, 0x58(t1)
+    sltu a3, t0, t2
+    li   t6, 0x1
+    beq  a3, t6, t1627_ok
+    j    fail
+t1627_ok:
+t1628: # a timer interrupt is taken (mcause = 2^63 + 7) and returns
+    li   a0, 1628
+    la   t0, interrupt_handler
+    csrw mtvec, t0
+    li   a6, 0
+    li   t1, 0x10000000
+    sd   zero, 0x60(t1)
+    li   t0, 0x80
+    csrw mie, t0
+    csrsi mstatus, 8
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    csrci mstatus, 8
+    csrw mie, zero
+    la   t0, trap_handler
+    csrw mtvec, t0
+    mv   a3, a6
+    li   t6, 0x8000000000000007
+    beq  a3, t6, t1628_ok
+    j    fail
+t1628_ok:
+t1629: # wfi is a no-op
+    li   a0, 1629
+    li   a3, 4
+    wfi
+    addi a3, a3, 1
+    li   t6, 0x5
+    beq  a3, t6, t1629_ok
+    j    fail
+t1629_ok:
+t1630: # cycle counter is read-only
+    li   a0, 1630
     rdcycle t0
     csrw cycle, zero
     rdcycle t1
     sltu a3, t0, t1
     li   t6, 0x1
-    beq  a3, t6, t1624_ok
+    beq  a3, t6, t1630_ok
     j    fail
-t1624_ok:
+t1630_ok:
 pass:
     li   a0, 0
     halt               # tohost = 1: PASS
@@ -14164,6 +14240,12 @@ fail:
     ori  t0, t0, 1
     csrw tohost, t0    # tohost = (n << 1) | 1: FAIL in test n
     j    .
+
+interrupt_handler:     # records mcause in a6, sets the timer to "never" again, returns to the interrupted instruction
+    csrr a6, mcause
+    li   t6, -1
+    sd   t6, 0x60(t1)
+    mret
 
 trap_handler:          # counts traps in a5 and returns to the instruction after the ecall/ebreak
     addi a5, a5, 1

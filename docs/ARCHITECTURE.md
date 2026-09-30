@@ -9,14 +9,14 @@ introduction read the [learning path](learn/README.md) first.
 
 | property | value |
 |---|---|
-| instruction set | RV64I + M (multiply/divide) + B (Zba address generation, Zbb bit manipulation, Zbs single-bit) + Zicsr (CSR instructions) + machine-mode traps (`ecall`, `ebreak`, `mret`): 112 instructions, see [`binary/`](../binary/README.md) |
+| instruction set | RV64I + M (multiply/divide) + B (Zba address generation, Zbb bit manipulation, Zbs single-bit) + Zicsr (CSR instructions) + machine-mode traps and interrupts (`ecall`, `ebreak`, `mret`, `wfi`): 113 instructions, see [`binary/`](../binary/README.md) |
 | traps | `ecall` / `ebreak` save the PC in `mepc` and the cause in `mcause` (11 / 3) and jump to `mtvec`; `mret` returns to `mepc`; `mstatus` MIE/MPIE are saved and restored |
 | pipeline | 6 stages, in order, single issue: FETCH1, FETCH2, DECODE, EXECUTE, MEMORY, WRITEBACK |
 | data hazards | forwarding **into DECODE** from EXECUTE, MEMORY, WRITEBACK; 1-cycle `LOAD_STALL` |
 | branch prediction | tournament: `TournamentChooser` (128-entry per-branch history table + 128-entry chooser) with `GSharePredictor` (2^`GSHARE_HISTORY_BITS` counters, default 6 bits = 64), speculative global history with checkpoint repair; a 16-entry `BranchTargetBuffer` in FETCH1; an 8-entry `ReturnAddressStack` in FETCH2 |
 | branch penalties | taken branch or JAL found in the BTB: 0 bubbles; otherwise a FETCH2 redirect: 1; predicted return: 1; wrong guess or unpredicted JALR: 3 (flush) |
 | multiply / divide | `IterativeMultiplyDivideUnit`: 64 x 16-bit Wallace-tree steps into a carry-save accumulator ([`Carry_Save_Multiplier.sv`](../src/Carry_Save_Multiplier.sv)), a leading-zero-counter skip for divides, a registered result: multiply 8 cycles, divide 5 + significant bits of the dividend (baseline build: single cycle) |
-| clock (logic only) | sky130 130 nm: 3.75 ns, about 267 MHz; ASAP7 7 nm: 0.536 ns, about 1.87 GHz; see [PERFORMANCE.md](PERFORMANCE.md) |
+| clock (logic only) | sky130 130 nm: 4.09 ns, about 244 MHz; ASAP7 7 nm: 0.513 ns, about 1.95 GHz; see [PERFORMANCE.md](PERFORMANCE.md) |
 | FPGA | the same core in a small computer (block RAM memory, UART, LEDs, buttons, boot firmware): see [FPGA.md](FPGA.md) |
 | builds | performance (default) and baseline (`-DBASELINE`, the plain pipeline); `make test` checks both |
 | memory | performance build: `InstructionCache` (4 KiB, 2-way set-associative with LRU replacement, 32-byte lines, next-line prefetch) and `DataCache` (4 KiB, 2-way LRU, next-line prefetch, write-through, no store allocation) in front of a 64 KiB main memory with a 10-cycle line refill; baseline: single-cycle 64 KiB `ScratchpadMemory` |
@@ -174,8 +174,30 @@ result: `tohost = 1` is PASS, `(n << 1) | 1` is FAIL in test n (the riscv-tests 
 | CSR `0x305` `mtvec` | trap handler address (direct mode) |
 | CSR `0x340` `mscratch` | scratch register for the handler |
 | CSR `0x341` `mepc` | address of the instruction that trapped |
-| CSR `0x342` `mcause` | 3 = breakpoint, 11 = environment call |
-| CSR `0xC03`..`0xC08` `hpmcounter3..8` | performance counters (read-only): load-stall cycles (L), flushes (F), FETCH2 redirects (R), multiply/divide busy cycles (K), instruction-cache miss cycles (I), data-cache miss cycles (D) |
+| CSR `0x342` `mcause` | 3 = breakpoint, 11 = environment call; with bit 63 set: 7 = machine timer interrupt, 11 = machine external interrupt |
+| CSR `0x304` `mie` | interrupt enables: bit 7 MTIE (timer), bit 11 MEIE (external) |
+| CSR `0x344` `mip` | interrupts pending (read-only): bit 7 MTIP, bit 11 MEIP, the interrupt lines registered once per cycle |
+| CSR `0xC03`..`0xC09` `hpmcounter3..9` | performance counters (read-only): load-stall cycles (L), flushes (F), FETCH2 redirects (R), multiply/divide busy cycles (K), instruction-cache miss cycles (I), data-cache miss cycles (D), interrupts taken (X) |
+| device `0x1000_0058` `MTIME`, `0x1000_0060` `MTIMECMP` | the machine timer: MTIME counts cycles; the timer interrupt line is up while MTIME >= MTIMECMP (reset: all ones, never) |
+
+## Interrupts
+
+Two interrupt lines reach the core: the machine timer (MTIME >= MTIMECMP) and an external line (on the FPGA,
+the UART's receive queue is not empty). The CSR file registers both every cycle into `mip`. An interrupt is
+**requested** when `mstatus.MIE` is 1 and a pending line is enabled in `mie`; the external one wins over the
+timer. It is **taken** in DECODE: the instruction there does not go to EXECUTE, and a pseudo-instruction
+carrying its PC goes instead. In EXECUTE the pseudo-instruction traps like `ecall` (mepc = that PC, mcause =
+the interrupt, MIE saved into MPIE and cleared, jump to mtvec), flushes everything younger, and becomes a
+bubble instead of retiring. Everything older finishes normally, so the interrupt is **precise** [58]: after
+`mret` the replaced instruction runs as if nothing had happened.
+
+It is not taken while DECODE is stalled or being flushed, or while EXECUTE holds a CSR write, a trap, `mret`
+or another interrupt (they may be changing `mstatus` or `mie` in that same cycle). `wfi` is a legal no-op:
+the loop around it does the waiting. [`programs/21_timer_interrupts.s`](../programs/21_timer_interrupts.s) is
+the example, [`tests/interrupt_stress.s`](../tests/interrupt_stress.s) the stress test, and
+[`fpga/examples/interrupt_echo.s`](../fpga/examples/interrupt_echo.s) a program driven only by interrupts.
+
+![An interrupt in the pipeline](img/diagrams/interrupt.svg)
 
 ## Timing rules (exact)
 
@@ -186,8 +208,9 @@ result: `tohost = 1` is PASS, `(n << 1) | 1` is FAIL in test n (the riscv-tests 
 | FETCH2 redirect (predicted-taken branch or JAL not in the BTB, predicted return) | 1 (0 if a flush squashes the redirecting instruction) |
 | taken branch or JAL found in the BTB | 0 |
 | flush (wrong branch guess, JALR not predicted or predicted wrong, `ecall`, `ebreak`, `mret`) | 3 |
+| interrupt (a flush, plus the pseudo-instruction's own slot) | 4 |
 | M instruction (performance build) | multiply 7, divide 4 + significant bits of the dividend (EXECUTE held, bubbles into MEMORY) |
 | instruction-cache miss | 11 (bubbles into FETCH2; a prefetched line costs 0) |
 | data-cache miss (loads) | 11 (the load waits in EXECUTE; stores never wait) |
 
-`cycles = N + 5 + L + 3F + R + K + I + D` holds exactly for both builds; see [MATH.md](MATH.md).
+`cycles = N + 5 + L + 3F + R + K + I + D + X` holds exactly for both builds; see [MATH.md](MATH.md).

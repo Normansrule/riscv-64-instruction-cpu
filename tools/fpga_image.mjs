@@ -17,9 +17,10 @@ import path from 'node:path';
 import { assemble, toListing } from '../model/asm.js';
 
 const args = process.argv.slice(2);
-let out = 'build/fpga', program = null;
+let out = 'build/fpga', program = null, input = null;
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--out') out = args[++i];
+  else if (args[i] === '--input') input = args[++i]; // characters typed after 'r' (they reach the running program)
   else program = args[i];
 }
 fs.mkdirSync(out, { recursive: true });
@@ -38,7 +39,9 @@ if (program) {
   const bytes = [...img.bytes.slice(lo, hi)];
   const word = v => [v & 255, (v >>> 8) & 255, (v >>> 16) & 255, (v >>> 24) & 255];
   const checksum = bytes.reduce((a, b) => (a + b) >>> 0, 0);
-  const stream = ['l'.charCodeAt(0), ...word(lo), ...word(hi - lo), ...bytes, ...word(checksum), 'r'.charCodeAt(0)];
+  const source = fs.readFileSync(program, 'utf8');
+  if (input === null) { const m = /^# FPGA-INPUT: (.*)$/m.exec(source); if (m) input = m[1]; }
+  const stream = ['l'.charCodeAt(0), ...word(lo), ...word(hi - lo), ...bytes, ...word(checksum), 'r'.charCodeAt(0), ...[...(input || '')].map(c => c.charCodeAt(0))];
   fs.writeFileSync(path.join(out, 'upload.hex'), stream.map(b => b.toString(16).padStart(2, '0')).join('\n') + '\n');
   console.log(`${program}: ${hi - lo} bytes at 0x${lo.toString(16)}, upload stream ${stream.length} bytes`);
 }

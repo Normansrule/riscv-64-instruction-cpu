@@ -41,6 +41,31 @@ module riscv64_top #(
   logic [255:0] INSTRUCTION_REFILL_LINE, DATA_REFILL_LINE;
   logic [63:0] CACHE_DATA;
 
+  // ===== The machine timer (memory-mapped, like the timer in every RISC-V system) =====
+  // MTIME counts clock cycles from reset; a store sets MTIMECMP; the timer interrupt line is up while
+  // MTIME >= MTIMECMP. Loads of 0x1000_0058 / 0x1000_0060 read them; every other device address reads 0.
+  logic [63:0] MACHINE_TIME, MACHINE_TIME_COMPARE, DEVICE_DATA;
+  logic IS_DEVICE;
+  assign IS_DEVICE = (dcache_addr[63:8] == MMIO_BASE[63:8]);
+  always_ff @(posedge clk) begin
+    if (reset) begin
+      MACHINE_TIME <= 64'd0;
+      MACHINE_TIME_COMPARE <= 64'hFFFF_FFFF_FFFF_FFFF; // no interrupt until software sets it
+    end else begin
+      MACHINE_TIME <= MACHINE_TIME + 64'd1;
+      if (dcache_addr == MMIO_MTIMECMP)
+        for (int BYTE_LANE = 0; BYTE_LANE < 8; BYTE_LANE = BYTE_LANE + 1)
+          if (dcache_we[BYTE_LANE]) MACHINE_TIME_COMPARE[8*BYTE_LANE +: 8] <= dcache_din[8*BYTE_LANE +: 8];
+    end
+  end
+  always_comb begin
+    if (dcache_addr == MMIO_MTIME) DEVICE_DATA = MACHINE_TIME;
+    else if (dcache_addr == MMIO_MTIMECMP) DEVICE_DATA = MACHINE_TIME_COMPARE;
+    else DEVICE_DATA = MEMORY_DATA; // the scratchpad answers 0 for the rest of the device page
+  end
+  logic TIMER_INTERRUPT_LINE;
+  assign TIMER_INTERRUPT_LINE = (MACHINE_TIME >= MACHINE_TIME_COMPARE);
+
   // Main memory (with the caches) or the single-cycle scratchpad (without)
   ScratchpadMemory mem (
     .clk                        (clk),
@@ -71,11 +96,11 @@ module riscv64_top #(
         .REFILL_ADDRESS (DATA_REFILL_ADDRESS), .REFILL_LINE (DATA_REFILL_LINE)
       );
       // Memory-mapped I/O is not cached: loads from a device address take the device's answer (0 here)
-      assign dcache_dout = (dcache_addr[63:8] == MMIO_BASE[63:8]) ? MEMORY_DATA : CACHE_DATA;
+      assign dcache_dout = IS_DEVICE ? DEVICE_DATA : CACHE_DATA;
     end else begin : no_caches
       assign icache_dout = MEMORY_INSTRUCTION;
       assign icache_hit = 1'b1;
-      assign dcache_dout = MEMORY_DATA;
+      assign dcache_dout = IS_DEVICE ? DEVICE_DATA : MEMORY_DATA;
       assign dcache_hit = 1'b1;
       assign INSTRUCTION_REFILL_ADDRESS = 64'd0;
       assign DATA_REFILL_ADDRESS = 64'd0;
@@ -95,6 +120,8 @@ module riscv64_top #(
     .reset                    (reset),
     .BRANCH_PREDICTION_ENABLE (BRANCH_PREDICTION_ENABLE),
     .RESET_VECTOR             (PC_RESET),
+    .TIMER_INTERRUPT_LINE     (TIMER_INTERRUPT_LINE),
+    .EXTERNAL_INTERRUPT_LINE  (1'b0),
     .dcache_addr              (dcache_addr),
     .icache_addr              (icache_addr),
     .dcache_we                (dcache_we),

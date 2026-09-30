@@ -8,9 +8,9 @@
     ],
     [
       "performance, SkyWater 130 nm",
-      3750,
+      4091,
       "measured",
-      "limit: the divider SIGN step (cpop now split over 2 stages)"
+      "limit: branch compare -> flush -> next PC"
     ],
     [
       "performance, ASAP7 7 nm, first",
@@ -20,9 +20,9 @@
     ],
     [
       "performance, ASAP7 7 nm, now",
-      536,
+      513,
       "best",
-      "limit: divider SIGN step (with the full B extension)"
+      "limit: branch compare -> flush -> next PC (B extension + interrupts)"
     ],
     [
       "target: 2.5 GHz",
@@ -71,6 +71,11 @@
     [
       "Zbs, cpop over two stages",
       "single-bit decoder only on the early operand path; cpop finishes its count in MEMORY",
+      "done"
+    ],
+    [
+      "Precise interrupts, decided from registers only",
+      "take the interrupt in DECODE; stall and flush applied where they already are",
       "done"
     ],
     [

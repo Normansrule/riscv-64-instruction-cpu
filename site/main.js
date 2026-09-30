@@ -254,6 +254,7 @@ const CHAPTERS = [
   ['06_performance', 'Measuring performance', 'CPI and an equation that accounts for every cycle.'],
   ['07_silicon', 'From RTL to silicon', 'Standard cells, a real layout, timing and area.'],
   ['08_using_the_cpu', 'Write your own program', 'Assemble, run, test and debug on the model and the RTL.'],
+  ['09_devices_and_interrupts', 'Devices, interrupts, booting', 'Memory-mapped devices, a timer interrupt taken precisely, and how the FPGA computer boots.'],
 ];
 $('chapters').innerHTML = CHAPTERS.map(([f, t, d]) => `<li><a href="${blob(`docs/learn/${f}.md`)}"><strong>${t}</strong><span>${d}</span></a></li>`).join('');
 

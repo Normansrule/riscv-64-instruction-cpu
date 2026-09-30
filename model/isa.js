@@ -116,6 +116,7 @@ export const INSTRUCTIONS = [
   I('ecall',  'SYS', O.SYSTEM, 0b000, null, 'none', 'RV64I', 'System', 'Environment Call', 'trap: mepc = pc, mcause = 11, jump to mtvec (a system call)'),
   I('ebreak', 'SYS', O.SYSTEM, 0b000, null, 'none', 'RV64I', 'System', 'Environment Breakpoint', 'trap: mepc = pc, mcause = 3, jump to mtvec (a breakpoint)'),
   I('mret',   'SYS', O.SYSTEM, 0b000, null, 'none', 'Priv', 'System', 'Machine-mode Return', 'return from a trap: pc = mepc, mstatus.MIE = mstatus.MPIE'),
+  I('wfi',    'SYS', O.SYSTEM, 0b000, null, 'none', 'Priv', 'System', 'Wait For Interrupt', 'a hint that nothing is left to do until an interrupt: Sixfold simply continues (a nop), so it sits in a loop'),
   // ---------------- Zicsr: control and status registers ---------------------
   I('csrrw',  'CSR',   O.SYSTEM, 0b001, null, 'csr',  'Zicsr', 'CSR', 'CSR Read and Write', 't = CSR[csr]; CSR[csr] = rs1; rd = t'),
   I('csrrs',  'CSR',   O.SYSTEM, 0b010, null, 'csr',  'Zicsr', 'CSR', 'CSR Read and Set bits', 't = CSR[csr]; if (rs1 != x0) CSR[csr] = t | rs1; rd = t'),
@@ -187,7 +188,8 @@ export const BY_NAME = Object.fromEntries(INSTRUCTIONS.map(i => [i.name, i]));
 // CSR names understood by the assembler (addresses match src/const_pkg.sv)
 export const CSR_NAMES = { tohost: 0x51E, status: 0x50A, hartid: 0x50B, cycle: 0xC00, instret: 0xC02, mhartid: 0xF14,
   mstatus: 0x300, mtvec: 0x305, mscratch: 0x340, mepc: 0x341, mcause: 0x342,
-  hpmcounter3: 0xC03, hpmcounter4: 0xC04, hpmcounter5: 0xC05, hpmcounter6: 0xC06, hpmcounter7: 0xC07, hpmcounter8: 0xC08 };
+  mie: 0x304, mip: 0x344,
+  hpmcounter3: 0xC03, hpmcounter4: 0xC04, hpmcounter5: 0xC05, hpmcounter6: 0xC06, hpmcounter7: 0xC07, hpmcounter8: 0xC08, hpmcounter9: 0xC09 };
 export const CSR_BY_ADDRESS = Object.fromEntries(Object.entries(CSR_NAMES).map(([k, v]) => [v, k]));
 
 // ABI register names
@@ -248,7 +250,7 @@ export function encode(name, f) {
     case 'I-unary':
       return u32((d.funct7 << 20) | (rs1 << 15) | (f3 << 12) | (rd << 7) | op);
     case 'SYS':
-      return u32(({ ecall: 0, ebreak: 1, mret: 0x302 }[name] << 20) | op);
+      return u32(({ ecall: 0, ebreak: 1, mret: 0x302, wfi: 0x105 }[name] << 20) | op);
     case 'CSR': case 'CSR-I':
       checkRange(imm, 0, 4095, `${name} CSR address`);
       checkRange(rs1, 0, 31, `${name} ${d.fmt === 'CSR' ? 'rs1' : 'immediate'}`);
@@ -277,7 +279,7 @@ export function decode(word) {
     if (d.fmt === 'SYS') {
       if (rd !== 0 || rs1 !== 0 || f3 !== 0) continue;
       const f12 = bits(w, 31, 20);
-      if ({ ecall: 0, ebreak: 1, mret: 0x302 }[d.name] !== f12) continue;
+      if ({ ecall: 0, ebreak: 1, mret: 0x302, wfi: 0x105 }[d.name] !== f12) continue;
     }
     def = d; break;
   }
