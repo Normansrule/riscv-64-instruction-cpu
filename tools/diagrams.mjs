@@ -11,6 +11,7 @@
 //   docs/img/diagrams/boot_sequence.svg      reset vector -> firmware -> program -> firmware (FPGA)
 //   docs/img/diagrams/fpga_system.svg        the FPGA computer on its board (docs/fpga_results.json)
 //   docs/img/diagrams/interrupt.svg          an interrupt taken in DECODE, cycle by cycle (real model trace)
+//   docs/img/diagrams/multitasking.svg       a preemptive kernel: timeline, task control blocks, one context switch
 //
 // Every number in these figures comes from the RTL parameters (src/*.sv) or from
 // docs/PERFORMANCE.md; the figures are redrawn by `make diagrams`.
@@ -793,6 +794,76 @@ export async function interruptDiagram() {
   return g.done();
 }
 
+// A tiny preemptive kernel: who runs when, the task control blocks, and one context switch (programs/22)
+export async function multitaskingDiagram() {
+  const { assemble } = await import('../model/asm.js');
+  const { Core, CONFIGS } = await import('../model/core.js');
+  const img = assemble(fs.readFileSync(new URL('../programs/22_multitasking.s', import.meta.url), 'utf8'));
+  const sym = img.symbols;
+  const core = new Core(img, CONFIGS.performance);
+  const evs = core.run(500000, true);
+  const owner = pc => pc >= sym.task2 && pc < sym.message ? 2 : pc >= sym.task1 && pc < sym.task2 ? 1 : pc >= sym.task0 && pc < sym.task1 ? 0 : pc >= sym.task_done && pc < sym.task0 ? 3 : 4; // 3 = sleeping, 4 = kernel
+  // who retires an instruction in each cycle (idle cycles inherit the last owner)
+  let last = 4; const who = evs.map(e => (e.stages.WRITEBACK ? (last = owner(e.stages.WRITEBACK.pc)) : last));
+  const segs = []; who.forEach((w, c) => { const t = segs[segs.length - 1]; if (t && t.w === w) t.end = c + 1; else segs.push({ w, start: c, end: c + 1 }); });
+  const kernelCycles = who.filter(w => w === 4).length, switches = evs.filter(e => e.interrupt).length;
+  const W = 1500, H = 860, x0 = 150, x1 = W - 40;
+  const g = canvas(W, H, 'A tiny operating system: three tasks, one CPU, a context switch every 600 cycles',
+    `programs/22_multitasking.s on the cycle-exact model: ${switches} timer interrupts, ${evs.length.toLocaleString('en-US')} cycles, ${(100 * kernelCycles / evs.length).toFixed(1)}% of them in the kernel. make test checks it on the RTL too.`);
+  const { add, text, rect, box, wire } = g;
+  const TC = [C.F1, C.M, C.E, '#B8C2BA', C.flush], TN = ['task 0: primes', 'task 1: squares', 'task 2: prints', 'finished, asleep', 'kernel'];
+  // 1. timeline, in two rows: the first 12,000 cycles, then the whole run
+  const strip = (y, from, to, label) => {
+    text(x0 - 12, y + 22, label, { size: 11.5, anchor: 'end', weight: 700 });
+    const sx = c => x0 + (c - from) / (to - from) * (x1 - x0);
+    for (const t of segs) { if (t.end <= from || t.start >= to) continue; const a = Math.max(t.start, from), b = Math.min(t.end, to);
+      add(`<rect x="${sx(a).toFixed(2)}" y="${y}" width="${Math.max(0.6, sx(b) - sx(a)).toFixed(2)}" height="34" fill="${TC[t.w]}"/>`); }
+    for (let k = 0; k <= 6; k++) { const c = Math.round(from + (to - from) * k / 6); text(sx(c), y + 50, c.toLocaleString('en-US'), { size: 9.5, anchor: 'middle', mono: true, fill: C.faint }); }
+  };
+  text(x0, 94, 'Who is running (the instruction retiring in WRITEBACK), cycle by cycle', { size: 13, weight: 700 });
+  strip(108, 0, 9000, 'cycles 0 - 9,000');
+  strip(178, 0, evs.length, 'the whole run');
+  TN.forEach((n, i) => { add(`<rect x="${x0 + i * 190}" y="244" width="14" height="14" rx="3" fill="${TC[i]}"/>`); text(x0 + i * 190 + 20, 256, n, { size: 11.5, fill: C.sub }); });
+  // 2. task control blocks in a ring
+  const ty = 300;
+  text(40, ty, 'Task control blocks: everything a task needs to continue later', { size: 13, weight: 700 });
+  const tcbs = [['tcb0', 'task 0', C.F1], ['tcb1', 'task 1', C.M], ['tcb2', 'task 2', C.E]];
+  tcbs.forEach(([n, t, col], i) => {
+    const bx = 40 + i * 250, by = ty + 20;
+    rect(bx, by, 200, 250, { stroke: col, sw: 2 });
+    text(bx + 100, by + 20, `${n} (${t})`, { size: 12, weight: 700, anchor: 'middle', fill: col });
+    const rows = [['0', 'x1  ra'], ['8', 'x2  sp (own stack)'], ['16..232', 'x3 .. x30'], ['240', 'x31 t6'], ['248', 'pc (from mepc)'], ['256', 'done flag'], ['264', 'next -> ' + tcbs[(i + 1) % 3][0]]];
+    rows.forEach(([o, f], r) => { rect(bx + 10, by + 34 + r * 29, 180, 25, { fill: r >= 4 ? '#FFF8E1' : '#FFF', stroke: C.line, rx: 3 }); text(bx + 16, by + 51 + r * 29, o, { size: 9.5, mono: true, fill: C.faint }); text(bx + 74, by + 51 + r * 29, f, { size: 10.5, mono: true }); });
+    if (i < 2) wire([[bx + 200, by + 238], [bx + 250, by + 238]], 'sub', { width: 1.6 });
+  });
+  add(`<path d="M${40 + 2 * 250 + 200},${ty + 258} L${40 + 2 * 250 + 220},${ty + 258} L${40 + 2 * 250 + 220},${ty + 285} L20,${ty + 285} L20,${ty + 258} L40,${ty + 258}" fill="none" stroke="${C.sub}" stroke-width="1.6" marker-end="url(#m-sub)"/>`);
+  text(400, ty + 300, 'round robin: the next pointers form a ring; mscratch holds the running task\'s block', { size: 11, anchor: 'middle', fill: C.sub });
+  // 3. one context switch, step by step
+  const sx0 = 800, sy = ty + 20;
+  text(sx0, ty, 'One context switch (trap_handler), in order', { size: 13, weight: 700 });
+  const avg = Math.round(kernelCycles / switches);
+  const steps = [
+    ['timer interrupt', 'mtime >= mtimecmp: the DECODE instruction is replaced, trap to mtvec (4 cycles)', C.flush],
+    ['csrrw t6, mscratch, t6', 'swap: t6 = this task\'s block, the task\'s t6 is parked in mscratch', C.D],
+    ['sd x1 .. x30, then t6, mepc', '32 stores into the block: the task is now frozen in memory', C.D],
+    ['move MTIMECMP forward', 'the next switch in 600 cycles', C.flush],
+    ['pick the next task', 'follow the next pointer, skip tasks that are done', C.sub],
+    ['csrw mscratch; csrw mepc', 'the new task\'s block and where it continues', C.D],
+    ['ld x1 .. x31', '31 loads: the new task\'s registers are back', C.D],
+    ['mret', 'jump to mepc, MIE on again: the other task runs as if never stopped', C.M],
+  ];
+  steps.forEach(([t, d, col], i) => {
+    const y = sy + i * 58;
+    add(`<circle cx="${sx0 + 14}" cy="${y + 18}" r="13" fill="${col}"/>`);
+    text(sx0 + 14, y + 23, String(i + 1), { size: 12, weight: 700, anchor: 'middle', fill: '#FFF' });
+    text(sx0 + 38, y + 16, t, { size: 12, weight: 700, mono: true });
+    text(sx0 + 38, y + 34, d, { size: 11, fill: C.sub });
+  });
+  text(sx0, sy + steps.length * 58 + 16, `About ${avg} cycles per switch on average (${kernelCycles.toLocaleString('en-US')} kernel cycles / ${switches} switches):`, { size: 11.5, weight: 600 });
+  text(sx0, sy + steps.length * 58 + 34, 'the price of sharing the CPU. Real kernels also switch page tables and flush or tag the TLB.', { size: 11.5, fill: C.sub });
+  return g.done();
+}
+
 export const FPGA_RESULTS = JSON.parse(fs.readFileSync(new URL('../docs/fpga_results.json', import.meta.url), 'utf8'));
 export const CLOCK_DATA = JSON.parse(fs.readFileSync(new URL('../docs/clock_roadmap.json', import.meta.url), 'utf8'));
 
@@ -813,7 +884,7 @@ if (isMain) {
   fs.mkdirSync('docs/img/diagrams', { recursive: true });
   const figs = { branch_prediction: branchPrediction(), cache: cache(), memory_hierarchy: hierarchy(), clock_roadmap: clockRoadmap(CLOCK_DATA),
     multiply_divide: multiplyDivideUnit(), operands_and_alu: operandsAndAlu(), performance_counters: performanceCounters(await program19Counters()),
-    cache_interfaces: cacheInterfaces(), memory_map: memoryMap(), boot_sequence: bootSequence(), fpga_system: fpgaSystem(FPGA_RESULTS), interrupt: await interruptDiagram() };
+    cache_interfaces: cacheInterfaces(), memory_map: memoryMap(), boot_sequence: bootSequence(), fpga_system: fpgaSystem(FPGA_RESULTS), interrupt: await interruptDiagram(), multitasking: await multitaskingDiagram() };
   for (const [n, svg] of Object.entries(figs)) { fs.writeFileSync(`docs/img/diagrams/${n}.svg`, svg); console.log(`wrote docs/img/diagrams/${n}.svg`); }
 }
 

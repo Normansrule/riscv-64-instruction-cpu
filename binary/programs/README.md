@@ -27,3 +27,4 @@ Every file in [`programs/`](../../programs) assembled by `model/asm.js` (code st
 * [19_performance_counters.lst](19_performance_counters.lst) · [19_performance_counters.hex](19_performance_counters.hex)
 * [20_leds_and_buttons.lst](20_leds_and_buttons.lst) · [20_leds_and_buttons.hex](20_leds_and_buttons.hex)
 * [21_timer_interrupts.lst](21_timer_interrupts.lst) · [21_timer_interrupts.hex](21_timer_interrupts.hex)
+* [22_multitasking.lst](22_multitasking.lst) · [22_multitasking.hex](22_multitasking.hex)

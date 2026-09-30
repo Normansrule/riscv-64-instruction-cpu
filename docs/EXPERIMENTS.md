@@ -193,3 +193,13 @@ instruction that holds EXECUTE. Then implement `mtvec`'s **vectored** mode (bit 
 cause *n* jumps to `BASE + 4n`) in `src/Riscv64.sv`, `src/Control_Status_Register_File.sv` and
 `model/core.js` together, so the handler no longer has to read `mcause` to tell the timer from the UART.
 `tests/interrupt_stress.s` and `make test` check that you kept every interrupt precise.
+
+## Lab 22: extend the tiny operating system
+
+`programs/22_multitasking.s` switches between three tasks on every timer tick. Give it a system call:
+`ecall` with `a7 = 1` means "yield", so a task that has nothing to do (task 2's delay loop) gives up the
+rest of its turn. The handler must tell an `ecall` (mcause 11: `mepc` points at the `ecall`, so add 4)
+from a timer interrupt (mcause bit 63 set: `mepc` points at the replaced instruction, so leave it). Then
+measure it: how many cycles does the whole program take now, and how much of that is kernel time
+(`hpmcounter9` counts the interrupts, `rdcycle` at kernel entry and exit counts the rest)? Try a shorter
+quantum too: where does the kernel's share become unreasonable?

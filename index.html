@@ -264,7 +264,7 @@
           <button type="button" id="fc-memtest">m memory test</button>
           <button type="button" id="fc-reset">Reset button</button>
         </div>
-        <p class="small">Try <code>20_leds_and_buttons</code> and hold a button to stop the light, or <code>interrupt_echo</code>, which does all its work in interrupt handlers: type into the terminal. The cycle count the firmware reports is the one in the table under Numbers. <a data-repo-doc="docs/FPGA.md" href="docs/FPGA.md">How the FPGA version works</a>, and the board sheets for the <a data-repo-doc="docs/boards/ULX3S.md" href="docs/boards/ULX3S.md">ULX3S</a> and the <a data-repo-doc="docs/boards/ARTY_A7.md" href="docs/boards/ARTY_A7.md">Arty A7-100T</a>.</p>
+        <p class="small">Try <code>20_leds_and_buttons</code> and hold a button to stop the light, or <code>interrupt_echo</code>, which does all its work in interrupt handlers: type into the terminal. <code>22_multitasking</code> runs a tiny operating system with three tasks. The cycle count the firmware reports is the one in the table under Numbers. <a data-repo-doc="docs/FPGA.md" href="docs/FPGA.md">How the FPGA version works</a>, and the board sheets for the <a data-repo-doc="docs/boards/ULX3S.md" href="docs/boards/ULX3S.md">ULX3S</a> and the <a data-repo-doc="docs/boards/ARTY_A7.md" href="docs/boards/ARTY_A7.md">Arty A7-100T</a>.</p>
       </div>
     </div>
     <div class="fc-figs">
@@ -272,6 +272,7 @@
       <figure class="fig"><a href="docs/img/diagrams/memory_map.svg" target="_blank" rel="noopener"><img src="docs/img/diagrams/memory_map.svg" alt="Memory map: firmware, stack, programs, device registers, control and status registers" loading="lazy"></a><figcaption>How the CPU drives the rest of the computer: memory-mapped device registers.</figcaption></figure>
       <figure class="fig"><a href="docs/img/diagrams/cache_interfaces.svg" target="_blank" rel="noopener"><img src="docs/img/diagrams/cache_interfaces.svg" alt="Every port between the pipeline, the caches, main memory and the devices" loading="lazy"></a><figcaption>How the caches connect the pipeline to memory and to the devices.</figcaption></figure>
       <figure class="fig"><a href="docs/img/diagrams/interrupt.svg" target="_blank" rel="noopener"><img src="docs/img/diagrams/interrupt.svg" alt="A timer interrupt cycle by cycle: the DECODE instruction is replaced, the trap flushes, the handler runs, mret returns" loading="lazy"></a><figcaption>How a device interrupts the program, cycle by cycle, precisely.</figcaption></figure>
+      <figure class="fig"><a href="docs/img/diagrams/multitasking.svg" target="_blank" rel="noopener"><img src="docs/img/diagrams/multitasking.svg" alt="A tiny preemptive kernel: which task runs over time, the task control blocks, and the steps of a context switch" loading="lazy"></a><figcaption>A tiny operating system: three tasks sharing the CPU through timer interrupts.</figcaption></figure>
     </div>
   </div>
 </section>

@@ -21,12 +21,13 @@ firmware, a serial console, LEDs and buttons ([FPGA.md](docs/FPGA.md)).
 | **Predictor arena** | the real branch stream of each program replayed through a per-branch table, gshare, the tournament, a perceptron and TAGE (the families in AMD Zen and other modern cores): [MODERN_CPUS.md](docs/MODERN_CPUS.md) |
 | **Traps** | `ecall`, `ebreak`, `mret` with `mtvec`, `mepc`, `mcause`, `mstatus`, `mscratch`: enough to run a tiny kernel ([`15_system_calls.s`](programs/15_system_calls.s)); timer and external interrupts on top |
 | **Performance counters** | `hpmcounter3..9` count the seven bubble kinds of the cycle equation (load stalls, flushes, redirects, multiply/divide, instruction- and data-cache misses, interrupts): a program can measure its own CPI stack ([`19_performance_counters.s`](programs/19_performance_counters.s)) |
+| **A tiny OS** | a preemptive round-robin kernel in ~200 lines of assembly: three tasks, timer-driven context switches, task control blocks ([`22_multitasking.s`](programs/22_multitasking.s)) |
 | **Interrupts** | precise machine timer and external interrupts (`mie`, `mip`, `wfi`, a memory-mapped MTIME/MTIMECMP timer), taken by replacing the instruction in DECODE: 4 cycles each, and the interrupted program cannot tell ([`21_timer_interrupts.s`](programs/21_timer_interrupts.s), a 388-interrupt stress test) |
 | **Multiply / divide** | iterative: a 64 x 16-bit Wallace-tree step with a carry-save accumulator (multiply in 8 cycles), 1 quotient bit per cycle after a leading-zero-counter skip (divide in 5 + significant bits) |
 | **Clock (logic only)** | about **244 MHz** on SkyWater 130 nm and **1.95 GHz** on the ASAP7 7 nm research kit, with the full M and B extensions and interrupts: [PERFORMANCE.md](docs/PERFORMANCE.md) |
 | **FPGA** | a complete computer around the core: 64 KiB block-RAM main memory, UART with queues, LEDs, buttons, memory-mapped device registers, boot firmware that loads programs over USB and reports PASS and cycles. Builds for the **ULX3S** (Lattice ECP5-85F, open-source tools: 44% of the chip, 25 MHz, placed and routed here) and the **Arty A7-100T** (Vivado): [FPGA.md](docs/FPGA.md) |
 | **Two builds** | the performance edition (default) and a simple baseline pipeline (`-DBASELINE`), both in the same RTL behind parameters |
-| **Verified** | 22 programs, a 1,630-case self-checking test (expected values from an independent Python model) and a 388-interrupt stress test, predictor on and off, **both builds**: the RTL matches a software twin on **every clock cycle** (96 runs). The FPGA system, booted and fed over its simulated UART, reports the same cycle counts (`make fpga-sim`) |
+| **Verified** | 23 programs, a 1,630-case self-checking test (expected values from an independent Python model) and a 388-interrupt stress test, predictor on and off, **both builds**: the RTL matches a software twin on **every clock cycle** (100 runs). The FPGA system, booted and fed over its simulated UART, reports the same cycle counts (`make fpga-sim`) |
 | **Silicon** | the original design's real sky130 layout, timing and area, plus sky130 synthesis of this RTL |
 | **Runs on** | Icarus Verilog, Verilator, Yosys, nextpnr, Vivado, an FPGA board, any web browser |
 
@@ -147,6 +148,17 @@ older instruction has finished, and no younger one has done anything. It costs 4
 [`tests/interrupt_stress.s`](tests/interrupt_stress.s) fires 388 interrupts at every kind of instruction
 and checks that the result is unchanged. The chart is a real trace from the model, and the RTL matches it
 on every cycle.
+
+### 12. A tiny operating system: preemptive multitasking
+
+![Multitasking](docs/img/diagrams/multitasking.svg)
+
+[`programs/22_multitasking.s`](programs/22_multitasking.s) is a kernel of about 200 lines. Three tasks
+share the CPU: one counts primes, one adds squares, and one prints. None of them knows about the others.
+Every 600 cycles the timer interrupts the running task, and the kernel does a **context switch**: it saves
+the task's 31 registers and PC into that task's control block, loads another task's, and returns into it
+with `mret`. That is the core mechanism of every multitasking operating system. Here it costs about 108
+cycles per switch.
 
 ## Open the live site
 
@@ -278,6 +290,7 @@ performance edition.
 | [`19_performance_counters`](programs/19_performance_counters.s) | the cycle equation, counted by the hardware itself | 231 | 1.96 | 258 | 2.19 |
 | [`20_leds_and_buttons`](programs/20_leds_and_buttons.s) | talking to devices (memory-mapped I/O) and Zbs | 1196 | 1.18 | 1449 | 1.43 |
 | [`21_timer_interrupts`](programs/21_timer_interrupts.s) | a timer interrupt, taken precisely in the middle of a loop | 10056 | 1.03 | 19255 | 2.02 |
+| [`22_multitasking`](programs/22_multitasking.s) | a tiny preemptive operating-system kernel, three tasks | 82959 | 2.43 | 90159 | 2.60 |
 
 ## Down to silicon
 
@@ -311,13 +324,13 @@ the pipeline registers): [SILICON.md](docs/SILICON.md).
 
 ## Experiments
 
-Twenty-one labs in [EXPERIMENTS.md](docs/EXPERIMENTS.md): history length, counter reset values, a
+Twenty-two labs in [EXPERIMENTS.md](docs/EXPERIMENTS.md): history length, counter reset values, a
 multi-cycle divider, removing false load stalls, a return address stack, a branch target buffer, a
 faster adder for the critical path, forwarding into EXECUTE, cache experiments, bigger and smarter
 predictors, chasing the 7 nm critical path, Booth recoding for the multiplier, your own CPI stack from
 the hardware counters, rewriting a program with Zba and Zbb, a bitmap allocator with Zbs, a new device
 register for the FPGA computer, a new command for its boot firmware, a pipelined data cache for a
-faster FPGA clock, and interrupt latency with vectored interrupts.
+faster FPGA clock, interrupt latency with vectored interrupts, and a yield system call for the tiny OS.
 
 ## Repository map
 

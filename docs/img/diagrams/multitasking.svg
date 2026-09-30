@@ -1,0 +1,452 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 860" width="1500" height="860">
+<defs><marker id="m-data" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2B3A31"/></marker><marker id="m-pred" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#00796B"/></marker><marker id="m-flush" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C2185B"/></marker><marker id="m-F1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2E86C1"/></marker><marker id="m-F2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#17A2B8"/></marker><marker id="m-D" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6A5ACD"/></marker><marker id="m-E" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#E08E0B"/></marker><marker id="m-M" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#27AE60"/></marker><marker id="m-tag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C9982E"/></marker><marker id="m-idx" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#17A2B8"/></marker><marker id="m-off" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6A5ACD"/></marker><marker id="m-hit" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1E8449"/></marker><marker id="m-miss" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C0392B"/></marker><marker id="m-sub" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4A5A50"/></marker></defs>
+<rect width="100%" height="100%" rx="12" fill="#FBFCF8" stroke="#D5DBD0"/>
+<text x="24" y="34" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="20" font-weight="700" fill="#17251D" text-anchor="start">A tiny operating system: three tasks, one CPU, a context switch every 600 cycles</text>
+<text x="24" y="56" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="400" fill="#4A5A50" text-anchor="start">programs/22_multitasking.s on the cycle-exact model: 138 timer interrupts, 82,959 cycles, 17.9% of them in the kernel. make test checks it on the RTL too.</text>
+<text x="150" y="94" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#17251D" text-anchor="start">Who is running (the instruction retiring in WRITEBACK), cycle by cycle</text>
+<text x="138" y="130" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="700" fill="#17251D" text-anchor="end">cycles 0 - 9,000</text>
+<rect x="150.00" y="108" width="36.97" height="34" fill="#C2185B"/>
+<rect x="186.97" y="108" width="64.48" height="34" fill="#2E86C1"/>
+<rect x="251.45" y="108" width="34.35" height="34" fill="#C2185B"/>
+<rect x="285.80" y="108" width="53.56" height="34" fill="#27AE60"/>
+<rect x="339.37" y="108" width="23.73" height="34" fill="#C2185B"/>
+<rect x="363.09" y="108" width="62.73" height="34" fill="#E08E0B"/>
+<rect x="425.83" y="108" width="14.41" height="34" fill="#C2185B"/>
+<rect x="440.24" y="108" width="72.92" height="34" fill="#2E86C1"/>
+<rect x="513.16" y="108" width="14.26" height="34" fill="#C2185B"/>
+<rect x="527.43" y="108" width="73.21" height="34" fill="#27AE60"/>
+<rect x="600.64" y="108" width="14.26" height="34" fill="#C2185B"/>
+<rect x="614.90" y="108" width="72.92" height="34" fill="#E08E0B"/>
+<rect x="687.83" y="108" width="15.72" height="34" fill="#C2185B"/>
+<rect x="703.55" y="108" width="71.61" height="34" fill="#2E86C1"/>
+<rect x="775.16" y="108" width="14.26" height="34" fill="#C2185B"/>
+<rect x="789.43" y="108" width="73.07" height="34" fill="#27AE60"/>
+<rect x="862.49" y="108" width="14.26" height="34" fill="#C2185B"/>
+<rect x="876.76" y="108" width="73.07" height="34" fill="#E08E0B"/>
+<rect x="949.83" y="108" width="14.41" height="34" fill="#C2185B"/>
+<rect x="964.24" y="108" width="74.23" height="34" fill="#2E86C1"/>
+<rect x="1038.47" y="108" width="14.26" height="34" fill="#C2185B"/>
+<rect x="1052.74" y="108" width="72.49" height="34" fill="#27AE60"/>
+<rect x="1125.22" y="108" width="14.26" height="34" fill="#C2185B"/>
+<rect x="1139.49" y="108" width="72.34" height="34" fill="#E08E0B"/>
+<rect x="1211.83" y="108" width="14.41" height="34" fill="#C2185B"/>
+<rect x="1226.24" y="108" width="72.92" height="34" fill="#2E86C1"/>
+<rect x="1299.16" y="108" width="14.26" height="34" fill="#C2185B"/>
+<rect x="1313.43" y="108" width="73.21" height="34" fill="#27AE60"/>
+<rect x="1386.64" y="108" width="14.26" height="34" fill="#C2185B"/>
+<rect x="1400.90" y="108" width="59.10" height="34" fill="#E08E0B"/>
+<text x="150" y="158" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">0</text>
+<text x="368.3333333333333" y="158" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">1,500</text>
+<text x="586.6666666666666" y="158" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">3,000</text>
+<text x="805" y="158" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">4,500</text>
+<text x="1023.3333333333333" y="158" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">6,000</text>
+<text x="1241.6666666666667" y="158" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">7,500</text>
+<text x="1460" y="158" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">9,000</text>
+<text x="138" y="200" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="700" fill="#17251D" text-anchor="end">the whole run</text>
+<rect x="150.00" y="178" width="4.01" height="34" fill="#C2185B"/>
+<rect x="154.01" y="178" width="7.00" height="34" fill="#2E86C1"/>
+<rect x="161.01" y="178" width="3.73" height="34" fill="#C2185B"/>
+<rect x="164.73" y="178" width="5.81" height="34" fill="#27AE60"/>
+<rect x="170.54" y="178" width="2.57" height="34" fill="#C2185B"/>
+<rect x="173.12" y="178" width="6.81" height="34" fill="#E08E0B"/>
+<rect x="179.92" y="178" width="1.56" height="34" fill="#C2185B"/>
+<rect x="181.49" y="178" width="7.91" height="34" fill="#2E86C1"/>
+<rect x="189.40" y="178" width="1.55" height="34" fill="#C2185B"/>
+<rect x="190.95" y="178" width="7.94" height="34" fill="#27AE60"/>
+<rect x="198.89" y="178" width="1.55" height="34" fill="#C2185B"/>
+<rect x="200.44" y="178" width="7.91" height="34" fill="#E08E0B"/>
+<rect x="208.35" y="178" width="1.71" height="34" fill="#C2185B"/>
+<rect x="210.05" y="178" width="7.77" height="34" fill="#2E86C1"/>
+<rect x="217.82" y="178" width="1.55" height="34" fill="#C2185B"/>
+<rect x="219.37" y="178" width="7.93" height="34" fill="#27AE60"/>
+<rect x="227.30" y="178" width="1.55" height="34" fill="#C2185B"/>
+<rect x="228.84" y="178" width="7.93" height="34" fill="#E08E0B"/>
+<rect x="236.77" y="178" width="1.56" height="34" fill="#C2185B"/>
+<rect x="238.33" y="178" width="8.05" height="34" fill="#2E86C1"/>
+<rect x="246.39" y="178" width="1.55" height="34" fill="#C2185B"/>
+<rect x="247.94" y="178" width="7.86" height="34" fill="#27AE60"/>
+<rect x="255.80" y="178" width="1.55" height="34" fill="#C2185B"/>
+<rect x="257.35" y="178" width="7.85" height="34" fill="#E08E0B"/>
+<rect x="265.19" y="178" width="1.56" height="34" fill="#C2185B"/>
+<rect x="266.76" y="178" width="7.91" height="34" fill="#2E86C1"/>
+<rect x="274.67" y="178" width="1.55" height="34" fill="#C2185B"/>
+<rect x="276.22" y="178" width="7.94" height="34" fill="#27AE60"/>
+<rect x="284.16" y="178" width="1.55" height="34" fill="#C2185B"/>
+<rect x="285.71" y="178" width="7.93" height="34" fill="#E08E0B"/>
+<rect x="293.63" y="178" width="1.72" height="34" fill="#C2185B"/>
+<rect x="295.36" y="178" width="7.74" height="34" fill="#2E86C1"/>
+<rect x="303.09" y="178" width="1.55" height="34" fill="#C2185B"/>
+<rect x="304.64" y="178" width="7.93" height="34" fill="#27AE60"/>
+<rect x="312.57" y="178" width="1.55" height="34" fill="#C2185B"/>
+<rect x="314.12" y="178" width="7.93" height="34" fill="#E08E0B"/>
+<rect x="322.04" y="178" width="1.56" height="34" fill="#C2185B"/>
+<rect x="323.61" y="178" width="8.02" height="34" fill="#2E86C1"/>
+<rect x="331.63" y="178" width="1.55" height="34" fill="#C2185B"/>
+<rect x="333.17" y="178" width="7.86" height="34" fill="#27AE60"/>
+<rect x="341.04" y="178" width="1.55" height="34" fill="#C2185B"/>
+<rect x="342.59" y="178" width="2.95" height="34" fill="#E08E0B"/>
+<rect x="345.54" y="178" width="4.93" height="34" fill="#B8C2BA"/>
+<rect x="350.47" y="178" width="1.56" height="34" fill="#C2185B"/>
+<rect x="352.03" y="178" width="7.93" height="34" fill="#2E86C1"/>
+<rect x="359.96" y="178" width="1.55" height="34" fill="#C2185B"/>
+<rect x="361.50" y="178" width="7.91" height="34" fill="#27AE60"/>
+<rect x="369.42" y="178" width="1.69" height="34" fill="#C2185B"/>
+<rect x="371.10" y="178" width="7.91" height="34" fill="#2E86C1"/>
+<rect x="379.02" y="178" width="1.55" height="34" fill="#C2185B"/>
+<rect x="380.56" y="178" width="7.91" height="34" fill="#27AE60"/>
+<rect x="388.47" y="178" width="1.67" height="34" fill="#C2185B"/>
+<rect x="390.15" y="178" width="7.77" height="34" fill="#2E86C1"/>
+<rect x="397.92" y="178" width="1.55" height="34" fill="#C2185B"/>
+<rect x="399.47" y="178" width="7.91" height="34" fill="#27AE60"/>
+<rect x="407.38" y="178" width="1.67" height="34" fill="#C2185B"/>
+<rect x="409.05" y="178" width="7.74" height="34" fill="#2E86C1"/>
+<rect x="416.79" y="178" width="1.55" height="34" fill="#C2185B"/>
+<rect x="418.34" y="178" width="7.94" height="34" fill="#27AE60"/>
+<rect x="426.28" y="178" width="1.67" height="34" fill="#C2185B"/>
+<rect x="427.95" y="178" width="7.86" height="34" fill="#2E86C1"/>
+<rect x="435.82" y="178" width="1.55" height="34" fill="#C2185B"/>
+<rect x="437.36" y="178" width="7.88" height="34" fill="#27AE60"/>
+<rect x="445.24" y="178" width="1.67" height="34" fill="#C2185B"/>
+<rect x="446.92" y="178" width="7.85" height="34" fill="#2E86C1"/>
+<rect x="454.77" y="178" width="1.55" height="34" fill="#C2185B"/>
+<rect x="456.31" y="178" width="7.91" height="34" fill="#27AE60"/>
+<rect x="464.22" y="178" width="1.67" height="34" fill="#C2185B"/>
+<rect x="465.90" y="178" width="7.74" height="34" fill="#2E86C1"/>
+<rect x="473.64" y="178" width="1.55" height="34" fill="#C2185B"/>
+<rect x="475.18" y="178" width="1.78" height="34" fill="#27AE60"/>
+<rect x="476.97" y="178" width="6.14" height="34" fill="#B8C2BA"/>
+<rect x="483.11" y="178" width="1.67" height="34" fill="#C2185B"/>
+<rect x="484.78" y="178" width="7.97" height="34" fill="#2E86C1"/>
+<rect x="492.76" y="178" width="1.71" height="34" fill="#C2185B"/>
+<rect x="494.46" y="178" width="7.60" height="34" fill="#2E86C1"/>
+<rect x="502.06" y="178" width="1.75" height="34" fill="#C2185B"/>
+<rect x="503.81" y="178" width="7.90" height="34" fill="#2E86C1"/>
+<rect x="511.71" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="513.37" y="178" width="7.78" height="34" fill="#2E86C1"/>
+<rect x="521.15" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="522.81" y="178" width="7.75" height="34" fill="#2E86C1"/>
+<rect x="530.56" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="532.22" y="178" width="7.75" height="34" fill="#2E86C1"/>
+<rect x="539.97" y="178" width="1.71" height="34" fill="#C2185B"/>
+<rect x="541.68" y="178" width="7.88" height="34" fill="#2E86C1"/>
+<rect x="549.56" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="551.22" y="178" width="7.69" height="34" fill="#2E86C1"/>
+<rect x="558.91" y="178" width="1.77" height="34" fill="#C2185B"/>
+<rect x="560.67" y="178" width="7.80" height="34" fill="#2E86C1"/>
+<rect x="568.48" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="570.13" y="178" width="7.74" height="34" fill="#2E86C1"/>
+<rect x="577.87" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="579.53" y="178" width="7.80" height="34" fill="#2E86C1"/>
+<rect x="587.33" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="588.99" y="178" width="8.01" height="34" fill="#2E86C1"/>
+<rect x="596.99" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="598.65" y="178" width="7.67" height="34" fill="#2E86C1"/>
+<rect x="606.33" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="607.98" y="178" width="7.77" height="34" fill="#2E86C1"/>
+<rect x="615.75" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="617.41" y="178" width="7.82" height="34" fill="#2E86C1"/>
+<rect x="625.23" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="626.89" y="178" width="7.82" height="34" fill="#2E86C1"/>
+<rect x="634.70" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="636.36" y="178" width="7.86" height="34" fill="#2E86C1"/>
+<rect x="644.22" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="645.88" y="178" width="7.91" height="34" fill="#2E86C1"/>
+<rect x="653.79" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="655.45" y="178" width="7.67" height="34" fill="#2E86C1"/>
+<rect x="663.13" y="178" width="1.77" height="34" fill="#C2185B"/>
+<rect x="664.89" y="178" width="7.71" height="34" fill="#2E86C1"/>
+<rect x="672.60" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="674.26" y="178" width="7.93" height="34" fill="#2E86C1"/>
+<rect x="682.19" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="683.84" y="178" width="7.77" height="34" fill="#2E86C1"/>
+<rect x="691.61" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="693.27" y="178" width="7.75" height="34" fill="#2E86C1"/>
+<rect x="701.02" y="178" width="1.85" height="34" fill="#C2185B"/>
+<rect x="702.87" y="178" width="7.64" height="34" fill="#2E86C1"/>
+<rect x="710.51" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="712.17" y="178" width="7.86" height="34" fill="#2E86C1"/>
+<rect x="720.04" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="721.69" y="178" width="7.75" height="34" fill="#2E86C1"/>
+<rect x="729.45" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="731.11" y="178" width="8.01" height="34" fill="#2E86C1"/>
+<rect x="739.11" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="740.77" y="178" width="7.78" height="34" fill="#2E86C1"/>
+<rect x="748.56" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="750.21" y="178" width="7.69" height="34" fill="#2E86C1"/>
+<rect x="757.90" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="759.56" y="178" width="7.93" height="34" fill="#2E86C1"/>
+<rect x="767.49" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="769.15" y="178" width="7.78" height="34" fill="#2E86C1"/>
+<rect x="776.93" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="778.59" y="178" width="7.74" height="34" fill="#2E86C1"/>
+<rect x="786.33" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="787.99" y="178" width="7.83" height="34" fill="#2E86C1"/>
+<rect x="795.82" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="797.48" y="178" width="7.94" height="34" fill="#2E86C1"/>
+<rect x="805.42" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="807.08" y="178" width="7.80" height="34" fill="#2E86C1"/>
+<rect x="814.88" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="816.54" y="178" width="7.72" height="34" fill="#2E86C1"/>
+<rect x="824.26" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="825.92" y="178" width="7.83" height="34" fill="#2E86C1"/>
+<rect x="833.75" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="835.41" y="178" width="7.85" height="34" fill="#2E86C1"/>
+<rect x="843.25" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="844.91" y="178" width="7.74" height="34" fill="#2E86C1"/>
+<rect x="852.65" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="854.31" y="178" width="7.80" height="34" fill="#2E86C1"/>
+<rect x="862.11" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="863.77" y="178" width="7.83" height="34" fill="#2E86C1"/>
+<rect x="871.60" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="873.26" y="178" width="7.93" height="34" fill="#2E86C1"/>
+<rect x="881.18" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="882.84" y="178" width="7.83" height="34" fill="#2E86C1"/>
+<rect x="890.67" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="892.33" y="178" width="7.82" height="34" fill="#2E86C1"/>
+<rect x="900.15" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="901.81" y="178" width="7.66" height="34" fill="#2E86C1"/>
+<rect x="909.46" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="911.12" y="178" width="7.86" height="34" fill="#2E86C1"/>
+<rect x="918.99" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="920.64" y="178" width="7.83" height="34" fill="#2E86C1"/>
+<rect x="928.48" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="930.14" y="178" width="7.90" height="34" fill="#2E86C1"/>
+<rect x="938.03" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="939.69" y="178" width="7.69" height="34" fill="#2E86C1"/>
+<rect x="947.38" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="949.04" y="178" width="7.88" height="34" fill="#2E86C1"/>
+<rect x="956.92" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="958.57" y="178" width="7.85" height="34" fill="#2E86C1"/>
+<rect x="966.42" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="968.08" y="178" width="7.71" height="34" fill="#2E86C1"/>
+<rect x="975.79" y="178" width="1.86" height="34" fill="#C2185B"/>
+<rect x="977.65" y="178" width="7.69" height="34" fill="#2E86C1"/>
+<rect x="985.34" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="987.00" y="178" width="7.85" height="34" fill="#2E86C1"/>
+<rect x="994.85" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="996.50" y="178" width="7.71" height="34" fill="#2E86C1"/>
+<rect x="1004.21" y="178" width="1.77" height="34" fill="#C2185B"/>
+<rect x="1005.98" y="178" width="7.78" height="34" fill="#2E86C1"/>
+<rect x="1013.76" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1015.42" y="178" width="7.80" height="34" fill="#2E86C1"/>
+<rect x="1023.22" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1024.88" y="178" width="7.75" height="34" fill="#2E86C1"/>
+<rect x="1032.63" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1034.29" y="178" width="7.94" height="34" fill="#2E86C1"/>
+<rect x="1042.24" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1043.89" y="178" width="7.69" height="34" fill="#2E86C1"/>
+<rect x="1051.58" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1053.24" y="178" width="7.82" height="34" fill="#2E86C1"/>
+<rect x="1061.06" y="178" width="1.77" height="34" fill="#C2185B"/>
+<rect x="1062.83" y="178" width="7.82" height="34" fill="#2E86C1"/>
+<rect x="1070.64" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1072.30" y="178" width="7.91" height="34" fill="#2E86C1"/>
+<rect x="1080.21" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1081.87" y="178" width="7.61" height="34" fill="#2E86C1"/>
+<rect x="1089.48" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1091.14" y="178" width="7.91" height="34" fill="#2E86C1"/>
+<rect x="1099.05" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1100.71" y="178" width="7.78" height="34" fill="#2E86C1"/>
+<rect x="1108.49" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1110.15" y="178" width="7.75" height="34" fill="#2E86C1"/>
+<rect x="1117.91" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1119.56" y="178" width="7.82" height="34" fill="#2E86C1"/>
+<rect x="1127.38" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1129.04" y="178" width="7.82" height="34" fill="#2E86C1"/>
+<rect x="1136.85" y="178" width="1.86" height="34" fill="#C2185B"/>
+<rect x="1138.72" y="178" width="7.63" height="34" fill="#2E86C1"/>
+<rect x="1146.34" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1148.00" y="178" width="7.82" height="34" fill="#2E86C1"/>
+<rect x="1155.82" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1157.48" y="178" width="7.96" height="34" fill="#2E86C1"/>
+<rect x="1165.44" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1167.09" y="178" width="7.80" height="34" fill="#2E86C1"/>
+<rect x="1174.89" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1176.55" y="178" width="7.77" height="34" fill="#2E86C1"/>
+<rect x="1184.32" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1185.98" y="178" width="7.78" height="34" fill="#2E86C1"/>
+<rect x="1193.76" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1195.42" y="178" width="7.90" height="34" fill="#2E86C1"/>
+<rect x="1203.32" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1204.98" y="178" width="7.77" height="34" fill="#2E86C1"/>
+<rect x="1212.75" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1214.40" y="178" width="7.80" height="34" fill="#2E86C1"/>
+<rect x="1222.20" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1223.86" y="178" width="7.78" height="34" fill="#2E86C1"/>
+<rect x="1231.65" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1233.31" y="178" width="7.77" height="34" fill="#2E86C1"/>
+<rect x="1241.07" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1242.73" y="178" width="7.82" height="34" fill="#2E86C1"/>
+<rect x="1250.55" y="178" width="1.86" height="34" fill="#C2185B"/>
+<rect x="1252.41" y="178" width="7.69" height="34" fill="#2E86C1"/>
+<rect x="1260.10" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1261.76" y="178" width="7.85" height="34" fill="#2E86C1"/>
+<rect x="1269.61" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1271.27" y="178" width="7.71" height="34" fill="#2E86C1"/>
+<rect x="1278.97" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1280.63" y="178" width="7.82" height="34" fill="#2E86C1"/>
+<rect x="1288.45" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1290.11" y="178" width="7.82" height="34" fill="#2E86C1"/>
+<rect x="1297.92" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1299.58" y="178" width="7.96" height="34" fill="#2E86C1"/>
+<rect x="1307.54" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1309.20" y="178" width="7.85" height="34" fill="#2E86C1"/>
+<rect x="1317.04" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1318.70" y="178" width="7.66" height="34" fill="#2E86C1"/>
+<rect x="1326.36" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1328.02" y="178" width="7.91" height="34" fill="#2E86C1"/>
+<rect x="1335.93" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1337.59" y="178" width="7.80" height="34" fill="#2E86C1"/>
+<rect x="1345.39" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1347.05" y="178" width="7.91" height="34" fill="#2E86C1"/>
+<rect x="1354.96" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1356.62" y="178" width="7.63" height="34" fill="#2E86C1"/>
+<rect x="1364.24" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1365.90" y="178" width="7.94" height="34" fill="#2E86C1"/>
+<rect x="1373.84" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1375.50" y="178" width="7.74" height="34" fill="#2E86C1"/>
+<rect x="1383.24" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1384.90" y="178" width="7.80" height="34" fill="#2E86C1"/>
+<rect x="1392.70" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1394.36" y="178" width="7.85" height="34" fill="#2E86C1"/>
+<rect x="1402.21" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1403.86" y="178" width="7.82" height="34" fill="#2E86C1"/>
+<rect x="1411.68" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1413.34" y="178" width="7.91" height="34" fill="#2E86C1"/>
+<rect x="1421.25" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1422.91" y="178" width="7.80" height="34" fill="#2E86C1"/>
+<rect x="1430.71" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1432.37" y="178" width="7.77" height="34" fill="#2E86C1"/>
+<rect x="1440.14" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1441.79" y="178" width="7.78" height="34" fill="#2E86C1"/>
+<rect x="1449.58" y="178" width="1.66" height="34" fill="#C2185B"/>
+<rect x="1451.24" y="178" width="2.34" height="34" fill="#2E86C1"/>
+<rect x="1453.57" y="178" width="5.42" height="34" fill="#B8C2BA"/>
+<rect x="1458.99" y="178" width="1.01" height="34" fill="#C2185B"/>
+<text x="150" y="228" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">0</text>
+<text x="368.3412287997686" y="228" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">13,827</text>
+<text x="586.6666666666666" y="228" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">27,653</text>
+<text x="805.0078954664351" y="228" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">41,480</text>
+<text x="1023.3333333333333" y="228" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">55,306</text>
+<text x="1241.674562133102" y="228" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">69,133</text>
+<text x="1460" y="228" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="middle">82,959</text>
+<rect x="150" y="244" width="14" height="14" rx="3" fill="#2E86C1"/>
+<text x="170" y="256" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4A5A50" text-anchor="start">task 0: primes</text>
+<rect x="340" y="244" width="14" height="14" rx="3" fill="#27AE60"/>
+<text x="360" y="256" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4A5A50" text-anchor="start">task 1: squares</text>
+<rect x="530" y="244" width="14" height="14" rx="3" fill="#E08E0B"/>
+<text x="550" y="256" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4A5A50" text-anchor="start">task 2: prints</text>
+<rect x="720" y="244" width="14" height="14" rx="3" fill="#B8C2BA"/>
+<text x="740" y="256" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4A5A50" text-anchor="start">finished, asleep</text>
+<rect x="910" y="244" width="14" height="14" rx="3" fill="#C2185B"/>
+<text x="930" y="256" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4A5A50" text-anchor="start">kernel</text>
+<text x="40" y="300" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#17251D" text-anchor="start">Task control blocks: everything a task needs to continue later</text>
+<rect x="40" y="320" width="200" height="250" rx="6" fill="#FFFFFF" stroke="#2E86C1" stroke-width="2"/>
+<text x="140" y="340" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#2E86C1" text-anchor="middle">tcb0 (task 0)</text>
+<rect x="50" y="354" width="180" height="25" rx="3" fill="#FFF" stroke="#D5DBD0" stroke-width="1.5"/>
+<text x="56" y="371" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="start">0</text>
+<text x="114" y="371" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="start">x1  ra</text>
+<rect x="50" y="383" width="180" height="25" rx="3" fill="#FFF" stroke="#D5DBD0" stroke-width="1.5"/>
+<text x="56" y="400" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="start">8</text>
+<text x="114" y="400" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="start">x2  sp (own stack)</text>
+<rect x="50" y="412" width="180" height="25" rx="3" fill="#FFF" stroke="#D5DBD0" stroke-width="1.5"/>
+<text x="56" y="429" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="start">16..232</text>
+<text x="114" y="429" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="start">x3 .. x30</text>
+<rect x="50" y="441" width="180" height="25" rx="3" fill="#FFF" stroke="#D5DBD0" stroke-width="1.5"/>
+<text x="56" y="458" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="start">240</text>
+<text x="114" y="458" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="start">x31 t6</text>
+<rect x="50" y="470" width="180" height="25" rx="3" fill="#FFF8E1" stroke="#D5DBD0" stroke-width="1.5"/>
+<text x="56" y="487" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="start">248</text>
+<text x="114" y="487" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="start">pc (from mepc)</text>
+<rect x="50" y="499" width="180" height="25" rx="3" fill="#FFF8E1" stroke="#D5DBD0" stroke-width="1.5"/>
+<text x="56" y="516" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="start">256</text>
+<text x="114" y="516" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="start">done flag</text>
+<rect x="50" y="528" width="180" height="25" rx="3" fill="#FFF8E1" stroke="#D5DBD0" stroke-width="1.5"/>
+<text x="56" y="545" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="start">264</text>
+<text x="114" y="545" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="start">next -&gt; tcb1</text>
+<path d="M240,558 L290,558" fill="none" stroke="#4A5A50" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#m-sub)"/>
+<rect x="290" y="320" width="200" height="250" rx="6" fill="#FFFFFF" stroke="#27AE60" stroke-width="2"/>
+<text x="390" y="340" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#27AE60" text-anchor="middle">tcb1 (task 1)</text>
+<rect x="300" y="354" width="180" height="25" rx="3" fill="#FFF" stroke="#D5DBD0" stroke-width="1.5"/>
+<text x="306" y="371" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="start">0</text>
+<text x="364" y="371" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="start">x1  ra</text>
+<rect x="300" y="383" width="180" height="25" rx="3" fill="#FFF" stroke="#D5DBD0" stroke-width="1.5"/>
+<text x="306" y="400" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="start">8</text>
+<text x="364" y="400" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="start">x2  sp (own stack)</text>
+<rect x="300" y="412" width="180" height="25" rx="3" fill="#FFF" stroke="#D5DBD0" stroke-width="1.5"/>
+<text x="306" y="429" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="start">16..232</text>
+<text x="364" y="429" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="start">x3 .. x30</text>
+<rect x="300" y="441" width="180" height="25" rx="3" fill="#FFF" stroke="#D5DBD0" stroke-width="1.5"/>
+<text x="306" y="458" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="start">240</text>
+<text x="364" y="458" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="start">x31 t6</text>
+<rect x="300" y="470" width="180" height="25" rx="3" fill="#FFF8E1" stroke="#D5DBD0" stroke-width="1.5"/>
+<text x="306" y="487" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="start">248</text>
+<text x="364" y="487" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="start">pc (from mepc)</text>
+<rect x="300" y="499" width="180" height="25" rx="3" fill="#FFF8E1" stroke="#D5DBD0" stroke-width="1.5"/>
+<text x="306" y="516" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="start">256</text>
+<text x="364" y="516" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="start">done flag</text>
+<rect x="300" y="528" width="180" height="25" rx="3" fill="#FFF8E1" stroke="#D5DBD0" stroke-width="1.5"/>
+<text x="306" y="545" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="start">264</text>
+<text x="364" y="545" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="start">next -&gt; tcb2</text>
+<path d="M490,558 L540,558" fill="none" stroke="#4A5A50" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#m-sub)"/>
+<rect x="540" y="320" width="200" height="250" rx="6" fill="#FFFFFF" stroke="#E08E0B" stroke-width="2"/>
+<text x="640" y="340" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#E08E0B" text-anchor="middle">tcb2 (task 2)</text>
+<rect x="550" y="354" width="180" height="25" rx="3" fill="#FFF" stroke="#D5DBD0" stroke-width="1.5"/>
+<text x="556" y="371" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="start">0</text>
+<text x="614" y="371" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="start">x1  ra</text>
+<rect x="550" y="383" width="180" height="25" rx="3" fill="#FFF" stroke="#D5DBD0" stroke-width="1.5"/>
+<text x="556" y="400" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="start">8</text>
+<text x="614" y="400" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="start">x2  sp (own stack)</text>
+<rect x="550" y="412" width="180" height="25" rx="3" fill="#FFF" stroke="#D5DBD0" stroke-width="1.5"/>
+<text x="556" y="429" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="start">16..232</text>
+<text x="614" y="429" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="start">x3 .. x30</text>
+<rect x="550" y="441" width="180" height="25" rx="3" fill="#FFF" stroke="#D5DBD0" stroke-width="1.5"/>
+<text x="556" y="458" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="start">240</text>
+<text x="614" y="458" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="start">x31 t6</text>
+<rect x="550" y="470" width="180" height="25" rx="3" fill="#FFF8E1" stroke="#D5DBD0" stroke-width="1.5"/>
+<text x="556" y="487" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="start">248</text>
+<text x="614" y="487" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="start">pc (from mepc)</text>
+<rect x="550" y="499" width="180" height="25" rx="3" fill="#FFF8E1" stroke="#D5DBD0" stroke-width="1.5"/>
+<text x="556" y="516" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="start">256</text>
+<text x="614" y="516" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="start">done flag</text>
+<rect x="550" y="528" width="180" height="25" rx="3" fill="#FFF8E1" stroke="#D5DBD0" stroke-width="1.5"/>
+<text x="556" y="545" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#8A968E" text-anchor="start">264</text>
+<text x="614" y="545" font-family="'IBM Plex Mono',Consolas,monospace" font-size="10.5" font-weight="400" fill="#17251D" text-anchor="start">next -&gt; tcb0</text>
+<path d="M740,558 L760,558 L760,585 L20,585 L20,558 L40,558" fill="none" stroke="#4A5A50" stroke-width="1.6" marker-end="url(#m-sub)"/>
+<text x="400" y="600" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="middle">round robin: the next pointers form a ring; mscratch holds the running task's block</text>
+<text x="800" y="300" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#17251D" text-anchor="start">One context switch (trap_handler), in order</text>
+<circle cx="814" cy="338" r="13" fill="#C2185B"/>
+<text x="814" y="343" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#FFF" text-anchor="middle">1</text>
+<text x="838" y="336" font-family="'IBM Plex Mono',Consolas,monospace" font-size="12" font-weight="700" fill="#17251D" text-anchor="start">timer interrupt</text>
+<text x="838" y="354" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">mtime &gt;= mtimecmp: the DECODE instruction is replaced, trap to mtvec (4 cycles)</text>
+<circle cx="814" cy="396" r="13" fill="#6A5ACD"/>
+<text x="814" y="401" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#FFF" text-anchor="middle">2</text>
+<text x="838" y="394" font-family="'IBM Plex Mono',Consolas,monospace" font-size="12" font-weight="700" fill="#17251D" text-anchor="start">csrrw t6, mscratch, t6</text>
+<text x="838" y="412" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">swap: t6 = this task's block, the task's t6 is parked in mscratch</text>
+<circle cx="814" cy="454" r="13" fill="#6A5ACD"/>
+<text x="814" y="459" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#FFF" text-anchor="middle">3</text>
+<text x="838" y="452" font-family="'IBM Plex Mono',Consolas,monospace" font-size="12" font-weight="700" fill="#17251D" text-anchor="start">sd x1 .. x30, then t6, mepc</text>
+<text x="838" y="470" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">32 stores into the block: the task is now frozen in memory</text>
+<circle cx="814" cy="512" r="13" fill="#C2185B"/>
+<text x="814" y="517" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#FFF" text-anchor="middle">4</text>
+<text x="838" y="510" font-family="'IBM Plex Mono',Consolas,monospace" font-size="12" font-weight="700" fill="#17251D" text-anchor="start">move MTIMECMP forward</text>
+<text x="838" y="528" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">the next switch in 600 cycles</text>
+<circle cx="814" cy="570" r="13" fill="#4A5A50"/>
+<text x="814" y="575" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#FFF" text-anchor="middle">5</text>
+<text x="838" y="568" font-family="'IBM Plex Mono',Consolas,monospace" font-size="12" font-weight="700" fill="#17251D" text-anchor="start">pick the next task</text>
+<text x="838" y="586" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">follow the next pointer, skip tasks that are done</text>
+<circle cx="814" cy="628" r="13" fill="#6A5ACD"/>
+<text x="814" y="633" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#FFF" text-anchor="middle">6</text>
+<text x="838" y="626" font-family="'IBM Plex Mono',Consolas,monospace" font-size="12" font-weight="700" fill="#17251D" text-anchor="start">csrw mscratch; csrw mepc</text>
+<text x="838" y="644" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">the new task's block and where it continues</text>
+<circle cx="814" cy="686" r="13" fill="#6A5ACD"/>
+<text x="814" y="691" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#FFF" text-anchor="middle">7</text>
+<text x="838" y="684" font-family="'IBM Plex Mono',Consolas,monospace" font-size="12" font-weight="700" fill="#17251D" text-anchor="start">ld x1 .. x31</text>
+<text x="838" y="702" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">31 loads: the new task's registers are back</text>
+<circle cx="814" cy="744" r="13" fill="#27AE60"/>
+<text x="814" y="749" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="700" fill="#FFF" text-anchor="middle">8</text>
+<text x="838" y="742" font-family="'IBM Plex Mono',Consolas,monospace" font-size="12" font-weight="700" fill="#17251D" text-anchor="start">mret</text>
+<text x="838" y="760" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#4A5A50" text-anchor="start">jump to mepc, MIE on again: the other task runs as if never stopped</text>
+<text x="800" y="800" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="600" fill="#17251D" text-anchor="start">About 108 cycles per switch on average (14,835 kernel cycles / 138 switches):</text>
+<text x="800" y="818" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="11.5" font-weight="400" fill="#4A5A50" text-anchor="start">the price of sharing the CPU. Real kernels also switch page tables and flush or tag the TLB.</text>
+</svg>

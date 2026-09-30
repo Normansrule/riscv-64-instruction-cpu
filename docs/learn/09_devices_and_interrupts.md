@@ -74,6 +74,26 @@ Out-of-order processors solve the same problem differently. Instructions finish 
 in program order through a reorder buffer, and an interrupt is taken at the retirement point. The
 guarantee is the same.
 
+## Sharing the CPU: a context switch
+
+A timer interrupt is all an operating system needs to share one CPU between several programs.
+[`programs/22_multitasking.s`](../../programs/22_multitasking.s) runs three tasks. Each timer interrupt
+enters the kernel, and the kernel does the following:
+
+1. It **saves** the interrupted task: all 31 registers and `mepc`, into that task's control block.
+   `mscratch` holds the block's address, so the first register can be saved before any register is free.
+2. It **chooses** the next task: round robin, skipping tasks that have finished.
+3. It **restores** that task's registers, sets `mepc` to where that task was interrupted, and runs `mret`.
+
+Each task sees only its own registers, its own stack and its own program counter, as if it had the CPU to
+itself. The price is about 108 cycles per switch, 18% of this program's run.
+
+![Multitasking](../img/diagrams/multitasking.svg)
+
+```bash
+make run PROG=22_multitasking          # task 2's lines appear while tasks 0 and 1 are still computing
+```
+
 ## Booting
 
 When a computer is switched on, its processor starts at a fixed **reset vector**. In a PC that address
