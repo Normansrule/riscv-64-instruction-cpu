@@ -9,6 +9,7 @@
 //   ev.stall       LOAD_STALL                                      -> amber pulse
 //   ev.flush       FLUSH_FETCH1_FETCH2_DECODE                      -> red sweep, dies dissolve
 //   ev.redirect    FETCH2 redirect                                 -> teal arc to FETCH1
+//   ev.trap        ecall, ebreak, mret and interrupts              -> red sweep (a flush) and a caption
 // =============================================================================
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
@@ -128,6 +129,10 @@ export function createHero({ canvas, programs, ui, reducedMotion }) {
   function caption(ev) {
     const t = id => core.instrs[id]?.text || '';
     if (ev.halt) return '<b>Done.</b> The instruction that writes the tohost register reached WRITEBACK: the program passed.';
+    if (ev.interruptTaken) return `<b>Interrupt.</b> The ${ev.interruptTaken.external ? 'serial port' : 'timer'} raised its line. The instruction in DECODE does not go on: an interrupt takes its place, and it will run after the handler returns.`;
+    if (ev.interrupt) return `<b>Trap.</b> The interrupt reaches EXECUTE: the CPU saves where to come back to (mepc) and why (mcause), turns interrupts off and jumps to the handler. Nothing is lost, nothing runs twice.`;
+    if (ev.trap?.kind === 'mret') return `<b>mret.</b> The handler is done: back to the saved address, interrupts on again.`;
+    if (ev.trap) return `<b>${ev.trap.kind}.</b> A trap on purpose: the CPU jumps to the handler at mtvec and remembers where it was.`;
     if (ev.flush) return ev.resolve?.kind === 'jalr'
       ? `<b>Flush.</b> <code>${t(ev.stages.EXECUTE.id)}</code> jumps to an address held in a register, which FETCH could not know. The 3 instructions behind it are thrown away.`
       : `<b>Wrong guess, flush.</b> The branch in EXECUTE went the other way. The 3 younger instructions were on the wrong path and are thrown away.`;

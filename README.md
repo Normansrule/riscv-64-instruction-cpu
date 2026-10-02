@@ -172,8 +172,13 @@ your browser, with no install:
 * **a bit playground**: flip any of the 32 bits and watch the decoder and its control signals change;
 * **a predictor race**: the same program with and without gshare, at any history length;
 * **a chip scope**: pan and zoom the real placed-and-routed layout and peel the metal off with a slider;
+* **the FPGA computer in your browser**: the boot firmware on a serial console, LEDs and buttons, upload and run;
+* **three programs, one CPU**: the tiny operating system of program 22, its tasks taking turns live, with a
+  quantum slider and the task control blocks read from memory;
 * **a live dashboard** of where every cycle goes, for every program;
-* **the lab** ([`web/`](web/index.html)): step forward and back through any program, or your own.
+* **the lab** ([`web/`](web/index.html)): step forward and back through any program, or your own, or run
+  it to the end; see the branch predictor's tables, the trap registers and the timer, and for programs
+  that share the CPU, a timeline of who ran when.
 
 Or start with the [learning path](docs/learn/README.md) (9 short chapters) and the
 [architecture reference](docs/ARCHITECTURE.md).
@@ -196,8 +201,9 @@ make serve                         # then open http://localhost:8000/ (the site)
 ## Watch it run
 
 The [web simulator](web/index.html) runs the same cycle-exact model the RTL is tested against. Step
-forward and back through a program and see every stage, every forwarded operand, the gshare counters
-and history, the binary encoding and control signals of each instruction, and the running CPI.
+forward and back through a program and see every stage, every forwarded operand, the predictor's
+tables (gshare, the per-branch table, the chooser, the BTB and the return address stack), interrupts
+and the trap registers, the binary encoding and control signals of each instruction, and the running CPI.
 
 ![pipeline chart](docs/img/pipeline/13_call_return_zoom.svg)
 
@@ -262,7 +268,7 @@ shows the price: the predictor's area grows about 4x for every 2 extra bits.
 
 ![CPI stack](docs/img/charts/cpi_stack.svg)
 
-The model tags every bubble with its cause, so `cycles = N + 5 + L + 3F + R + K + I + D` holds **exactly** for
+The model tags every bubble with its cause, so `cycles = N + 5 + L + 3F + R + K + I + D + X` holds **exactly** for
 every program and both builds ([MATH.md](docs/MATH.md), checked by `make math`). Numbers below are the
 performance edition.
 
@@ -343,7 +349,7 @@ faster FPGA clock, interrupt latency with vectored interrupts, and a yield syste
 | [`programs/`](programs), [`tests/`](tests) | example programs and the self-check |
 | [`binary/`](binary/README.md) | every instruction and every program in binary |
 | [`docs/`](docs) | [learning path](docs/learn/README.md), [architecture](docs/ARCHITECTURE.md), [performance](docs/PERFORMANCE.md), [modern CPUs](docs/MODERN_CPUS.md), [math](docs/MATH.md), [experiments](docs/EXPERIMENTS.md), [silicon](docs/SILICON.md), [references](docs/REFERENCES.md) |
-| [`index.html`](index.html), [`site/`](site) | the GitHub Pages front page: 3D pipeline, bit playground, predictor race, chip scope, dashboard (vanilla JavaScript modules + vendored three.js, no build step) |
+| [`index.html`](index.html), [`site/`](site) | the GitHub Pages front page: 3D pipeline, bit playground, predictor race, caches, FPGA console, operating system, chip scope, dashboard (vanilla JavaScript modules + vendored three.js, no build step) |
 | [`web/`](web/index.html) | the pipeline lab: step-by-step simulator |
 | [`tools/`](tools) | CLI, test runner, doc/chart/diagram generators, chip and cell renderers |
 | [`docs/silicon/`](docs/silicon) | the 32-bit prototype's placed-and-routed layout (DEF) and timing/power reports |

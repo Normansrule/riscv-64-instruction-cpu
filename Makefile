@@ -32,7 +32,7 @@ test:            ## full regression: both builds, predictor on and off, RTL vs m
 test-model:      ## regression without a Verilog simulator (model only)
 	node tools/test.mjs --no-rtl
 
-math:            ## verify cycles = N + 5 + L + 3F + R + K on every program, both builds
+math:            ## verify cycles = N + 5 + L + 3F + R + K + I + D + X on every program, both builds
 	node tools/verify_math.mjs
 
 run:             ## run PROG on the model:   make run PROG=09_primes_sieve BP=0

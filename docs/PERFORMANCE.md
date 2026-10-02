@@ -50,7 +50,7 @@ Geometric-mean speed-up of the performance edition over the baseline, both on 13
 
 ## Part 1: cycles per instruction
 
-`cycles = N + 5 + L + 3F + R + K + I + D` ([MATH.md](MATH.md)) says exactly where every cycle above
+`cycles = N + 5 + L + 3F + R + K + I + D + X` ([MATH.md](MATH.md)) says exactly where every cycle above
 one per instruction comes from.
 
 | change | term | how | cost |

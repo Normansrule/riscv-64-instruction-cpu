@@ -22,7 +22,8 @@
     <button id="back" title="Step back one cycle (←)">◀ Back</button>
     <button id="step" class="primary" title="Advance one clock cycle (→ or space)">Step ▶</button>
     <button id="run" title="Run / pause (R)">Run</button>
-    <label class="field speed">Speed <input id="speed" type="range" min="1" max="60" value="8"></label>
+    <button id="end" title="Run to the end as fast as possible (E)">To the end ⏭</button>
+    <label class="field speed">Speed <span id="speed-o" class="speed-o"></span><input id="speed" type="range" min="1" max="100" value="20"></label>
     <button id="reset" title="Back to cycle 0">Reset</button>
     <label class="toggle"><input id="bp" type="checkbox" checked> gshare predictor</label>
     <label class="field">History <select id="hist"></select></label>
@@ -34,6 +35,13 @@
     <div class="cyclebar"><span>cycle</span> <strong id="cycle">0</strong><span id="status" class="status"></span></div>
     <div id="stages" class="stages"></div>
     <ol id="narration" class="narration" aria-live="polite"></ol>
+  </section>
+
+  <section class="card whocard" id="whocard" hidden>
+    <h2>Who is running?</h2>
+    <p class="hint">This program shares the CPU between several parts (its <code># REGIONS:</code> line names them). Each row is one part, time runs left to right over the whole run, and every cycle belongs to the last instruction that reached WRITEBACK. The line is now.</p>
+    <canvas id="who" class="who" aria-label="Timeline of which part of the program ran in each cycle"></canvas>
+    <div id="who-legend" class="who-legend"></div>
   </section>
 
   <section class="card chartcard">
@@ -67,24 +75,41 @@
     </section>
 
     <section class="card bpcard">
-      <h2>GSharePredictor</h2>
+      <h2>Branch prediction</h2>
+      <p class="hint">FETCH1 reads four tables every cycle. The tournament chooser picks, per branch, between a per-branch history table (BHT) and gshare; the branch target buffer (BTB) remembers where taken branches went so FETCH1 can jump there at once; FETCH2 takes return addresses from the return address stack (RAS).</p>
       <p class="hint" id="bpinfo"></p>
       <div class="bpstate">
         <div><div class="lbl">GLOBAL_HISTORY_REGISTER (newest on the right)</div><div id="ghr" class="ghr"></div><div class="hint" id="ghrnote"></div></div>
         <div class="legend4"><span class="c0">00 strong NT</span><span class="c1">01 weak NT</span><span class="c2">10 weak T</span><span class="c3">11 strong T</span></div>
       </div>
       <div id="pht" class="pht"></div>
-      <p class="hint mt">No branch target buffer is needed: FETCH2 already has the instruction bits and computes <code>FETCH2_PC_TARGET = PC + imm</code>. The price is the 1-cycle redirect bubble.</p>
+      <div class="bp2">
+        <div><div class="lbl">BHT: 128 two-bit counters, one per branch address</div><div id="bht" class="pht small"></div></div>
+        <div><div class="lbl">Chooser: dark = trust gshare, light = trust the BHT</div><div id="chooser" class="pht small"></div></div>
+      </div>
+      <div class="bp2 mt">
+        <div><div class="lbl">BTB: 16 entries</div><table id="btb" class="btb"></table></div>
+        <div><div class="lbl">RAS: 8 return addresses</div><div id="ras" class="ras"></div>
+          <p class="hint mt">Without a BTB hit, FETCH2 still computes <code>PC + imm</code> from the instruction bits and redirects FETCH1, at the price of one bubble.</p></div>
+      </div>
+    </section>
+
+    <section class="card machine">
+      <h2>Traps and interrupts</h2>
+      <p class="hint">The machine-mode control and status registers (CSRs) and the timer device. Hover a name for what it does.</p>
+      <dl id="csrs" class="statlist csrs"></dl>
+      <h2 class="mt">Last traps</h2>
+      <ol id="traps" class="traps"></ol>
     </section>
 
     <section class="card stats">
       <h2>Performance</h2>
       <dl id="stats" class="statlist"></dl>
-      <p class="hint">cycles = instructions + 5 (pipeline fill) + 1 per load stall + 3 per flush + 1 per surviving FETCH2 redirect. The page checks this identity when the program halts (docs/MATH.md).</p>
+      <p class="hint">cycles = N + 5 + L + 3F + R + K + I + D + X: instructions, 5 to fill the pipeline, 1 per load stall, 3 per flush, 1 per surviving FETCH2 redirect, the multiply/divide busy cycles, the instruction and data cache miss cycles, and 1 per interrupt. The page checks this identity when the program halts (docs/MATH.md).</p>
     </section>
   </div>
 </main>
-<footer>RTL, model and tests: see the repository README. Keyboard: → or space step, ← back, R run/pause.</footer>
+<footer>RTL, model and tests: see the repository README. Keyboard: → or space step, ← back, R run/pause, E run to the end.</footer>
 <script type="module" src="app.js"></script>
 </body>
 </html>

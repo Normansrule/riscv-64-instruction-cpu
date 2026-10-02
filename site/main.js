@@ -99,7 +99,10 @@ $('bit-presets').onclick = e => { const b = e.target.closest('button'); if (b) {
 fromAsm();
 
 // ---------------------------------------------------------------- predictor race
-const CAUSE = { fill: '--fill', loaduse: '--stall', flush: '--flush', redirect: '--F2', muldiv: '--D', imiss: '--F1', dmiss: '--M' };
+const CAUSE = { fill: '--fill', loaduse: '--stall', flush: '--flush', redirect: '--F2', muldiv: '--D', imiss: '--F1', dmiss: '--M', interrupt: '--W' };
+// Clock rates of the two builds (logic-only sky130 estimates, docs/PERFORMANCE.md)
+const CLOCK_BASELINE_MHZ = 7.5, CLOCK_PERFORMANCE_MHZ = 244;
+const CLOCK_RATIO = Math.round(CLOCK_PERFORMANCE_MHZ / CLOCK_BASELINE_MHZ);
 const cssv = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 for (const n of NAMES) $('r-prog').add(new Option(nice(n), n));
 $('r-prog').value = '11_gshare_patterns';
@@ -163,9 +166,9 @@ function raceEnd() {
   const hist = $('r-hist').value;
   const who = race.cmp ? 'The performance edition' : `gshare with ${hist} history bits`;
   $('r-verdict').innerHTML = race.cmp && b >= a
-    ? `Same clock, and here the performance edition needs <b>${(b - a).toLocaleString()}</b> more cycles: this program multiplies or divides, which now takes several short cycles. Its clock is about 27 times faster (7.5 MHz to 207 MHz), so it still finishes far sooner.`
+    ? `Same clock, and here the performance edition needs <b>${(b - a).toLocaleString()}</b> more cycles: this program multiplies or divides, which now takes several short cycles. Its clock is about ${CLOCK_RATIO} times faster (${CLOCK_BASELINE_MHZ} MHz to ${CLOCK_PERFORMANCE_MHZ} MHz), so it still finishes far sooner.`
     : b < a
-    ? `${who} finished in <b>${b.toLocaleString()}</b> cycles, ${(a - b).toLocaleString()} fewer: <b>${(100 * (a - b) / a).toFixed(1)}%</b> fewer cycles${race.cmp ? ', on a clock about 27 times faster' : ''}.`
+    ? `${who} finished in <b>${b.toLocaleString()}</b> cycles, ${(a - b).toLocaleString()} fewer: <b>${(100 * (a - b) / a).toFixed(1)}%</b> fewer cycles${race.cmp ? `, on a clock about ${CLOCK_RATIO} times faster` : ''}.`
     : b === a ? 'A tie: this program has too few branches for guessing to matter.'
     : `Here guessing <b>cost</b> ${(b - a).toLocaleString()} cycles: this program's branches are hard to predict with ${hist} history bits, and every wrong guess costs 3 cycles. Try another history length.`;
 }
@@ -224,7 +227,7 @@ drawGshare({ core: new Core(assemble(PROGRAMS['11_gshare_patterns']), { bp: true
 // ---------------------------------------------------------------- dashboard
 (() => {
   const dash = $('dash');
-  const parts = [['retired', '--F1', 'useful work'], ['fill', '--fill', 'pipeline fill'], ['loaduse', '--stall', 'load stalls'], ['flush', '--flush', 'flushes'], ['redirect', '--F2', 'redirects'], ['muldiv', '--D', 'multiply/divide busy'], ['imiss', '--E', 'instruction cache misses'], ['dmiss', '--W', 'data cache misses']];
+  const parts = [['retired', '--F1', 'useful work'], ['fill', '--fill', 'pipeline fill'], ['loaduse', '--stall', 'load stalls'], ['flush', '--flush', 'flushes'], ['redirect', '--F2', 'redirects'], ['muldiv', '--D', 'multiply/divide busy'], ['imiss', '--E', 'instruction cache misses'], ['dmiss', '--W', 'data cache misses'], ['interrupt', '--ink2', 'interrupts']];
   const tiles = [];
   let i = 0;
   const bar = (s, max) => `<div class="stack" style="width:${(100 * s.cycles / max).toFixed(1)}%">${parts.map(([k, v]) => { const n = k === 'retired' ? s.retired : s.bubbles[k]; return n ? `<i style="width:${(100 * n / s.cycles).toFixed(2)}%;background:var(${v})" title="${n} ${k}"></i>` : ''; }).join('')}</div>`;
@@ -285,6 +288,13 @@ const CMDS = {
     ['make synth', 'map every module onto real SkyWater sky130 cells (sv2v + Yosys)'],
     ['make schematics', 'gate-level schematics of the predictor and branch control'],
     ['python3 tools/render_def.py docs/silicon/prototype_layout.def.gz docs/img/silicon', 'redraw the chip pictures from the layout file'],
+  ],
+  'FPGA board': [
+    ['make fpga-sim', 'the whole FPGA computer in simulation: firmware, upload over the UART, run, report'],
+    ['make fpga-ulx3s PROG=20_leds_and_buttons', 'bitstream for the ULX3S (yosys + nextpnr-ecp5 + ecppack)'],
+    ['openFPGALoader -b ulx3s build/ulx3s/sixfold.bit', 'program the board over USB'],
+    ['python3 tools/fpga_load.py programs/22_multitasking.s --port /dev/ttyUSB0', 'send a program to the firmware and show what it prints'],
+    ['make fpga-arty PROG=05_fibonacci', 'bitstream for the Arty A7-100T (Vivado)'],
   ],
   'Publish on GitHub Pages': [
     ['git remote add origin git@github.com:<you>/sixfold-cpu.git', 'run inside the project folder'],

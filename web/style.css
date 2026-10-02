@@ -64,7 +64,7 @@ main { padding: 1rem 1.5rem 2rem; max-width: 1500px; margin: 0 auto; }
 .empty { border: 1.5px dashed var(--rule); border-radius: 8px; padding: .8rem .5rem; text-align: center; color: var(--sub); font-size: .8rem; }
 .tags { display: flex; flex-wrap: wrap; gap: .25rem; margin-top: .4rem; }
 .tag { font-size: .68rem; font-family: var(--sans); padding: .05rem .4rem; border-radius: 999px; border: 1px solid currentColor; }
-.tag.fwd { color: var(--fwd); } .tag.stall { color: var(--stall); } .tag.pred { color: var(--pred); } .tag.miss { color: var(--redirect); } .tag.ok { color: var(--MEM); }
+.tag.fwd { color: var(--fwd); } .tag.stall { color: var(--stall); } .tag.pred { color: var(--pred); } .tag.miss { color: var(--redirect); } .tag.ok { color: var(--MEMORY); }
 .narration { margin: .7rem 0 0; padding-left: 1.3rem; font-size: .88rem; columns: 2 26rem; column-gap: 2rem; }
 .narration li { break-inside: avoid; margin-bottom: .2rem; }
 .narration b { font-family: var(--mono); font-weight: 600; }
@@ -73,7 +73,7 @@ main { padding: 1rem 1.5rem 2rem; max-width: 1500px; margin: 0 auto; }
 .card { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 1rem; }
 .chartcard { margin-bottom: 1rem; }
 .grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 1rem; }
-@media (max-width: 1000px) { .grid { grid-template-columns: 1fr; } .stages { grid-template-columns: repeat(3, minmax(0, 1fr)); } .stage:nth-child(3)::after { display: none; } .stage { border-bottom: 1px solid var(--rule); } }
+@media (max-width: 1000px) { .grid { grid-template-columns: minmax(0, 1fr); } .stages { grid-template-columns: repeat(3, minmax(0, 1fr)); } .stage:nth-child(3)::after { display: none; } .stage { border-bottom: 1px solid var(--rule); } }
 @media (max-width: 560px) { .stages { grid-template-columns: repeat(2, minmax(0, 1fr)); } main, .top { padding-left: .8rem; padding-right: .8rem; } }
 
 /* chart */
@@ -148,3 +148,37 @@ textarea { width: 100%; min-height: 20rem; font: .82rem/1.45 var(--mono); backgr
 footer { color: var(--sub); font-size: .8rem; padding: 1rem 1.5rem 2rem; border-top: 1px solid var(--rule); }
 
 .home { margin: 0 0 4px; font-size: .88rem; } .home a { color: inherit; opacity: .75; }
+
+/* ---------- run controls ---------- */
+.speed-o { font-family: var(--mono); color: var(--ink); }
+.chip.intr { background-image: repeating-linear-gradient(-45deg, rgba(255,255,255,.18) 0 6px, transparent 6px 12px); }
+.chip small { opacity: .85; }
+
+/* ---------- who is running ---------- */
+.whocard { margin-bottom: 1rem; }
+.who { display: block; width: 100%; height: 85px; cursor: crosshair; }
+.who-legend { display: flex; flex-wrap: wrap; gap: .3rem 1rem; margin-top: .5rem; font: .8rem var(--mono); align-items: center; }
+.who-legend span { display: inline-flex; gap: .35rem; align-items: center; }
+.who-legend span.now { font-weight: 700; }
+.who-legend i { width: .8rem; height: .8rem; border-radius: 2px; display: inline-block; }
+.who-legend .hint { font-family: var(--sans); margin: 0; }
+
+/* ---------- predictor extras ---------- */
+.bp2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; margin-top: .8rem; }
+.bp2 .lbl { font-size: .75rem; color: var(--sub); margin-bottom: .3rem; }
+.pht.small { grid-template-columns: repeat(16, minmax(0, 1fr)); max-width: none; gap: 1px; }
+.btb { border-collapse: collapse; font: .7rem/1.35 var(--mono); width: 100%; }
+.btb th { text-align: left; color: var(--sub); font-weight: 500; }
+.btb td, .btb th { padding: 0 .3rem; }
+.btb tr.rd td { background: var(--tint); outline: 1px solid var(--FETCH1); }
+.ras { display: flex; flex-direction: column-reverse; gap: 2px; font: .72rem var(--mono); }
+.ras span { border: 1px solid var(--rule); border-radius: 4px; padding: 0 .4rem; }
+.ras span.top { border-color: var(--FETCH2); color: var(--FETCH2); font-weight: 600; }
+@media (max-width: 560px) { .bp2 { grid-template-columns: 1fr; } }
+
+/* ---------- traps ---------- */
+.csrs { font-size: .82rem; }
+.csrs dt { font-family: var(--mono); cursor: help; }
+.traps { list-style: none; padding: 0; margin: 0; font: .78rem/1.6 var(--mono); }
+.traps .cyc { color: var(--sub); display: inline-block; min-width: 6ch; }
+.traps b { color: var(--WRITEBACK); font-weight: 600; } .traps b.ret { color: var(--MEMORY); }

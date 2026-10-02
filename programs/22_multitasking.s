@@ -17,6 +17,7 @@
 #   a2 = lines task 2 printed (4), a3 = context switches (hpmcounter9)
 # mscratch always holds the address of the running task's control block, so the
 # handler can save the first register before it has any free register to use.
+# REGIONS: task0=task0 task1=task1 task2=task2 kernel=kernel_start asleep=task_done
 # EXPECT: a0 = 95
 # EXPECT: a1 = 21413400
 # EXPECT: a2 = 4

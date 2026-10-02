@@ -32,6 +32,7 @@
     <a href="#bits">Bits</a>
     <a href="#multiply">Multiply</a>
     <a href="#fpga">FPGA</a>
+    <a href="#os">OS</a>
     <a href="#silicon">Silicon</a>
     <a href="#numbers">Numbers</a>
     <a href="#faster">Faster</a>
@@ -277,8 +278,35 @@
   </div>
 </section>
 
+<!-- ============================================================== OPERATING SYSTEM -->
+<section class="band" id="os">
+  <div class="wrap">
+    <div class="copy narrow">
+      <h2>Three programs, one CPU.</h2>
+      <p>This is how every operating system shares a processor. Three ordinary programs run on Sixfold: one counts primes, one adds up squares, one prints lines. None of them knows about the others. Every <b>quantum</b> of cycles the machine timer interrupts whichever one is running; the kernel saves its 31 registers and its PC into its <b>task control block</b> in memory, loads the next task's, and returns into it with <code>mret</code>. Each row below is one part of the program, time runs left to right, and every cycle belongs to the last instruction that finished. Make the quantum shorter and watch the kernel's share grow.</p>
+    </div>
+    <div class="race-ctl">
+      <button id="os-go" class="primary">Play</button>
+      <label>Quantum <input id="os-q" type="range" min="150" max="3000" step="50" value="600"> <output id="os-q-o">600</output> cycles</label>
+      <span class="small" id="os-note"></span>
+    </div>
+    <div class="os">
+      <canvas id="os-gantt" class="os-gantt" aria-label="Which task ran in each cycle"></canvas>
+      <div class="os-legend" id="os-legend"></div>
+      <div class="os-grid">
+        <div class="os-tcbs" id="os-tcbs"></div>
+        <div class="os-side">
+          <dl class="cstats os-stats" id="os-stats"></dl>
+          <div class="os-term-wrap"><span class="fc-label">PUTCHAR 0x1000_0000 (task 2)</span><pre class="os-term" id="os-term"></pre></div>
+        </div>
+      </div>
+    </div>
+    <p class="small">The source is <a data-repo-doc="programs/22_multitasking.s" href="programs/22_multitasking.s">programs/22_multitasking.s</a>, about 120 instructions of kernel; open it <a href="web/index.html?prog=22_multitasking">in the lab</a> to step through a context switch one cycle at a time. Chapter 9 of the course explains interrupts and the switch.</p>
+  </div>
+</section>
+
 <!-- ============================================================== SILICON -->
-<section class="band" id="silicon">
+<section class="band alt" id="silicon">
   <div class="wrap">
     <div class="copy narrow">
       <h2>Then it became a chip.</h2>
@@ -310,7 +338,7 @@
 </section>
 
 <!-- ============================================================== NUMBERS -->
-<section class="band alt" id="numbers">
+<section class="band" id="numbers">
   <div class="wrap">
     <div class="copy narrow">
       <h2>Where every cycle goes, for every program.</h2>
@@ -321,7 +349,7 @@
 </section>
 
 <!-- ============================================================== FASTER -->
-<section class="band" id="faster">
+<section class="band alt" id="faster">
   <div class="wrap">
     <div class="copy narrow">
       <h2>A shorter critical path, and fewer wasted cycles.</h2>
@@ -370,5 +398,6 @@
 <script type="module" src="site/main.js"></script>
 <script type="module" src="site/extras.js"></script>
 <script type="module" src="site/console.js"></script>
+<script type="module" src="site/os.js"></script>
 </body>
 </html>

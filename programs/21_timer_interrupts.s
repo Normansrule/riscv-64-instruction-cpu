@@ -17,6 +17,7 @@
 #   a2 = the mcause the handler saw (0x8000000000000007)
 #   a3 = interrupts counted by the hardware (hpmcounter9), must equal a1
 #   then wfi waits for two more ticks with interrupts on
+# REGIONS: main=0x2000 waiting=sleep handler=handler
 # EXPECT: a0 = 4501500
 # EXPECT: a2 = -9223372036854775801
 # =============================================================================
