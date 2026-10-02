@@ -25,6 +25,12 @@
 //
 // Width: every level can push a carry one column higher, so WIDTH = A_WIDTH + B_WIDTH + LEVELS columns
 // hold the exact sum with no bit ever falling off the top (64 + 16 + 6 = 86).
+//
+// On an FPGA (SIXFOLD_FPGA) the step is written as a plain multiply-add instead: the FPGA has hard
+// multipliers (DSP slices: 25 x 18 bits on an Artix-7, 18 x 18 on an ECP5) that do the partial products
+// in silicon, and a carry chain for the adds. A tree of lookup tables would cost about 2,400 of them, an
+// eighth of the Basys 3's chip. The answer is the same pair with CARRY_VECTOR = 0, so the product, and
+// every cycle count, are unchanged.
 // =====================================================================================================
 module CarrySaveMultiplyStep #(
     parameter int A_WIDTH = 64,
@@ -57,6 +63,10 @@ module CarrySaveMultiplyStep #(
     endfunction
     localparam int LEVELS = levels_needed();
 
+`ifdef SIXFOLD_FPGA
+    assign SUM_VECTOR = WIDTH'(ACCUMULATOR_SUM) + WIDTH'(ACCUMULATOR_CARRY) + WIDTH'(MULTIPLICAND) * WIDTH'(MULTIPLIER);
+    assign CARRY_VECTOR = '0;
+`else
     genvar LEVEL, ROW;
     generate
         for (LEVEL = 0; LEVEL <= LEVELS; LEVEL = LEVEL + 1) begin : level
@@ -87,6 +97,7 @@ module CarrySaveMultiplyStep #(
 
     assign SUM_VECTOR = level[LEVELS].OPERAND[0];
     assign CARRY_VECTOR = level[LEVELS].OPERAND[1];
+`endif
 
 endmodule
 

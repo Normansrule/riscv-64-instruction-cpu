@@ -70,8 +70,9 @@
       <div id="regs" class="reggrid"></div>
       <h2 class="mt">Output</h2>
       <pre id="output" class="output"></pre>
-      <h2 class="mt">LEDs <span class="hint">(a store to 0x1000_0008, see programs/20_leds_and_buttons.s)</span></h2>
-      <div id="leds" class="leds" aria-label="the 8 LEDs"></div>
+      <h2 class="mt">LEDs and digits <span class="hint">(stores to 0x1000_0008 and 0x1000_0070, as on a Basys 3 board; see programs/20_leds_and_buttons.s)</span></h2>
+      <div id="leds" class="leds" aria-label="the 16 LEDs"></div>
+      <svg id="display" class="sevenseg" viewBox="0 0 230 92" role="img" aria-label="the four seven-segment digits"></svg>
     </section>
 
     <section class="card bpcard">

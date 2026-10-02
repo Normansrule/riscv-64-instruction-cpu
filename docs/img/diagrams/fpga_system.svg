@@ -2,29 +2,32 @@
 <defs><marker id="m-data" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2B3A31"/></marker><marker id="m-pred" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#00796B"/></marker><marker id="m-flush" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C2185B"/></marker><marker id="m-F1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2E86C1"/></marker><marker id="m-F2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#17A2B8"/></marker><marker id="m-D" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6A5ACD"/></marker><marker id="m-E" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#E08E0B"/></marker><marker id="m-M" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#27AE60"/></marker><marker id="m-tag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C9982E"/></marker><marker id="m-idx" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#17A2B8"/></marker><marker id="m-off" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6A5ACD"/></marker><marker id="m-hit" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1E8449"/></marker><marker id="m-miss" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C0392B"/></marker><marker id="m-sub" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4A5A50"/></marker></defs>
 <rect width="100%" height="100%" rx="12" fill="#FBFCF8" stroke="#D5DBD0"/>
 <text x="24" y="34" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="20" font-weight="700" fill="#17251D" text-anchor="start">The Sixfold FPGA computer (fpga/rtl/Sixfold_System.sv) on its board</text>
-<text x="24" y="56" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="400" fill="#4A5A50" text-anchor="start">ULX3S (ECP5-85F): 36,988 LUT4s (44%), 5,621 flip-flops, 85 block RAMs, routed for 26.6 MHz and clocked at 25 MHz. Arty A7-100T: about 16,878 LUT6s (27%).</text>
+<text x="24" y="56" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="400" fill="#4A5A50" text-anchor="start">ULX3S (ECP5-85F): 33,886 LUT4s (41%), 5,546 flip-flops, 85 block RAMs, routed for 25.0 MHz and clocked at 20 MHz. Basys 3 (XC7A35T): about 17,975 LUTs (86%); Arty A7-100T: 28%.</text>
 <rect x="30" y="130" width="200" height="62" rx="6" fill="#2E86C1" stroke="#2E86C1" stroke-width="1.5" fill-opacity="0.12"/>
-<text x="42" y="154" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#2E86C1" text-anchor="start">25 MHz oscillator</text>
-<text x="42" y="174" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="start">ULX3S pin G2 (Arty: 100 MHz)</text>
+<text x="42" y="154" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#2E86C1" text-anchor="start">Oscillator</text>
+<text x="42" y="174" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="start">25 MHz ULX3S, 100 MHz Basys 3 / Arty</text>
 <rect x="30" y="270" width="200" height="62" rx="6" fill="#C2185B" stroke="#C2185B" stroke-width="1.5" fill-opacity="0.12"/>
-<text x="42" y="294" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#C2185B" text-anchor="start">PWR / RESET button</text>
-<text x="42" y="314" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="start">active low, synchronized</text>
+<text x="42" y="294" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#C2185B" text-anchor="start">Reset</text>
+<text x="42" y="314" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="start">a button, or (Basys 3) left + right</text>
 <rect x="1270" y="470" width="200" height="62" rx="6" fill="#17A2B8" stroke="#17A2B8" stroke-width="1.5" fill-opacity="0.12"/>
 <text x="1282" y="494" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#17A2B8" text-anchor="start">USB to serial chip</text>
-<text x="1282" y="514" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="start">FT231X (Arty: FT2232HQ)</text>
-<rect x="1270" y="610" width="200" height="62" rx="6" fill="#E08E0B" stroke="#E08E0B" stroke-width="1.5" fill-opacity="0.12"/>
-<text x="1282" y="634" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#E08E0B" text-anchor="start">8 LEDs</text>
-<text x="1282" y="654" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="start">the LEDS register</text>
-<rect x="1270" y="720" width="200" height="62" rx="6" fill="#6A5ACD" stroke="#6A5ACD" stroke-width="1.5" fill-opacity="0.12"/>
-<text x="1282" y="744" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#6A5ACD" text-anchor="start">6 buttons + 2 switches</text>
-<text x="1282" y="764" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="start">synchronized, active high</text>
+<text x="1282" y="514" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="start">FT231X (Basys 3, Arty: FT2232HQ)</text>
+<rect x="1270" y="570" width="200" height="62" rx="6" fill="#E08E0B" stroke="#E08E0B" stroke-width="1.5" fill-opacity="0.12"/>
+<text x="1282" y="594" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#E08E0B" text-anchor="start">16 LEDs</text>
+<text x="1282" y="614" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="start">the LEDS register (8 on ULX3S, Arty)</text>
+<rect x="1270" y="670" width="200" height="62" rx="6" fill="#6A5ACD" stroke="#6A5ACD" stroke-width="1.5" fill-opacity="0.12"/>
+<text x="1282" y="694" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#6A5ACD" text-anchor="start">5 buttons, 16 switches</text>
+<text x="1282" y="714" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="start">synchronized, active high</text>
+<rect x="1270" y="770" width="200" height="62" rx="6" fill="#C0392B" stroke="#C0392B" stroke-width="1.5" fill-opacity="0.12"/>
+<text x="1282" y="794" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" font-weight="700" fill="#C0392B" text-anchor="start">4-digit display</text>
+<text x="1282" y="814" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10" font-weight="400" fill="#4A5A50" text-anchor="start">Basys 3: seven segments + point</text>
 <rect x="270" y="90" width="960" height="780" rx="14" fill="#FFF" stroke="#2B3A31" stroke-width="1.5" stroke-dasharray="8 5"/>
 <text x="286" y="112" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#17251D" text-anchor="start">SixfoldSystem</text>
 <rect x="300" y="130" width="190" height="100" rx="6" fill="#FFFFFF" stroke="#2E86C1" stroke-width="1.5"/>
 <text x="395" y="149" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#17251D" text-anchor="middle">PLL / MMCM</text>
-<text x="395" y="164" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">25 -&gt; 25 MHz (ECP5)</text>
-<text x="395" y="177.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">100 -&gt; 25 MHz (Artix-7)</text>
-<text x="395" y="191" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">one clock for everything</text>
+<text x="395" y="164" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">25 -&gt; 20 MHz (ULX3S)</text>
+<text x="395" y="177.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">100 -&gt; 20 MHz (Basys 3)</text>
+<text x="395" y="191" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">100 -&gt; 25 MHz (Arty)</text>
 <rect x="300" y="260" width="190" height="110" rx="6" fill="#FFFFFF" stroke="#C2185B" stroke-width="1.5"/>
 <text x="395" y="279" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#17251D" text-anchor="middle">Reset and boot</text>
 <text x="395" y="294" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">power-on: 65536 cycles</text>
@@ -71,13 +74,13 @@
 <text x="395" y="728" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">r: clear registers, BOOT</text>
 <text x="395" y="741.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">after a program:</text>
 <text x="395" y="755" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">PASS / FAIL, cycles</text>
-<rect x="920" y="130" width="280" height="330" rx="6" fill="#FFFFFF" stroke="#C2185B" stroke-width="1.5"/>
+<rect x="920" y="130" width="280" height="360" rx="6" fill="#FFFFFF" stroke="#C2185B" stroke-width="1.5"/>
 <text x="1060" y="149" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#17251D" text-anchor="middle">Device registers</text>
 <text x="1060" y="164" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">address[63:8] = 0x1000_00</text>
 <text x="1060" y="177.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle"></text>
 <text x="1060" y="191" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">0x00 PUTCHAR   -&gt; transmit queue</text>
-<text x="1060" y="204.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">0x08 LEDS      -&gt; 8 LEDs</text>
-<text x="1060" y="218" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">0x10 BUTTONS   &lt;- buttons, switches</text>
+<text x="1060" y="204.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">0x08 LEDS      -&gt; 16 LEDs</text>
+<text x="1060" y="218" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">0x10 BUTTONS   &lt;- buttons</text>
 <text x="1060" y="231.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">0x18 UART      status / receive</text>
 <text x="1060" y="245" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">0x20 BOOT      -&gt; restart the core</text>
 <text x="1060" y="258.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">0x28 CLOCK     = CLOCK_HZ</text>
@@ -85,13 +88,20 @@
 <text x="1060" y="285.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">0x40 BOOT_REASON 0x48 TIMER</text>
 <text x="1060" y="299" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">0x50 BOOT_ADDRESS</text>
 <text x="1060" y="312.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">0x58 MTIME  0x60 MTIMECMP</text>
-<rect x="920" y="500" width="280" height="130" rx="6" fill="#FFFFFF" stroke="#17A2B8" stroke-width="1.5"/>
-<text x="1060" y="519" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#17251D" text-anchor="middle">UART</text>
-<text x="1060" y="532" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9" font-weight="400" fill="#8A968E" text-anchor="middle">fpga/rtl/Uart.sv</text>
-<text x="1060" y="547" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">receiver: 16-byte queue</text>
-<text x="1060" y="560.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">transmitter: 2 KiB queue</text>
-<text x="1060" y="574" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">115200 baud, 8N1</text>
-<text x="1060" y="587.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">divider = CLOCK_HZ / BAUD</text>
+<text x="1060" y="326" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">0x68 SWITCHES &lt;- 16 switches</text>
+<text x="1060" y="339.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">0x70 DISPLAY  -&gt; 4 digits</text>
+<rect x="920" y="520" width="280" height="120" rx="6" fill="#FFFFFF" stroke="#17A2B8" stroke-width="1.5"/>
+<text x="1060" y="539" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#17251D" text-anchor="middle">UART</text>
+<text x="1060" y="552" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9" font-weight="400" fill="#8A968E" text-anchor="middle">fpga/rtl/Uart.sv</text>
+<text x="1060" y="567" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">receiver: 16-byte queue</text>
+<text x="1060" y="580.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">transmitter: 2 KiB queue</text>
+<text x="1060" y="594" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">115200 baud, 8N1</text>
+<rect x="920" y="680" width="280" height="130" rx="6" fill="#FFFFFF" stroke="#C0392B" stroke-width="1.5"/>
+<text x="1060" y="699" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#17251D" text-anchor="middle">Seven-segment driver</text>
+<text x="1060" y="712" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9" font-weight="400" fill="#8A968E" text-anchor="middle">fpga/rtl/Seven_Segment_Display.sv</text>
+<text x="1060" y="727" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">one digit at a time, 1 ms each</text>
+<text x="1060" y="740.5" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">segments and anodes active low</text>
+<text x="1060" y="754" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">software picks the segments</text>
 <rect x="1270" y="130" width="200" height="220" rx="6" fill="#FFFFFF" stroke="#4A5A50" stroke-width="1.5"/>
 <text x="1370" y="149" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#17251D" text-anchor="middle">Your PC</text>
 <text x="1370" y="164" font-family="'IBM Plex Sans','Segoe UI',Helvetica,Arial,sans-serif" font-size="10.5" font-weight="400" fill="#4A5A50" text-anchor="middle">a serial terminal</text>
@@ -122,17 +132,20 @@
 <path d="M920,390 L860,390" fill="none" stroke="#C2185B" stroke-width="2" stroke-dasharray="4 3" stroke-linejoin="round" marker-end="url(#m-flush)"/>
 <text x="890" y="383" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#C2185B" text-anchor="middle">timer</text>
 <text x="890" y="408" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#C2185B" text-anchor="middle">UART irq</text>
-<path d="M1060,460 L1060,500" fill="none" stroke="#17A2B8" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-F2)"/>
+<path d="M1060,490 L1060,520" fill="none" stroke="#17A2B8" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-F2)"/>
 <path d="M940,130 L940,121 L520,121 L520,355 L490,355" fill="none" stroke="#C2185B" stroke-width="2" stroke-dasharray="5 3" stroke-linejoin="round" marker-end="url(#m-flush)"/>
 <text x="730" y="116" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#C2185B" text-anchor="middle">BOOT store, or a halt -&gt; restart the core</text>
 <path d="M490,740 L560,740" fill="none" stroke="#2E86C1" stroke-width="2" stroke-dasharray="4 3" stroke-linejoin="round" marker-end="url(#m-F1)"/>
 <text x="525" y="733" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#2E86C1" text-anchor="middle">at 0x0</text>
-<path d="M1200,540 L1270,500" fill="none" stroke="#17A2B8" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-F2)"/>
-<text x="1222" y="518" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#17A2B8" text-anchor="middle">TX</text>
-<path d="M1270,520 L1200,580" fill="none" stroke="#17A2B8" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-F2)"/>
-<text x="1222" y="588" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#17A2B8" text-anchor="middle">RX</text>
+<path d="M1200,550 L1270,495" fill="none" stroke="#17A2B8" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-F2)"/>
+<text x="1222" y="515" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#17A2B8" text-anchor="middle">TX</text>
+<path d="M1270,515 L1200,600" fill="none" stroke="#17A2B8" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-F2)"/>
+<text x="1222" y="600" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#17A2B8" text-anchor="middle">RX</text>
 <path d="M1370,470 L1370,350" fill="none" stroke="#17A2B8" stroke-width="3" stroke-linejoin="round" marker-end="url(#m-F2)"/>
 <text x="1378" y="420" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#17A2B8" text-anchor="start">USB cable</text>
-<path d="M1200,400 L1245,400 L1245,641 L1270,641" fill="none" stroke="#E08E0B" stroke-width="2" stroke-dasharray="5 3" stroke-linejoin="round" marker-end="url(#m-E)"/>
-<path d="M1270,751 L1255,751 L1255,360 L1200,360" fill="none" stroke="#6A5ACD" stroke-width="2" stroke-dasharray="5 3" stroke-linejoin="round" marker-end="url(#m-D)"/>
+<path d="M1200,400 L1240,400 L1240,600 L1270,600" fill="none" stroke="#E08E0B" stroke-width="2" stroke-dasharray="5 3" stroke-linejoin="round" marker-end="url(#m-E)"/>
+<path d="M1270,700 L1252,700 L1252,370 L1200,370" fill="none" stroke="#6A5ACD" stroke-width="2" stroke-dasharray="5 3" stroke-linejoin="round" marker-end="url(#m-D)"/>
+<path d="M1200,470 L1230,470 L1230,660 L1060,660 L1060,680" fill="none" stroke="#C0392B" stroke-width="2" stroke-dasharray="5 3" stroke-linejoin="round" marker-end="url(#m-W)"/>
+<text x="1140" y="655" font-family="'IBM Plex Mono',Consolas,monospace" font-size="9.5" font-weight="400" fill="#C0392B" text-anchor="middle">DISPLAY</text>
+<path d="M1200,745 L1270,800" fill="none" stroke="#C0392B" stroke-width="2" stroke-linejoin="round" marker-end="url(#m-W)"/>
 </svg>

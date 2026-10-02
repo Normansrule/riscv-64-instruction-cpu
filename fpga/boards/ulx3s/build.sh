@@ -3,7 +3,7 @@
 # fpga/boards/ulx3s/build.sh: Sixfold for the ULX3S (ECP5-85F), with the open-source flow
 #
 #   fpga/boards/ulx3s/build.sh [program.s]      (default program: programs/20_leds_and_buttons.s)
-#   CLOCK_MHZ=20 fpga/boards/ulx3s/build.sh     (a different clock: the PLL is generated to match; 25 meets timing)
+#   CLOCK_MHZ=24 fpga/boards/ulx3s/build.sh     (a different clock: the PLL is generated to match; 20 has a safe margin)
 #
 #   ecppll          the PLL: 25 MHz -> CLOCK_MHZ
 #   sv2v            SystemVerilog -> Verilog, with SIXFOLD_FPGA defined (adders on the carry chain)
@@ -16,7 +16,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/../../.."
 PROGRAM=${1:-programs/20_leds_and_buttons.s}
-CLOCK_MHZ=${CLOCK_MHZ:-25}
+CLOCK_MHZ=${CLOCK_MHZ:-20}
 OUT=build/ulx3s
 mkdir -p $OUT
 [ -x build/sv2v ] || { curl -sL -o build/sv2v.zip https://github.com/zachjs/sv2v/releases/download/v0.0.13/sv2v-Linux.zip && unzip -qo build/sv2v.zip -d build && cp build/sv2v-Linux/sv2v build/sv2v; }
@@ -42,7 +42,7 @@ YS
 yosys -q -l $OUT/yosys.log -s $OUT/synth.ys
 grep -A40 "Printing statistics" $OUT/yosys.log | tail -40 > $OUT/resources.txt || true
 nextpnr-ecp5 --85k --package CABGA381 --speed 6 --json $OUT/sixfold.json --lpf fpga/boards/ulx3s/ulx3s.lpf \
-  --textcfg $OUT/sixfold.config --freq $CLOCK_MHZ --router router2 --timing-allow-fail --report $OUT/report.json -l $OUT/nextpnr.log --seed 1
+  --textcfg $OUT/sixfold.config --freq $CLOCK_MHZ --router router2 --timing-allow-fail --report $OUT/report.json -l $OUT/nextpnr.log --seed ${SEED:-1}
 ecppack --compress $OUT/sixfold.config $OUT/sixfold.bit
 grep -E "Max frequency|Info: Device utilisation" -A12 $OUT/nextpnr.log | grep -E "MHz|TRELLIS_SLICE|DP16KD|MULT18|TRELLIS_FF|LUT" | tail -12
 echo "bitstream: $OUT/sixfold.bit   (openFPGALoader -b ulx3s $OUT/sixfold.bit)"

@@ -7,7 +7,7 @@
 //   uart_txd_in  -> UART receive  (the PC -> the FPGA, through the FT2232HQ USB chip)
 //   uart_rxd_out <- UART transmit (the FPGA -> the PC)
 //   ck_rst     the red RESET button (active low): the boot firmware starts again, memory is kept
-//   btn[3:0] -> BUTTONS[3:0], sw[3:0] -> BUTTONS[7:4]
+//   btn[3:0] -> BUTTONS[3:0], sw[3:0] -> BUTTONS[7:4] and SWITCHES[3:0]
 //   led[3:0]  (green) <- LEDS[3:0];  the green part of the four RGB LEDs <- LEDS[7:4]
 // Pin names follow Digilent's Arty-A7-100-Master.xdc (fpga/boards/arty_a7/arty_a7_100t.xdc).
 // =====================================================================================================
@@ -56,16 +56,17 @@ module arty_a7_top #(
         buttons_sync <= buttons_meta;
     end
 
-    wire [7:0] leds;
+    wire [15:0] leds;
     assign led = leds[3:0];
     assign {led3_g, led2_g, led1_g, led0_g} = leds[7:4];
 
     SixfoldSystem #(.CLOCK_HZ (CLOCK_HZ), .BAUD (115_200), .MEMORY_IMAGE (MEMORY_IMAGE)) system (
         .clk (clk), .reset (reset),
         .UART_RX (uart_txd_in), .UART_TX (uart_rxd_out),
-        .BUTTONS (buttons_sync), .LEDS (leds),
+        .BUTTONS (buttons_sync), .SWITCHES ({12'd0, buttons_sync[7:4]}), .LEDS (leds), .DISPLAY (),
         .CORE_HALTED (), .RUNNING_PROGRAM ()
     );
+    wire unused = ^leds[15:8]; // 8 LEDs on this board, no seven-segment display
 endmodule
 
 `default_nettype wire

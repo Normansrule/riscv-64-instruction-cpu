@@ -25,7 +25,7 @@ firmware, a serial console, LEDs and buttons ([FPGA.md](docs/FPGA.md)).
 | **Interrupts** | precise machine timer and external interrupts (`mie`, `mip`, `wfi`, a memory-mapped MTIME/MTIMECMP timer), taken by replacing the instruction in DECODE: 4 cycles each, and the interrupted program cannot tell ([`21_timer_interrupts.s`](programs/21_timer_interrupts.s), a 388-interrupt stress test) |
 | **Multiply / divide** | iterative: a 64 x 16-bit Wallace-tree step with a carry-save accumulator (multiply in 8 cycles), 1 quotient bit per cycle after a leading-zero-counter skip (divide in 5 + significant bits) |
 | **Clock (logic only)** | about **244 MHz** on SkyWater 130 nm and **1.95 GHz** on the ASAP7 7 nm research kit, with the full M and B extensions and interrupts: [PERFORMANCE.md](docs/PERFORMANCE.md) |
-| **FPGA** | a complete computer around the core: 64 KiB block-RAM main memory, UART with queues, LEDs, buttons, memory-mapped device registers, boot firmware that loads programs over USB and reports PASS and cycles. Builds for the **ULX3S** (Lattice ECP5-85F, open-source tools: 44% of the chip, 25 MHz, placed and routed here) and the **Arty A7-100T** (Vivado): [FPGA.md](docs/FPGA.md) |
+| **FPGA** | a complete computer around the core: 64 KiB block-RAM main memory, UART with queues, 16 LEDs, 16 switches, 5 buttons, a four-digit seven-segment display, memory-mapped device registers, boot firmware that loads programs over USB and reports PASS and cycles. Builds for the **Digilent Basys 3** (Artix-7 XC7A35T, Vivado: every switch, button, LED and digit; about 86% of the chip), the **ULX3S** (Lattice ECP5-85F, open-source tools, placed and routed here) and the **Arty A7-100T** (Vivado): [FPGA.md](docs/FPGA.md). A hands-on example, [`calculator.s`](fpga/examples/calculator.s), does arithmetic on the switches when you press the buttons and shows the answer on the digits and the LEDs |
 | **Two builds** | the performance edition (default) and a simple baseline pipeline (`-DBASELINE`), both in the same RTL behind parameters |
 | **Verified** | 23 programs, a 1,630-case self-checking test (expected values from an independent Python model) and a 388-interrupt stress test, predictor on and off, **both builds**: the RTL matches a software twin on **every clock cycle** (100 runs). The FPGA system, booted and fed over its simulated UART, reports the same cycle counts (`make fpga-sim`) |
 | **Silicon** | the original design's real sky130 layout, timing and area, plus sky130 synthesis of this RTL |
@@ -134,8 +134,13 @@ Like a PC's reset vector pointing into its BIOS, the core starts in boot firmwar
 from your PC ([`tools/fpga_load.py`](tools/fpga_load.py)) and starts it with a store to the `BOOT`
 register. When the program finishes, it reports PASS and the cycle count, which is the same number the
 cycle-exact model gives. The whole sequence runs in simulation too: `make fpga-sim`.
-[FPGA.md](docs/FPGA.md) has the details and the build steps for both boards, and the board sheets are
-[ULX3S](docs/boards/ULX3S.md) and [Arty A7-100T](docs/boards/ARTY_A7.md).
+[FPGA.md](docs/FPGA.md) has the details and the build steps for every board, and the board sheets are
+[Basys 3](docs/boards/BASYS3.md), [ULX3S](docs/boards/ULX3S.md) and [Arty A7-100T](docs/boards/ARTY_A7.md).
+
+On a Basys 3, no PC is needed after programming it: the display says `bIOS`, the centre button runs the
+built-in program, and [`calculator.s`](fpga/examples/calculator.s) turns the board into a calculator (switches
+15–8 and 7–0 are the numbers; up, down, left and right add, subtract, multiply and divide) and a light
+painter. `make fpga-basys3 PROG=calculator` builds it.
 
 ### 11. An interrupt, cycle by cycle
 
@@ -325,18 +330,19 @@ the pipeline registers): [SILICON.md](docs/SILICON.md).
 * `make lint` and `make fpga-lint`: Verilator with all warnings (except the naming style this code uses on purpose).
 * `make fpga-sim`: the whole FPGA computer (block RAM memory, device registers, UART, boot firmware)
   boots in simulation, receives every program over its serial port, runs it and reports. The
-  reported cycle count must equal the model's.
+  reported cycle count must equal the model's. For the board examples it flips switches and presses
+  buttons, and checks what is printed, lit and displayed.
 * Continuous integration runs all of it on every push ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 ## Experiments
 
-Twenty-two labs in [EXPERIMENTS.md](docs/EXPERIMENTS.md): history length, counter reset values, a
+Twenty-three labs in [EXPERIMENTS.md](docs/EXPERIMENTS.md): history length, counter reset values, a
 multi-cycle divider, removing false load stalls, a return address stack, a branch target buffer, a
 faster adder for the critical path, forwarding into EXECUTE, cache experiments, bigger and smarter
 predictors, chasing the 7 nm critical path, Booth recoding for the multiplier, your own CPI stack from
 the hardware counters, rewriting a program with Zba and Zbb, a bitmap allocator with Zbs, a new device
 register for the FPGA computer, a new command for its boot firmware, a pipelined data cache for a
-faster FPGA clock, interrupt latency with vectored interrupts, and a yield system call for the tiny OS.
+faster FPGA clock, interrupt latency with vectored interrupts, a yield system call for the tiny OS, and your own program for the Basys 3's switches, buttons and digits.
 
 ## Repository map
 
@@ -344,7 +350,7 @@ faster FPGA clock, interrupt latency with vectored interrupts, and a yield syste
 |---|---|
 | [`src/`](src) | the SystemVerilog RTL: `Riscv64.sv` and one file per module ([file list](src/sources.f)) |
 | [`tb/`](tb) | the testbench (per-cycle trace, register dump, `+BP=0` to disable prediction) |
-| [`fpga/`](fpga) | the FPGA computer: `rtl/` (memory, UART, devices, boot control), `firmware/bios.s`, `sim/`, `boards/` (ULX3S, Arty A7) |
+| [`fpga/`](fpga) | the FPGA computer: `rtl/` (memory, UART, devices, boot control), `firmware/bios.s`, `sim/`, `boards/` (Basys 3, ULX3S, Arty A7), `examples/` (calculator, interrupt echo) |
 | [`model/`](model) | ISA table, assembler, cycle-exact pipeline model (JavaScript) |
 | [`programs/`](programs), [`tests/`](tests) | example programs and the self-check |
 | [`binary/`](binary/README.md) | every instruction and every program in binary |

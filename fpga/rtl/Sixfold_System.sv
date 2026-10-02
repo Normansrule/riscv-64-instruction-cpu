@@ -10,7 +10,8 @@ import const_pkg::*;
 //            |                   |   device registers (memory-mapped I/O at 0x1000_0000)     |
 //   UART TX <+-- transmit queue <+-- PUTCHAR LEDS BUTTONS UART BOOT CLOCK LAST_* TIMER       |
 //   LEDs    <+-------------------+        ^ loads and stores to 0x1000_00xx                  |
-//   buttons -+-------------------+        |                                                  |
+//   buttons -+-------------------+        |   (+ SWITCHES and DISPLAY: 7-segment digits)     |
+//   switches-+-------------------+        |                                                  |
 //            |   Riscv64 core --> instruction cache --> refill --+                           |
 //            |                --> data cache ---------> refill --+--> MainMemory (block RAM) |
 //            |                --> stores (write-through) --------+    64 KiB: firmware at 0,  |
@@ -22,8 +23,8 @@ import const_pkg::*;
 //
 //   offset  name          load returns                                store does
 //   0x00    PUTCHAR       0                                           send one character to the PC
-//   0x08    LEDS          the LED byte                                set the 8 LEDs
-//   0x10    BUTTONS       buttons / switches of the board             -
+//   0x08    LEDS          the LEDs                                    set the LEDs (16; byte stores set 8)
+//   0x10    BUTTONS       the buttons: bit 0 centre / FIRE1, 1 FIRE2, 2 up, 3 down, 4 left, 5 right
 //   0x18    UART          bit0 = a byte arrived, bit1 = transmit queue full,
 //                         bit2 = transmitter idle, bits 15:8 = that byte    drop the received byte
 //   0x20    BOOT          0                                           restart the core at BOOT_ADDRESS
@@ -35,6 +36,9 @@ import const_pkg::*;
 //   0x50    BOOT_ADDRESS  where BOOT starts the core (0x2000)         set it
 //   0x58    MTIME         the machine timer (= TIMER)                 -
 //   0x60    MTIMECMP      the timer interrupt time                    set it: interrupt when MTIME >= MTIMECMP
+//   0x68    SWITCHES      the slide switches (16 on the Basys 3)      -
+//   0x70    DISPLAY       the seven-segment digits                    set them: one byte of segments per digit
+//                         (fpga/rtl/Seven_Segment_Display.sv shows the bit order)
 //
 // Interrupt lines into the core: the timer (MTIME >= MTIMECMP) and the external one (a byte is waiting in
 // the UART's receive queue), both enabled by software through mie and mstatus.MIE.
@@ -63,7 +67,9 @@ module SixfoldSystem #(
     input  logic UART_RX,
     output logic UART_TX,
     input  logic [7:0] BUTTONS,       // already synchronized, active high
-    output logic [7:0] LEDS,
+    input  logic [15:0] SWITCHES,     // already synchronized, 1 = up / on
+    output logic [15:0] LEDS,
+    output logic [31:0] DISPLAY,      // the seven-segment digits (SevenSegmentDisplay drives the pins)
     output logic CORE_HALTED,
     output logic RUNNING_PROGRAM      // 1 while a program (not the firmware) runs
 );
@@ -154,16 +160,18 @@ module SixfoldSystem #(
     assign RX_POP = DEVICE_STORE && (DEVICE_REGISTER == 5'd3);
 
     // Registers
-    logic [7:0] LED_REGISTER;
+    logic [15:0] LED_REGISTER;
+    logic [31:0] DISPLAY_REGISTER;
     logic [63:0] LAST_TOHOST, LAST_CYCLES, PROGRAM_CYCLES, BOOT_ADDRESS;
     logic [1:0] BOOT_REASON;
     assign LEDS = LED_REGISTER;
+    assign DISPLAY = DISPLAY_REGISTER;
 
     // Loads: a device register instead of the cache's data
     logic [63:0] DEVICE_DATA;
     always_comb begin
         unique case (DEVICE_REGISTER)
-            5'd1: DEVICE_DATA = {56'd0, LED_REGISTER};
+            5'd1: DEVICE_DATA = {48'd0, LED_REGISTER};
             5'd2: DEVICE_DATA = {56'd0, BUTTONS};
             5'd3: DEVICE_DATA = {48'd0, RX_QUEUE_BYTE, 5'd0, !TX_BUSY && TX_QUEUE_EMPTY && !TX_SEND, TX_QUEUE_FULL, !RX_QUEUE_EMPTY};
             5'd5: DEVICE_DATA = 64'(CLOCK_HZ);
@@ -174,6 +182,8 @@ module SixfoldSystem #(
             5'd10: DEVICE_DATA = BOOT_ADDRESS;
             5'd11: DEVICE_DATA = TIMER; // MTIME
             5'd12: DEVICE_DATA = MACHINE_TIME_COMPARE;
+            5'd13: DEVICE_DATA = {48'd0, SWITCHES};
+            5'd14: DEVICE_DATA = {32'd0, DISPLAY_REGISTER};
             default: DEVICE_DATA = 64'd0;
         endcase
     end
@@ -191,7 +201,8 @@ module SixfoldSystem #(
             BOOT_STATE <= RESTART;
             BOOT_REASON <= 2'd0;
             RUNNING_PROGRAM <= 1'b0;
-            LED_REGISTER <= 8'd0;
+            LED_REGISTER <= 16'd0;
+            DISPLAY_REGISTER <= 32'd0;
             LAST_TOHOST <= 64'd0;
             LAST_CYCLES <= 64'd0;
             PROGRAM_CYCLES <= 64'd0;
@@ -200,7 +211,13 @@ module SixfoldSystem #(
             MACHINE_TIME_COMPARE <= 64'hFFFF_FFFF_FFFF_FFFF;
         end else begin
             TIMER <= TIMER + 64'd1;
-            if (DEVICE_STORE && (DEVICE_REGISTER == 5'd1)) LED_REGISTER <= dcache_din[7:0];
+            // LEDS and DISPLAY take only the bytes the store writes (sb sets 8 LEDs or one digit)
+            if (DEVICE_STORE && (DEVICE_REGISTER == 5'd1))
+                for (int BYTE_LANE = 0; BYTE_LANE < 2; BYTE_LANE = BYTE_LANE + 1)
+                    if (dcache_we[BYTE_LANE]) LED_REGISTER[8*BYTE_LANE +: 8] <= dcache_din[8*BYTE_LANE +: 8];
+            if (DEVICE_STORE && (DEVICE_REGISTER == 5'd14))
+                for (int BYTE_LANE = 0; BYTE_LANE < 4; BYTE_LANE = BYTE_LANE + 1)
+                    if (dcache_we[BYTE_LANE]) DISPLAY_REGISTER[8*BYTE_LANE +: 8] <= dcache_din[8*BYTE_LANE +: 8];
             if (DEVICE_STORE && (DEVICE_REGISTER == 5'd10)) BOOT_ADDRESS <= dcache_din;
             if (CORE_RESET) MACHINE_TIME_COMPARE <= 64'hFFFF_FFFF_FFFF_FFFF; // every program starts with no timer set
             else if (DEVICE_STORE && (DEVICE_REGISTER == 5'd12))
@@ -240,7 +257,7 @@ module SixfoldSystem #(
 
     /* verilator lint_off UNUSEDSIGNAL */
     logic UNUSED;
-    assign UNUSED = ^{icache_addr[63:0], INSTRUCTION_REFILL_ADDRESS[63:16], DATA_REFILL_ADDRESS[63:16], RX_QUEUE_FULL, dcache_din[63:8]};
+    assign UNUSED = ^{icache_addr[63:0], INSTRUCTION_REFILL_ADDRESS[63:16], DATA_REFILL_ADDRESS[63:16], RX_QUEUE_FULL, dcache_din[63:32]};
     /* verilator lint_on UNUSEDSIGNAL */
 
 endmodule

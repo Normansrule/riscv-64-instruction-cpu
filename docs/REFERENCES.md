@@ -236,3 +236,10 @@ The memory-mapped timer that `MTIME` / `MTIMECMP` model, and the interrupt enabl
 **[58]** J. E. Smith and A. R. Pleszkun, "Implementing Precise Interrupts in Pipelined Processors," *IEEE
 Transactions on Computers*, 37(5), 1988. Why an interrupt must look as if it happened between two
 instructions, and the reorder-buffer technique out-of-order cores use for it.
+
+**[59]** Digilent, *Basys 3 Reference Manual*, https://digilent.com/reference/programmable-logic/basys-3/reference-manual ,
+and *Basys-3-Master.xdc*, https://github.com/Digilent/digilent-xdc . The XC7A35T board with 16 switches,
+16 LEDs, 5 buttons and a multiplexed four-digit display, summarized in [boards/BASYS3.md](boards/BASYS3.md).
+AMD (Xilinx), *7 Series DSP48E1 Slice User Guide* (UG479), https://docs.amd.com : the hard multipliers the
+FPGA build's multiply step uses.
+

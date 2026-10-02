@@ -13,6 +13,8 @@
 #   i  information: ISA, clock, memory, uptime
 #   m  memory test of the program area (0x2000 .. 0xFFFF; erases the program)
 #   h  help
+# Without a PC: the centre button (FIRE1 on the ULX3S) runs the program too, and the
+# seven-segment display (Basys 3) shows "bIOS", then "PASS" or "FAIL" after a program.
 #
 # When a program finishes (it writes TOHOST), the system restarts the core here
 # with BOOT_REASON = 1 and the firmware prints PASS/FAIL and the cycle count.
@@ -33,6 +35,10 @@
     .equ BOOT_REASON, 0x40
     .equ TIMER,       0x48
     .equ BOOT_ADDRESS, 0x50
+    .equ DISPLAY,     0x70      # seven-segment digits: one byte of segments per digit, leftmost in bits 31:24
+    .equ SHOW_BIOS,   0x7C303F6D # b I O S
+    .equ SHOW_PASS,   0x73776D6D # P A S S
+    .equ SHOW_FAIL,   0x71773038 # F A I L
     .equ PROGRAM_START, 0x2000
     .equ MEMORY_END,  0x10000
 
@@ -42,6 +48,8 @@ bios:
     li   s0, DEVICES           # s0 = base of the device registers, for the whole firmware
     li   t0, 0x81
     sd   t0, LEDS(s0)          # two LEDs on: the firmware is alive
+    li   t0, SHOW_BIOS
+    sw   t0, DISPLAY(s0)
     ld   t0, BOOT_REASON(s0)
     li   t1, 1
     beq  t0, t1, report        # a program just finished
@@ -57,10 +65,14 @@ report:
     ld   t0, LAST_TOHOST(s0)
     li   t1, 1
     bne  t0, t1, report_fail
+    li   t0, SHOW_PASS
+    sw   t0, DISPLAY(s0)
     la   a0, text_pass
     call puts
     j    report_cycles
 report_fail:
+    li   t0, SHOW_FAIL
+    sw   t0, DISPLAY(s0)
     la   a0, text_fail
     call puts
     ld   a0, LAST_TOHOST(s0)
@@ -272,12 +284,30 @@ putc:
 
 # getc() -> a0: wait for a byte, take it, drop it from the receive queue (a store to UART)
 getc:
+    ld   t0, BUTTONS(s0)
+    andi t0, t0, 1
+    bnez t0, getc_button       # the centre button: "r"
     ld   t0, UART(s0)
     andi t1, t0, 1
     beqz t1, getc
     srli a0, t0, 8
     andi a0, a0, 255
     sd   zero, UART(s0)
+    ret
+
+getc_button:                   # wait for the release, so the program does not see the press
+    ld   t0, BUTTONS(s0)
+    andi t0, t0, 1
+    bnez t0, getc_button
+    ld   t0, CLOCK(s0)          # then 20 ms more: the contacts bounce when released too
+    li   t1, 50
+    divu t0, t0, t1
+    ld   t1, TIMER(s0)
+    add  t0, t0, t1
+getc_settle:
+    ld   t1, TIMER(s0)
+    bltu t1, t0, getc_settle
+    li   a0, 'r'
     ret
 
 # puts(a0 = address of a zero-terminated string)
@@ -350,13 +380,13 @@ text_isa:
 text_hz:
     .string " Hz\r\n"
 text_memory:
-    .string "  memory  : 64 KiB block RAM (firmware 0x0000, programs 0x2000), 4 KiB I-cache + 4 KiB D-cache\r\n  devices : UART, 8 LEDs, buttons at 0x1000_0000\r\n  uptime  : "
+    .string "  memory  : 64 KiB block RAM (firmware 0x0000, programs 0x2000), 4 KiB I-cache + 4 KiB D-cache\r\n  devices : UART, LEDs, buttons, switches, 7-segment digits at 0x1000_0000\r\n  uptime  : "
 text_cycles:
     .string " cycles\r\n"
 text_prompt:
     .string "sixfold> "
 text_help:
-    .string "\r\n  l  load a program (use tools/fpga_load.py)\r\n  r  run the program at 0x2000\r\n  i  information\r\n  m  memory test (erases the program)\r\n  h  this help\r\n"
+    .string "\r\n  l  load a program (use tools/fpga_load.py)\r\n  r  run the program at 0x2000 (or press the centre button)\r\n  i  information\r\n  m  memory test (erases the program)\r\n  h  this help\r\n"
 text_unknown:
     .string "\r\n  unknown command, h for help\r\n"
 text_newline:

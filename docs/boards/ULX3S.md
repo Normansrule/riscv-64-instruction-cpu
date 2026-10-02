@@ -28,7 +28,7 @@ From the official constraints file `ulx3s_v20.lpf`; copied into
 
 | Signal | Pin | Direction | Sixfold |
 |---|---|---|---|
-| `clk_25mhz` | G2 | in | PLL input; the system runs at 25 MHz (`CLOCK_MHZ`, see FPGA.md) |
+| `clk_25mhz` | G2 | in | PLL input; the system runs at 20 MHz (`CLOCK_MHZ`, see FPGA.md) |
 | `ftdi_txd` | M1 | in | UART receive (the PC sends) |
 | `ftdi_rxd` | L4 | out | UART transmit (the PC receives) |
 | `wifi_gpio0` | L2 | out | held at 1, so the ESP32 leaves the FPGA alone |

@@ -246,14 +246,22 @@
   <div class="wrap">
     <div class="copy narrow">
       <h2>A whole computer: boot it right here.</h2>
-      <p>On an FPGA board Sixfold becomes a small computer. It has 64 KiB of memory, a serial port, LEDs and buttons, and boot firmware that starts at address 0, the way a PC starts in its BIOS. The firmware prints a banner, loads a program sent from your PC, runs it, and reports PASS and the cycle count. Below, that same firmware runs on the cycle-exact model at 1 MHz, with this page acting as the board: the terminal is the serial port, and the lights and buttons are the device registers at <code>0x1000_0000</code>. Click the terminal to type, or upload a program.</p>
+      <p>On an FPGA board Sixfold becomes a small computer. It has 64 KiB of memory, a serial port, LEDs, switches, buttons and a four-digit display, and boot firmware that starts at address 0, the way a PC starts in its BIOS. The firmware prints a banner, loads a program sent from your PC, runs it, and reports PASS and the cycle count. Below, that same firmware runs on the cycle-exact model at 1 MHz, with this page acting as a Digilent Basys 3: the terminal is the serial port, and the display, LEDs, switches and buttons are the device registers at <code>0x1000_0000</code>. Click the terminal to type, upload a program, or press the centre button to run the one loaded.</p>
     </div>
     <div class="fc">
       <div class="fc-board">
         <div class="fc-top"><span class="fc-title">sixfold &mdash; serial console, 115200 baud</span><span id="fc-status" class="fc-status"></span></div>
         <pre id="fc-term" class="fc-term" tabindex="0" aria-label="Serial console: click and type a command" aria-live="polite"></pre>
-        <div class="fc-row"><span class="fc-label">LEDS 0x1000_0008</span><div id="fc-leds" class="fc-leds"></div></div>
-        <div class="fc-row"><span class="fc-label">BUTTONS 0x1000_0010</span><div id="fc-buttons" class="fc-buttons"></div></div>
+        <div class="fc-panel" aria-label="The board: display, LEDs, switches and buttons (laid out like a Basys 3)">
+          <div class="fc-panel-top">
+            <div class="fc-display-wrap"><span class="fc-label">DISPLAY 0x1000_0070</span><svg id="fc-display" class="fc-display" viewBox="0 0 230 92" role="img" aria-label="Seven-segment display"></svg></div>
+            <div class="fc-pad-wrap"><span class="fc-label">BUTTONS 0x1000_0010</span><div id="fc-buttons" class="fc-pad"></div></div>
+          </div>
+          <span class="fc-label">LEDS 0x1000_0008</span>
+          <div id="fc-leds" class="fc-leds"></div>
+          <span class="fc-label">SWITCHES 0x1000_0068 <span id="fc-sw-value" class="fc-sw-value"></span></span>
+          <div id="fc-switches" class="fc-switches"></div>
+        </div>
       </div>
       <div class="fc-side">
         <label>Program <select id="fc-program"></select></label>
@@ -265,7 +273,7 @@
           <button type="button" id="fc-memtest">m memory test</button>
           <button type="button" id="fc-reset">Reset button</button>
         </div>
-        <p class="small">Try <code>20_leds_and_buttons</code> and hold a button to stop the light, or <code>interrupt_echo</code>, which does all its work in interrupt handlers: type into the terminal. <code>22_multitasking</code> runs a tiny operating system with three tasks. The cycle count the firmware reports is the one in the table under Numbers. <a data-repo-doc="docs/FPGA.md" href="docs/FPGA.md">How the FPGA version works</a>, and the board sheets for the <a data-repo-doc="docs/boards/ULX3S.md" href="docs/boards/ULX3S.md">ULX3S</a> and the <a data-repo-doc="docs/boards/ARTY_A7.md" href="docs/boards/ARTY_A7.md">Arty A7-100T</a>.</p>
+        <p class="small">Try <code>calculator</code>: set A on switches 15–8 and B on 7–0 (click them), then press a button: up adds, down subtracts, left multiplies, right divides; the centre button switches to a light painter. Or <code>20_leds_and_buttons</code>, and hold a button to stop the light, or <code>interrupt_echo</code>, which does all its work in interrupt handlers: type into the terminal. <code>22_multitasking</code> runs a tiny operating system with three tasks. The cycle count the firmware reports is the one in the table under Numbers. <a data-repo-doc="docs/FPGA.md" href="docs/FPGA.md">How the FPGA version works</a>, and the board sheets for the <a data-repo-doc="docs/boards/BASYS3.md" href="docs/boards/BASYS3.md">Basys 3</a>, the <a data-repo-doc="docs/boards/ULX3S.md" href="docs/boards/ULX3S.md">ULX3S</a> and the <a data-repo-doc="docs/boards/ARTY_A7.md" href="docs/boards/ARTY_A7.md">Arty A7-100T</a>.</p>
       </div>
     </div>
     <div class="fc-figs">

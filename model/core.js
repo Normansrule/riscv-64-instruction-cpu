@@ -24,6 +24,9 @@ export const SHORT = { FETCH1: 'F1', FETCH2: 'F2', DECODE: 'D', EXECUTE: 'E', ME
 export const RESET_PC = 0x2000;
 export const MMIO_BASE = 0x10000000n, MMIO_PUTCHAR = 0x10000000n, MMIO_LEDS = 0x10000008n, MMIO_BUTTONS = 0x10000010n;
 export const MMIO_MTIME = 0x10000058n, MMIO_MTIMECMP = 0x10000060n; // the machine timer (src/Riscv64_top.sv)
+export const MMIO_SWITCHES = 0x10000068n, MMIO_DISPLAY = 0x10000070n; // FPGA boards: slide switches, seven-segment digits
+// The LEDS register is 16 bits and DISPLAY 32: a store changes only the bytes it writes
+const mergeBytes = (old, op, bytes) => { let v = old; for (let k = 0; k < bytes; k++) if (op.mask & (1 << k)) v = (v & ~(0xff << (8 * k))) | (Number((op.data >> BigInt(8 * k)) & 0xffn) << (8 * k)); return v >>> 0; };
 export const isMmio = a => (a >> 8n) === (MMIO_BASE >> 8n); // 0x1000_0000 .. 0x1000_00FF: devices, never RAM
 export const HPM = { 0xC03: 'stall', 0xC04: 'flush', 0xC05: 'redirect', 0xC06: 'busy', 0xC07: 'imiss', 0xC08: 'dmiss', 0xC09: 'intr' }; // hpmcounter3..9 = L F R K I D X
 export const CSR = { TOHOST: 0x51E, STATUS: 0x50A, HARTID: 0x50B, CYCLE: 0xC00, INSTRET: 0xC02, MHARTID: 0xF14,
@@ -349,7 +352,7 @@ export class Core {
     this.mip = { timer: false, external: false }; // the interrupt lines as the CSR file registered them
     this.F1PC = resetPc;
     this.f2 = BUBBLE('fill'); this.d = BUBBLE('fill'); this.e = BUBBLE('fill'); this.m = BUBBLE('fill'); this.w = BUBBLE('fill');
-    this.cycle = 0; this.halted = false; this.output = ''; this.leds = 0;
+    this.cycle = 0; this.halted = false; this.output = ''; this.leds = 0; this.display = 0;
     this.instrs = []; this.nextId = 0;
     this.stats = { cycles: 0, retired: 0, loadStalls: 0, falseLoadStalls: 0, flushes: 0, mispredicts: 0, jalrFlushes: 0,
       redirects: 0, branches: 0, predictedTaken: 0, forwards: 0, btbRedirects: 0, returnsPredicted: 0, multiplyDivideBusy: 0,
@@ -585,7 +588,8 @@ export class Core {
     if (w.valid) this.stats.retired++; else this.stats.bubbles[w.cause]++;
     if (storeOp && storeOp.mask) {
       if (storeOp.addr === MMIO_PUTCHAR) { this.output += String.fromCharCode(Number(storeOp.data & 0xffn)); ev.putchar = true; }
-      else if (storeOp.addr === MMIO_LEDS && (storeOp.mask & 1)) { this.leds = Number(storeOp.data & 0xffn); ev.leds = this.leds; }
+      else if ((storeOp.addr & ~7n) === MMIO_LEDS && (storeOp.mask & 3)) { this.leds = mergeBytes(this.leds, storeOp, 2); ev.leds = this.leds; }
+      else if ((storeOp.addr & ~7n) === MMIO_DISPLAY && (storeOp.mask & 15)) { this.display = mergeBytes(this.display, storeOp, 4); ev.display = this.display; }
       else if (isMmio(storeOp.addr)) { /* other device addresses: only the devices hook sees them */ }
       if (isMmio(storeOp.addr)) { if (this.opts.devices) this.opts.devices.store(storeOp.addr, storeOp.data, storeOp.mask); }
       else { const base = Number(storeOp.addr & 0xfff8n); for (let k = 0; k < 8; k++) if (storeOp.mask & (1 << k)) this.mem[(base + k) & 0xffff] = Number((storeOp.data >> BigInt(8 * k)) & 0xffn); }

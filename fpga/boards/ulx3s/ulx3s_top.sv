@@ -8,13 +8,14 @@
 //   ftdi_rxd   <- UART transmit (the FPGA -> the PC)
 //   btn[0]     "PWR" button: reset (active low); the boot firmware starts again, memory is kept
 //   btn[6:1]   FIRE1 FIRE2 UP DOWN LEFT RIGHT -> BUTTONS[5:0];  sw[1:0] -> BUTTONS[7:6]
+//   sw[3:0]    the four DIP switches -> SWITCHES[3:0]
 //   led[7:0]   the LEDS register (0x1000_0008)
 //   wifi_gpio0 held high, so the ESP32 on the board does not take over the FPGA
 // Pin names follow the board's official constraints file ulx3s_v20.lpf (fpga/boards/ulx3s/ulx3s.lpf).
 // =====================================================================================================
 module ulx3s_top #(
     parameter string MEMORY_IMAGE = "memory.hex",
-    parameter int CLOCK_HZ = 25_000_000      // set by build.sh (CLOCK_MHZ), which generates the matching PLL
+    parameter int CLOCK_HZ = 20_000_000      // set by build.sh (CLOCK_MHZ), which generates the matching PLL
 ) (
     input  wire       clk_25mhz,
     input  wire [6:0] btn,
@@ -43,21 +44,26 @@ module ulx3s_top #(
     end
 
     logic [7:0] buttons_meta, buttons_sync;
+    logic [3:0] switches_meta, switches_sync;
     always_ff @(posedge clk) begin
         buttons_meta <= {sw[1:0], btn[6:1]};
         buttons_sync <= buttons_meta;
+        switches_meta <= sw;
+        switches_sync <= switches_meta;
     end
+    wire [15:0] leds;
+    assign led = leds[7:0];
 
     /* verilator lint_off PINCONNECTEMPTY */
     SixfoldSystem #(.CLOCK_HZ (CLOCK_HZ), .BAUD (115_200), .MEMORY_IMAGE (MEMORY_IMAGE)) system (
         .clk (clk), .reset (reset),
         .UART_RX (ftdi_txd), .UART_TX (ftdi_rxd),
-        .BUTTONS (buttons_sync), .LEDS (led),
+        .BUTTONS (buttons_sync), .SWITCHES ({12'd0, switches_sync}), .LEDS (leds), .DISPLAY (),
         .CORE_HALTED (), .RUNNING_PROGRAM ()
     );
     /* verilator lint_on PINCONNECTEMPTY */
 
-    wire unused = ^sw[3:2];
+    wire unused = ^leds[15:8]; // the ULX3S has 8 LEDs and no seven-segment display
 endmodule
 
 `default_nettype wire

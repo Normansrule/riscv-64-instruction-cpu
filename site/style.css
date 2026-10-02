@@ -343,12 +343,27 @@ label { font-size: .88rem; color: var(--ink2); display: inline-flex; gap: .5em; 
 .fc-term:focus { border-color: #2E86C1; }
 .fc-row { display: flex; align-items: center; gap: 14px; margin-top: 12px; flex-wrap: wrap; }
 .fc-label { font: 11px var(--mono); color: var(--ink3); min-width: 150px; }
-.fc-leds { display: flex; gap: 10px; }
-.fc-led { width: 16px; height: 16px; border-radius: 50%; background: #2A1A16; border: 1px solid #4A2A22; transition: background .05s; }
+.fc-leds { display: grid; grid-template-columns: repeat(16, minmax(0, 1fr)); gap: 6px; max-width: 520px; }
+.fc-led { width: 100%; max-width: 18px; aspect-ratio: 1; justify-self: center; border-radius: 50%; background: #2A1A16; border: 1px solid #4A2A22; transition: background .05s; }
 .fc-led.on { background: #FF5A36; border-color: #FF8A66; box-shadow: 0 0 10px #FF5A36; }
-.fc-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
-.fc-btn { font: 11px var(--mono); padding: 5px 9px; }
+.fc-panel { margin-top: 14px; display: grid; gap: 8px; }
+.fc-panel .fc-label { min-width: 0; }
+.fc-panel-top { display: flex; gap: 22px; align-items: flex-start; flex-wrap: wrap; margin-bottom: 4px; }
+.fc-display-wrap, .fc-pad-wrap { display: grid; gap: 6px; }
+.fc-display { width: 230px; max-width: 100%; height: auto; background: #120707; border-radius: 6px; border: 1px solid #3A1A16; }
+.fc-display polygon, .fc-display circle { fill: #2A0F0C; transition: fill .04s; }
+.fc-display .on { fill: #FF4A2A; filter: drop-shadow(0 0 3px #FF4A2A); }
+.fc-pad { display: grid; grid-template-columns: repeat(3, 38px); grid-template-rows: repeat(3, 32px); gap: 4px; }
+.fc-btn { font: 600 12px var(--mono); padding: 0; border-radius: 50%; width: 32px; height: 32px; justify-self: center; touch-action: none; }
+.fc-btn-U { grid-area: 1 / 2; } .fc-btn-L { grid-area: 2 / 1; } .fc-btn-C { grid-area: 2 / 2; } .fc-btn-R { grid-area: 2 / 3; } .fc-btn-D { grid-area: 3 / 2; }
 .fc-btn.down { background: #2E86C1; color: #fff; }
+.fc-switches { display: grid; grid-template-columns: repeat(16, minmax(0, 1fr)); gap: 6px; max-width: 520px; }
+.fc-sw { padding: 0; border: 0; background: none; display: grid; justify-items: center; gap: 2px; cursor: pointer; min-width: 0; }
+.fc-sw i { width: 14px; height: 26px; border-radius: 3px; background: #1A262C; border: 1px solid #3A4F5A; position: relative; display: block; }
+.fc-sw i::after { content: ''; position: absolute; left: 1px; right: 1px; height: 11px; bottom: 1px; border-radius: 2px; background: #9DB0B9; transition: bottom .08s; }
+.fc-sw.on i::after { bottom: 12px; background: #E9EFF1; }
+.fc-sw span { font: 9px var(--mono); color: var(--ink3); }
+.fc-sw-value { color: var(--ink2); margin-left: 6px; }
 .fc-side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .fc-side select { width: 100%; }
 .fc-keys { display: flex; flex-wrap: wrap; gap: 8px; }

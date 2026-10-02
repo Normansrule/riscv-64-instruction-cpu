@@ -15,9 +15,19 @@ starting at `0x1000_0000` are the device page:
     li   t0, 'A'
     sb   t0, 0(s0)          # PUTCHAR: the character goes out of the serial port
     li   t0, 0x81
-    sd   t0, 8(s0)          # LEDS: the outer two LEDs light up
+    sd   t0, 8(s0)          # LEDS: LEDs 0 and 7 light up
     ld   t1, 16(s0)         # BUTTONS: 1 bits for the buttons held down
+    ld   t2, 0x68(s0)       # SWITCHES: 1 bits for the switches that are up
+    li   t0, 0x3F06         # two digit patterns: "0" (segments a-f) and "1" (segments b, c)
+    sw   t0, 0x70(s0)       # DISPLAY: the rightmost two digits show "01"
 ```
+
+A device can be very simple and leave the thinking to software. The display on a Basys 3 board does no
+arithmetic at all: each digit's byte says which of its seven segments are lit. To show 1234, the CPU
+divides by 10 to get each decimal digit and looks each one up in a table of segment patterns. The
+hardware's whole job is to flash the four digits one after another fast enough that they all look lit.
+[`fpga/examples/calculator.s`](../../fpga/examples/calculator.s) does exactly this, with switches for its
+input and buttons for its commands.
 
 The pipeline treats these as ordinary loads and stores. Only the address decides whether a store reaches
 RAM or a device: `address[63:8] == 0x1000_00` in [`src/Riscv64_top.sv`](../../src/Riscv64_top.sv) (in

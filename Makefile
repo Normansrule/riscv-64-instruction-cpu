@@ -5,7 +5,7 @@ PROG ?= 05_fibonacci
 BP   ?= 1
 HIST ?= 6
 CONFIG ?= performance
-SRC   = $(firstword $(wildcard programs/$(PROG).s tests/$(PROG).s $(PROG)))
+SRC   = $(firstword $(wildcard programs/$(PROG).s tests/$(PROG).s fpga/examples/$(PROG).s $(PROG)))
 RTL   = $(shell cat src/sources.f)
 NAME  = $(basename $(notdir $(SRC)))
 LIB   = build/sky130_hd_tt.lib
@@ -16,7 +16,7 @@ BPFLAG = $(if $(filter 0,$(BP)),--bp=off) --history=$(HIST) --config=$(CONFIG)
 
 TBDEF = $(if $(filter baseline,$(CONFIG)),-DBASELINE)
 FPGA_RTL = $(filter-out src/Scratchpad_Memory.sv src/Riscv64_top.sv,$(RTL)) $(shell cat fpga/sources.f)
-.PHONY: fpga-sim fpga-image fpga-ulx3s fpga-arty fpga-lint arena timing help deps test test-model math run pipe bp cycle rtl vsim wave lint docs charts diagram diagrams animations schematics synth serve clean
+.PHONY: fpga-sim fpga-image fpga-ulx3s fpga-arty fpga-basys3 fpga-lint arena timing help deps test test-model math run pipe bp cycle rtl vsim wave lint docs charts diagram diagrams animations schematics synth serve clean
 
 help:            ## list targets
 	@grep -E '^[a-z-]+:.*##' Makefile | sed 's/:.*##/\t/' | expand -t 14
@@ -72,8 +72,10 @@ wave: build/sim.vvp  ## dump waveforms of PROG and open GTKWave with the pipelin
 lint:            ## Verilator lint (all warnings except naming style and intentionally unused bits)
 	verilator --lint-only -Wall -Wno-DECLFILENAME -Wno-IMPORTSTAR -Wno-UNUSEDPARAM -Wno-UNUSEDSIGNAL $(RTL) --top-module riscv64_top
 
-fpga-lint:       ## Verilator lint of the FPGA system (core + block RAM memory + UART + devices)
-	verilator --lint-only -Wall -Wno-DECLFILENAME -Wno-IMPORTSTAR -Wno-UNUSEDPARAM -Wno-UNUSEDSIGNAL $(FPGA_RTL) --top-module SixfoldSystem
+fpga-lint:       ## Verilator lint of the FPGA system (core + block RAM memory + UART + devices) and the Basys 3 / Arty board tops
+	verilator --lint-only -Wall -DSIXFOLD_FPGA -Wno-DECLFILENAME -Wno-IMPORTSTAR -Wno-UNUSEDPARAM -Wno-UNUSEDSIGNAL $(FPGA_RTL) --top-module SixfoldSystem
+	verilator --lint-only -Wall -DSIXFOLD_FPGA -Wno-DECLFILENAME -Wno-IMPORTSTAR -Wno-UNUSEDPARAM -Wno-UNUSEDSIGNAL -Wno-PINCONNECTEMPTY -Wno-MULTITOP $(FPGA_RTL) fpga/sim/xilinx_lint_stubs.sv fpga/boards/basys3/basys3_top.sv --top-module basys3_top
+	verilator --lint-only -Wall -DSIXFOLD_FPGA -Wno-DECLFILENAME -Wno-IMPORTSTAR -Wno-UNUSEDPARAM -Wno-UNUSEDSIGNAL -Wno-PINCONNECTEMPTY -Wno-MULTITOP $(FPGA_RTL) fpga/sim/xilinx_lint_stubs.sv fpga/boards/arty_a7/arty_a7_top.sv --top-module arty_a7_top
 
 fpga-sim:        ## the FPGA system in simulation: boot firmware, UART upload, run, report; cycles checked against the model
 	node tools/fpga_sim.mjs
@@ -87,6 +89,10 @@ fpga-ulx3s:      ## bitstream for the ULX3S (ECP5-85F) with yosys + nextpnr-ecp5
 fpga-arty:       ## bitstream for the Arty A7-100T with Vivado: build/arty_a7/sixfold.bit
 	node tools/fpga_image.mjs $(SRC) --out build/arty_a7
 	vivado -mode batch -nojournal -nolog -source fpga/boards/arty_a7/build.tcl
+
+fpga-basys3:     ## bitstream for the Digilent Basys 3 with Vivado: build/basys3/sixfold.bit (try PROG=calculator)
+	node tools/fpga_image.mjs $(SRC) --out build/basys3
+	vivado -mode batch -nojournal -nolog -source fpga/boards/basys3/build.tcl
 
 docs:            ## regenerate binary/, docs/img/{formats,instructions,pipeline}, web/programs.js
 	node tools/gendocs.mjs

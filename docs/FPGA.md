@@ -1,16 +1,24 @@
 # Sixfold on an FPGA
 
 The same core that `make test` checks cycle by cycle becomes a small computer you can hold in your hand:
-the core, its two caches, 64 KiB of block RAM, a serial port, LEDs and buttons, and boot firmware that
-loads programs from your PC. This page covers what is in it, how the CPU talks to each part, how it boots,
-and how to build it for two boards.
+the core, its two caches, 64 KiB of block RAM, a serial port, LEDs, switches, buttons and a four-digit
+display, and boot firmware that loads programs from your PC. This page covers what is in it, how the CPU
+talks to each part, how it boots, and how to build it for three boards.
 
-* Boards: **ULX3S** (Lattice ECP5-85F, fully open-source tools) and **Arty A7-100T** (AMD Artix-7, Vivado).
-  Their board sheets: [docs/boards/ULX3S.md](boards/ULX3S.md), [docs/boards/ARTY_A7.md](boards/ARTY_A7.md).
+* Boards: **Digilent Basys 3** (AMD Artix-7 XC7A35T, Vivado: the full set of switches, buttons, LEDs and
+  digits), **ULX3S** (Lattice ECP5-85F, fully open-source tools) and **Arty A7-100T** (AMD Artix-7, Vivado).
+  Their board sheets: [docs/boards/BASYS3.md](boards/BASYS3.md), [docs/boards/ULX3S.md](boards/ULX3S.md),
+  [docs/boards/ARTY_A7.md](boards/ARTY_A7.md).
+* Try it with your hands: [`fpga/examples/calculator.s`](../fpga/examples/calculator.s) adds, subtracts,
+  multiplies and divides the numbers on the switches when you press a button, shows the answer on the
+  display and the LEDs, and has a mode where the buttons paint the LEDs.
 * Source: [`fpga/`](../fpga): `rtl/` (the system around the core), `firmware/bios.s` (boot firmware),
-  `sim/` (whole-system testbench), `boards/` (pins, clocks, build scripts).
+  `sim/` (whole-system testbench), `boards/` (pins, clocks, build scripts), `examples/` (programs for a person
+  at the board).
 * Check it without a board: `make fpga-sim` boots the system in simulation, uploads every program over
-  the simulated serial port and checks the cycle counts against the model.
+  the simulated serial port and checks the cycle counts against the model. For the hands-on examples it
+  also flips the switches and presses the buttons (a program's `# FPGA-STEPS:` lines say how) and checks
+  what it prints, its LEDs and its digits.
 
 ## 1. What is on the chip
 
@@ -25,7 +33,8 @@ and how to build it for two boards.
 | UART | [`fpga/rtl/Uart.sv`](../fpga/rtl/Uart.sv) | 115200 baud, 8 data bits, no parity, 1 stop bit; 2 KiB transmit queue, 16-byte receive queue. |
 | Reset and boot control | `Sixfold_System.sv` | Power-on reset, the reset vector, restarting the core for a program and after it. |
 | Boot firmware | [`fpga/firmware/bios.s`](../fpga/firmware/bios.s) | Software at address 0: banner, commands, program loader, report. |
-| Board top | [`fpga/boards/*/`](../fpga/boards) | Clock (PLL / MMCM), pins, button synchronizers. |
+| Seven-segment driver | [`fpga/rtl/Seven_Segment_Display.sv`](../fpga/rtl/Seven_Segment_Display.sv) | Lights the four digits one at a time, 1 ms each, from the `DISPLAY` register (Basys 3). |
+| Board top | [`fpga/boards/*/`](../fpga/boards) | Clock (PLL / MMCM), pins, button and switch synchronizers. |
 
 Only two things in `src/` know about the FPGA at all: the core's `RESET_VECTOR` input (the simulator ties
 it to 0x2000), and a `SIXFOLD_FPGA` switch in [`Parallel_Prefix_Adder.sv`](../src/Parallel_Prefix_Adder.sv)
@@ -70,8 +79,8 @@ the device's value, and the store never reaches the RAM.
 | Offset | Register | A load returns | A store does |
 |---|---|---|---|
 | 0x00 | `PUTCHAR` | 0 | sends one character over the UART |
-| 0x08 | `LEDS` | the LED byte | sets the 8 LEDs |
-| 0x10 | `BUTTONS` | buttons and switches (1 = pressed) | nothing |
+| 0x08 | `LEDS` | the 16 LED bits | sets the LEDs (`sh` sets all 16, `sb` the low 8; boards with 8 LEDs show bits 7:0) |
+| 0x10 | `BUTTONS` | the buttons, 1 = pressed: bit 0 centre (FIRE1), 1 FIRE2, 2 up, 3 down, 4 left, 5 right | nothing |
 | 0x18 | `UART` | bit 0: a byte arrived, bit 1: transmit queue full, bit 2: transmitter idle, bits 15:8: the byte | drops the received byte |
 | 0x20 | `BOOT` | 0 | restarts the core (and clears its caches) at `BOOT_ADDRESS` |
 | 0x28 | `CLOCK` | the clock rate in Hz | nothing |
@@ -82,6 +91,20 @@ the device's value, and the store never reaches the RAM.
 | 0x50 | `BOOT_ADDRESS` | where `BOOT` starts the core (0x2000 after power-on) | sets it |
 | 0x58 | `MTIME` | the machine timer: cycles since power-on | nothing |
 | 0x60 | `MTIMECMP` | when the timer interrupt fires | sets it: the timer interrupt line is up while `MTIME >= MTIMECMP` (every program starts with it at "never") |
+| 0x68 | `SWITCHES` | the slide switches, 1 = up (16 on the Basys 3, 4 on the ULX3S and the Arty) | nothing |
+| 0x70 | `DISPLAY` | the digits as last written | sets the four seven-segment digits: one byte per digit, leftmost in bits 31:24; bit 0 = segment a (top) ... bit 6 = g (middle), bit 7 = the decimal point |
+
+The display shows exactly the segments software asks for, so the CPU does the arithmetic of a number
+display itself: divide by 10 for each decimal digit, then look the digit up in a 16-byte table of
+segment patterns (`calculator.s` has both). The patterns, with bit 0 = a:
+
+```
+   a        0 = 0x3F   1 = 0x06   2 = 0x5B   3 = 0x4F   4 = 0x66   5 = 0x6D   6 = 0x7D   7 = 0x07
+ f   b      8 = 0x7F   9 = 0x6F   A = 0x77   b = 0x7C   C = 0x39   d = 0x5E   E = 0x79   F = 0x71
+   g        - = 0x40   L = 0x38   r = 0x50   o = 0x5C   P = 0x73   blank = 0x00   + 0x80 = decimal point
+ e   c
+   d   .
+```
 
 Two of these devices can **interrupt** the CPU instead of waiting to be polled: the timer (`MTIME >=
 MTIMECMP`) and the UART, whose external interrupt line is up while a received byte is waiting. Software
@@ -120,8 +143,8 @@ Two register files are easy to confuse. The **device registers** are memory addr
 The **control and status registers** (CSRs: `cycle`, `instret`, the performance counters, `mtvec`, `tohost`
 and the rest) are inside the core, in their own 12-bit address space, and only `csrr` / `csrw` reach them.
 
-In simulation, every device load returns 0. Only `PUTCHAR` prints, and the model tracks `LEDS`, which the
-[web lab](../web/index.html) shows as eight lights. So the same program runs on the model, the RTL and the
+In simulation, every device load returns 0. Only `PUTCHAR` prints, and the model tracks `LEDS` and
+`DISPLAY`; the [web lab](../web/index.html) shows the 16 LEDs. So the same program runs on the model, the RTL and the
 board. [`programs/20_leds_and_buttons.s`](../programs/20_leds_and_buttons.s) is the example.
 
 ## 4. How it boots
@@ -173,7 +196,19 @@ python3 tools/fpga_load.py programs/09_primes_sieve.s --port /dev/ttyUSB0
 The build script ([`fpga/boards/ulx3s/build.sh`](../fpga/boards/ulx3s/build.sh)) runs these steps:
 `ecppll` makes the PLL, `sv2v` converts to Verilog with `SIXFOLD_FPGA`, `yosys synth_ecp5` maps the
 design onto lookup tables, carry chains and block RAM, `nextpnr-ecp5` places, routes and checks timing,
-and `ecppack` writes the bitstream. `CLOCK_MHZ=20 make fpga-ulx3s` picks another clock rate (25 MHz is the default and just meets timing).
+and `ecppack` writes the bitstream. `CLOCK_MHZ=24 make fpga-ulx3s` picks another clock rate (20 MHz is the
+default, with a margin; `SEED=2` tries another placement).
+
+### Basys 3 (Vivado)
+
+```
+make fpga-basys3 PROG=calculator            # vivado -mode batch -source fpga/boards/basys3/build.tcl
+openFPGALoader -b basys3 build/basys3/sixfold.bit      # or Vivado's Hardware Manager
+```
+
+The display shows `bIOS`: press the centre button to run the calculator built into the image, or open the
+serial port (115200 baud) for the firmware's prompt and load any program with `tools/fpga_load.py`.
+[docs/boards/BASYS3.md](boards/BASYS3.md) has the pins, the controls, and how to keep the design in flash.
 
 ### Arty A7-100T (Vivado)
 
@@ -185,15 +220,16 @@ python3 tools/fpga_load.py programs/05_fibonacci.s --port /dev/ttyUSB1
 
 ## 6. Results
 
-| | ULX3S: ECP5 LFE5U-85F, speed grade 6 | Arty A7-100T: Artix-7 XC7A100T-1 |
-|---|---|---|
-| tools | Yosys 0.33 + nextpnr-ecp5 0.6 (placed, routed, timed) | Yosys `synth_xilinx` estimate (Vivado reports its own) |
-| logic | 36,988 LUT4 (44%) | about 16,900 LUT6 (27%), 472 CARRY4 |
-| flip-flops | 5,621 (6%) | 4,952 (4%) |
-| LUT RAM | 705 RAM slices (caches, register file) | 420 RAM64M + 46 RAM32M |
-| block RAM | 85 of 208 DP16KD (40%) | 32 RAMB36 + 1 RAMB18 (24%) |
-| clock | **25 MHz**; nextpnr: maximum 26.6 MHz | 25 MHz (a safe start; raise it if Vivado's slack allows) |
-| a program's speed | 01_hello: 147 cycles = 5.9 µs; 09_primes_sieve: 16,899 cycles = 0.68 ms | the same cycles, at its clock |
+| | ULX3S: ECP5 LFE5U-85F, speed grade 6 | Basys 3: Artix-7 XC7A35T-1 | Arty A7-100T: Artix-7 XC7A100T-1 |
+|---|---|---|---|
+| tools | Yosys 0.33 + nextpnr-ecp5 0.6 (placed, routed, timed) | Yosys `synth_xilinx` estimate (Vivado reports its own) | the same netlist as the Basys 3 |
+| logic | 33,886 LUT4 (41%) | about 17,975 LUT6 (86%): 16,071 logic + 1,904 memory | about 17,975 LUT6 (28%) |
+| flip-flops | 5,546 (7%) | 5,465 (13%) | 5,465 (4%) |
+| LUT RAM | 705 RAM slices (caches, register file) | 420 RAM64M + 56 RAM32M | the same |
+| block RAM | 85 of 208 DP16KD (40%) | 32 RAMB36 + 1 RAMB18 (65%) | the same (24%) |
+| multipliers | 4 MULT18X18D (the multiply step) | 4 DSP48E1 | the same |
+| clock | **20 MHz**; nextpnr: maximum 25.0 MHz | **20 MHz** (a margin; raise it if Vivado's slack allows) | 25 MHz (raise or lower it by Vivado's slack) |
+| a program's speed | 09_primes_sieve: 16,899 cycles = 0.84 ms | the same cycles, at its clock | the same cycles, at its clock |
 
 The bitstream is about 1 MB (`build/ulx3s/sixfold.bit`), and the whole build takes about 8 minutes.
 
@@ -209,7 +245,7 @@ What sets the FPGA's clock is not in the chip numbers at all: the **data cache**
 arrays are SRAM macros and are timed on their own. On the FPGA, they are lookup-table RAM in the fabric,
 and one EXECUTE cycle does all of the following: adds the address (on the carry chain), reads both tags,
 compares them, and, for a store, turns the result into the write enables of the line. That path is about
-40 ns, which is where 25 MHz comes from. Soft processors built for FPGAs usually reach 50 to 150 MHz,
+40 ns, which is where 20 to 25 MHz comes from. Soft processors built for FPGAs usually reach 50 to 150 MHz,
 because they register the address first and check the tag in the next stage. That is the classic
 pipelined cache, and it costs one more cycle of load latency (Lab 20 in
 [EXPERIMENTS.md](EXPERIMENTS.md)). Sixfold keeps the same-cycle cache, so the FPGA runs exactly the cycles
@@ -230,10 +266,20 @@ comment:
   `share`, the build reached 26.4 MHz and used 30% fewer lookup tables. The chip flow found the same
   problem in the third round.
 
+Then the Basys 3 asked for less. Its XC7A35T is a quarter of the Arty's chip, and the first estimate filled
+97% of its lookup tables. The largest block that did not need them was the multiplier step's Wallace tree
+(about 2,400 lookup tables): every FPGA has hard multipliers. With `SIXFOLD_FPGA`, the step is written as
+`accumulator + multiplicand x 16 bits`, which synthesis maps onto 4 DSP slices (4 MULT18X18D on the ECP5),
+giving the same product with a zero carry vector, so every cycle count stays the same (`make fpga-sim`
+checks it). The Basys 3 estimate fell to 86%, and the ULX3S build from 44% to 41% of its LUT4s. The ULX3S's
+maximum clock moved from 26.6 MHz to between 24 and 25 MHz: the slowest path is still the data cache, and
+placements vary by a few MHz from run to run. So its default clock is now 20 MHz, with a 25% margin.
+
 ## 7. Bring-up checklist
 
-1. **Nothing on the serial port.** Check the baud rate (115200). On the Arty, try the *second* serial port
-   of the FT2232HQ. Press the reset button (ULX3S: PWR; Arty: the red RESET) for the banner.
+1. **Nothing on the serial port.** Check the baud rate (115200). On the Arty and the Basys 3, try the
+   *second* serial port of the FT2232HQ. Press reset (ULX3S: PWR; Arty: the red RESET; Basys 3: hold
+   left and right together for half a second) for the banner.
 2. **Garbage characters.** The UART divisor comes from `CLOCK_HZ`, which must match the PLL output.
    `build.sh` generates both from `CLOCK_MHZ`. On the Arty, change `CLOCK_HZ` whenever you change
    `CLOCK_DIVIDE`.
@@ -245,3 +291,6 @@ comment:
 5. **Timing fails** (the nextpnr log says `FAIL at N MHz`, or Vivado's WNS is negative). Lower the clock.
 6. **A program never finishes.** It may be waiting on a button or looping forever. Press reset: the
    firmware comes back, and memory keeps the program.
+7. **The display is dark or shows garbage.** Only the Basys 3 has digits. They show `bIOS` from power-on;
+   if they stay dark, the bitstream is not running (is the DONE LED on?). A digit that shows the wrong
+   segments is the program's table, not the hardware: bit 0 is segment a.

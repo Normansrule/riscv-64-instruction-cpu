@@ -203,3 +203,16 @@ from a timer interrupt (mcause bit 63 set: `mepc` points at the replaced instruc
 measure it: how many cycles does the whole program take now, and how much of that is kernel time
 (`hpmcounter9` counts the interrupts, `rdcycle` at kernel entry and exit counts the rest)? Try a shorter
 quantum too: where does the kernel's share become unreasonable?
+
+## Lab 23: your own board program
+
+Load `fpga/examples/calculator.s` onto a Basys 3 (`make fpga-basys3 PROG=calculator`, or try it in the
+site's FPGA console first) and press its buttons: the switches are two numbers, the buttons pick the
+operation, the answer goes to the digits and the LEDs. Then change it. Add a fifth operation on the
+centre button (the remainder, A AND B, or the greatest common divisor by Euclid's loop of `remu`), or show
+answers in hexadecimal when switch 15 is up. Harder: make it count up on the display every second without
+blocking the buttons, using the timer interrupt (`programs/21_timer_interrupts.s` shows how). Add your
+presses to the program's `# FPGA-STEPS:` lines and its answers to `# FPGA-EXPECT-OUTPUT:`, and
+`node tools/fpga_sim.mjs fpga/examples/calculator.s` checks it on the RTL of the whole FPGA computer,
+buttons and all.
+

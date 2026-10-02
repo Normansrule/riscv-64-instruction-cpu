@@ -7,6 +7,7 @@ import { Core, STAGES, SHORT, DEFAULT_HISTORY_BITS, WB_NAMES, control } from '..
 import { decode, disasm, FORMATS, ABI } from '../model/isa.js';
 import { PROGRAMS } from './programs.js';
 import { parseRegions, RegionTracker, profile, drawTimeline } from './regions.js';
+import { buildDisplay } from './sevenseg.js';
 
 const $ = id => document.getElementById(id);
 const STAGE_INFO = {
@@ -98,7 +99,8 @@ function render() {
   else st.textContent = '';
   renderStages(ev, prev); renderNarration(ev); renderChart(); renderListing(ev); renderRegs(ev); renderPredictor(ev); renderStats(); renderMachine(); renderTimeline();
   $('output').textContent = core.output || '(nothing printed yet: programs print by storing a byte to 0x10000000)';
-  $('leds').innerHTML = [7, 6, 5, 4, 3, 2, 1, 0].map(i => `<span class="led${(core.leds >> i) & 1 ? ' on' : ''}" title="LED ${i}"></span>`).join('');
+  $('leds').innerHTML = [...Array(16).keys()].reverse().map(i => `<span class="led${(core.leds >> i) & 1 ? ' on' : ''}" title="LED ${i}"></span>`).join('');
+  showDisplay(core.display);
 }
 
 function renderStages(ev, prev) {
@@ -328,6 +330,8 @@ $('who').addEventListener('click', e => {
   if (x < 0) return;
   seek(Math.round(x / (r.width - 70) * prof.cycles));
 });
+
+const showDisplay = buildDisplay($('display'));
 
 // ------------------------------------------------------------------ wiring
 const sel = $('prog');

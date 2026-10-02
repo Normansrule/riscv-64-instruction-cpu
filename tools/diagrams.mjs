@@ -957,7 +957,7 @@ export function cacheInterfaces() {
 
 // The address space: memory, the firmware's area, programs, device registers, and the CSRs
 export function memoryMap() {
-  const W = 1300, H = 840;
+  const W = 1300, H = 900;
   const g = canvas(W, H, 'Memory map: what each address means',
     'Loads and stores reach memory and devices; CSR instructions reach the registers inside the core. Same map in simulation and on the FPGA.');
   const { add, text, rect, pill } = g;
@@ -981,8 +981,8 @@ export function memoryMap() {
   const tx = 500, ty = 104;
   const rows = [
     ['0x00', 'PUTCHAR', '0', 'print one character (UART on the FPGA)'],
-    ['0x08', 'LEDS', 'the LED byte', 'set the 8 LEDs'],
-    ['0x10', 'BUTTONS', 'buttons and switches', '-'],
+    ['0x08', 'LEDS', 'the 16 LED bits', 'set the LEDs (sb: the low 8)'],
+    ['0x10', 'BUTTONS', 'bit 0 centre, 2 up, 3 down, 4 left, 5 right', '-'],
     ['0x18', 'UART', 'bit0 byte waiting, bit1 queue full, bit2 idle, 15:8 byte', 'drop the received byte'],
     ['0x20', 'BOOT', '0', 'restart the core at BOOT_ADDRESS'],
     ['0x28', 'CLOCK', 'clock rate in Hz', '-'],
@@ -993,6 +993,8 @@ export function memoryMap() {
     ['0x50', 'BOOT_ADDRESS', 'where BOOT starts (0x2000)', 'set it'],
     ['0x58', 'MTIME', 'the machine timer (cycles)', '-'],
     ['0x60', 'MTIMECMP', 'the timer interrupt time', 'set it: interrupt at MTIME >= it'],
+    ['0x68', 'SWITCHES', 'the slide switches (16 on a Basys 3)', '-'],
+    ['0x70', 'DISPLAY', 'the digits as written', 'set 4 digits: a byte of segments each'],
   ];
   const cols = [[0, 'offset'], [60, 'register'], [180, 'a load returns'], [500, 'a store does']];
   rect(tx - 12, ty - 4, 780, 48 + rows.length * 26, { fill: '#FFF', stroke: C.flush, rx: 8 });
@@ -1006,11 +1008,11 @@ export function memoryMap() {
     text(tx + 180, yy, r[2], { size: 11, fill: C.sub });
     text(tx + 500, yy, r[3], { size: 11, fill: C.sub });
   });
-  text(tx, ty + 70 + rows.length * 26, 'In simulation the timer works everywhere; the other device loads return 0 and only PUTCHAR (and LEDS, in the', { size: 10.5, fill: C.faint });
-  text(tx, ty + 84 + rows.length * 26, 'model) do anything, so the same program runs unchanged on the model, the RTL and the board.', { size: 10.5, fill: C.faint });
+  text(tx, ty + 70 + rows.length * 26, 'In simulation the timer works everywhere; the other device loads return 0 and only PUTCHAR (and LEDS and DISPLAY,', { size: 10.5, fill: C.faint });
+  text(tx, ty + 84 + rows.length * 26, 'in the model) do anything, so the same program runs unchanged on the model, the RTL and the board.', { size: 10.5, fill: C.faint });
 
   // CSR box
-  const cy = 580;
+  const cy = 640;
   rect(tx - 12, cy, 780, 238, { fill: '#FFF', stroke: C.D, rx: 8 });
   text(tx, cy + 22, 'Control and status registers: a separate address space, inside the core (csrr / csrw)', { size: 12.5, weight: 700, fill: C.D });
   const csrs = [['0xC00 cycle', '0xC02 instret', 'counters since reset (rdcycle, rdinstret)'], ['0xC03..0xC08', 'hpmcounter3..8', 'L F R K I D: the bubble counters of the cycle equation'],
@@ -1079,31 +1081,33 @@ export function bootSequence() {
 // The whole FPGA computer on its board
 export function fpgaSystem(results) {
   const W = 1500, H = 900;
-  const r = results.ulx3s, x7 = results.arty;
+  const r = results.ulx3s, x7 = results.arty, b3 = results.basys3;
   const g = canvas(W, H, 'The Sixfold FPGA computer (fpga/rtl/Sixfold_System.sv) on its board',
-    `ULX3S (ECP5-85F): ${r.lut4.toLocaleString('en-US')} LUT4s (${r.lutPercent}%), ${r.ff.toLocaleString('en-US')} flip-flops, ${r.bram} block RAMs, routed for ${r.fmax.toFixed(1)} MHz and clocked at ${r.clock} MHz. Arty A7-100T: about ${x7.lut6.toLocaleString('en-US')} LUT6s (${x7.lutPercent}%).`);
+    `ULX3S (ECP5-85F): ${r.lut4.toLocaleString('en-US')} LUT4s (${r.lutPercent}%), ${r.ff.toLocaleString('en-US')} flip-flops, ${r.bram} block RAMs, routed for ${r.fmax.toFixed(1)} MHz and clocked at ${r.clock} MHz. Basys 3 (XC7A35T): about ${b3.lut6.toLocaleString('en-US')} LUTs (${b3.lutPercent}%); Arty A7-100T: ${x7.lutPercent}%.`);
   const { add, text, rect, box, wire, pill } = g;
 
   // Board parts: clock and reset on the left, serial port, LEDs and buttons on the right
   const part = (x, y, t, sub, col) => { rect(x, y, 200, 62, { fill: col, stroke: col, op: 0.12 }); text(x + 12, y + 24, t, { size: 12.5, weight: 700, fill: col }); text(x + 12, y + 44, sub, { size: 10, fill: C.sub }); };
-  part(30, 130, '25 MHz oscillator', 'ULX3S pin G2 (Arty: 100 MHz)', C.F1);
-  part(30, 270, 'PWR / RESET button', 'active low, synchronized', C.flush);
-  part(1270, 470, 'USB to serial chip', 'FT231X (Arty: FT2232HQ)', C.F2);
-  part(1270, 610, '8 LEDs', 'the LEDS register', C.E);
-  part(1270, 720, '6 buttons + 2 switches', 'synchronized, active high', C.D);
+  part(30, 130, 'Oscillator', '25 MHz ULX3S, 100 MHz Basys 3 / Arty', C.F1);
+  part(30, 270, 'Reset', 'a button, or (Basys 3) left + right', C.flush);
+  part(1270, 470, 'USB to serial chip', 'FT231X (Basys 3, Arty: FT2232HQ)', C.F2);
+  part(1270, 570, '16 LEDs', 'the LEDS register (8 on ULX3S, Arty)', C.E);
+  part(1270, 670, '5 buttons, 16 switches', 'synchronized, active high', C.D);
+  part(1270, 770, '4-digit display', 'Basys 3: seven segments + point', C.W);
 
   // The system
   rect(270, 90, 960, 780, { fill: '#FFF', stroke: C.edge, dash: '8 5', rx: 14 });
   text(286, 112, 'SixfoldSystem', { size: 14, weight: 700 });
-  box(300, 130, 190, 100, 'PLL / MMCM', [`25 -> ${r.clock} MHz (ECP5)`, `100 -> ${x7.clock} MHz (Artix-7)`, 'one clock for everything'], { stroke: C.F1 });
+  box(300, 130, 190, 100, 'PLL / MMCM', [`25 -> ${r.clock} MHz (ULX3S)`, `100 -> ${b3.clock} MHz (Basys 3)`, `100 -> ${x7.clock} MHz (Arty)`], { stroke: C.F1 });
   box(300, 260, 190, 110, 'Reset and boot', ['power-on: 65536 cycles', 'RESET_VECTOR 0x0000', 'or BOOT_ADDRESS'], { stroke: C.flush });
   box(560, 130, 300, 290, 'Riscv64 core', ['6 stages: F1 F2 D E M W', 'RV64IM Zicsr Zba Zbb Zbs', 'BTB, tournament predictor, RAS', 'forwarding into DECODE', 'iterative multiply / divide', 'traps: ecall ebreak mret', 'performance counters', '', 'RESET_VECTOR input: the only', 'difference from simulation'], { stroke: C.E, file: 'src/Riscv64.sv' });
   box(560, 460, 140, 110, 'I-cache', ['4 KiB 2-way', 'LUT RAM'], { stroke: C.F1 });
   box(720, 460, 140, 110, 'D-cache', ['4 KiB 2-way', 'write-through', 'per-byte writes'], { stroke: C.M });
   box(560, 640, 300, 200, 'Main memory: 64 KiB block RAM', ['2 copies x 2048 lines x 256 bits', '(ECP5 DP16KD / Artix-7 RAMB36)', 'copy A: instruction refills', 'copy B: data refills', 'every store writes both', 'initial image: firmware + a demo', 'program (tools/fpga_image.mjs)'], { stroke: C.edge, file: 'fpga/rtl/Main_Memory.sv' });
   box(300, 640, 190, 200, 'Boot firmware', ['software, 2 KiB', 'fpga/firmware/bios.s', 'banner, info, memory test', "l: load over the UART", "r: clear registers, BOOT", 'after a program:', 'PASS / FAIL, cycles'], { stroke: C.F1 });
-  box(920, 130, 280, 330, 'Device registers', ['address[63:8] = 0x1000_00', '', '0x00 PUTCHAR   -> transmit queue', '0x08 LEDS      -> 8 LEDs', '0x10 BUTTONS   <- buttons, switches', '0x18 UART      status / receive', '0x20 BOOT      -> restart the core', '0x28 CLOCK     = CLOCK_HZ', '0x30 LAST_TOHOST 0x38 LAST_CYCLES', '0x40 BOOT_REASON 0x48 TIMER', '0x50 BOOT_ADDRESS', '0x58 MTIME  0x60 MTIMECMP'], { stroke: C.flush, lsize: 10.5 });
-  box(920, 500, 280, 130, 'UART', ['receiver: 16-byte queue', 'transmitter: 2 KiB queue', '115200 baud, 8N1', 'divider = CLOCK_HZ / BAUD'], { stroke: C.F2, file: 'fpga/rtl/Uart.sv' });
+  box(920, 130, 280, 360, 'Device registers', ['address[63:8] = 0x1000_00', '', '0x00 PUTCHAR   -> transmit queue', '0x08 LEDS      -> 16 LEDs', '0x10 BUTTONS   <- buttons', '0x18 UART      status / receive', '0x20 BOOT      -> restart the core', '0x28 CLOCK     = CLOCK_HZ', '0x30 LAST_TOHOST 0x38 LAST_CYCLES', '0x40 BOOT_REASON 0x48 TIMER', '0x50 BOOT_ADDRESS', '0x58 MTIME  0x60 MTIMECMP', '0x68 SWITCHES <- 16 switches', '0x70 DISPLAY  -> 4 digits'], { stroke: C.flush, lsize: 10.5 });
+  box(920, 520, 280, 120, 'UART', ['receiver: 16-byte queue', 'transmitter: 2 KiB queue', '115200 baud, 8N1'], { stroke: C.F2, file: 'fpga/rtl/Uart.sv' });
+  box(920, 680, 280, 130, 'Seven-segment driver', ['one digit at a time, 1 ms each', 'segments and anodes active low', 'software picks the segments'], { stroke: C.W, file: 'fpga/rtl/Seven_Segment_Display.sv' });
   box(1270, 130, 200, 220, 'Your PC', ['a serial terminal', '(screen, minicom, PuTTY)', 'at 115200 baud', '', 'tools/fpga_load.py:', 'program.s -> the board', '-> PASS in N cycles'], { stroke: C.sub });
 
   const lbl = (x, y, s, col, anchor = 'middle') => text(x, y, s, { size: 9.5, anchor, mono: true, fill: col });
@@ -1118,13 +1122,15 @@ export function fpgaSystem(results) {
   wire([[860, 250], [920, 250]], 'flush'); lbl(890, 243, 'ld / sd', C.flush);
   wire([[920, 300], [860, 300]], 'flush'); lbl(890, 318, 'value', C.flush);
   wire([[920, 390], [860, 390]], 'flush', { dash: '4 3' }); lbl(890, 383, 'timer', C.flush); lbl(890, 408, 'UART irq', C.flush);
-  wire([[1060, 460], [1060, 500]], 'F2');
+  wire([[1060, 490], [1060, 520]], 'F2');
   wire([[940, 130], [940, 121], [520, 121], [520, 355], [490, 355]], 'flush', { dash: '5 3' }); lbl(730, 116, 'BOOT store, or a halt -> restart the core', C.flush);
   wire([[490, 740], [560, 740]], 'F1', { dash: '4 3' }); lbl(525, 733, 'at 0x0', C.F1);
-  wire([[1200, 540], [1270, 500]], 'F2'); lbl(1222, 518, 'TX', C.F2);
-  wire([[1270, 520], [1200, 580]], 'F2'); lbl(1222, 588, 'RX', C.F2);
+  wire([[1200, 550], [1270, 495]], 'F2'); lbl(1222, 515, 'TX', C.F2);
+  wire([[1270, 515], [1200, 600]], 'F2'); lbl(1222, 600, 'RX', C.F2);
   wire([[1370, 470], [1370, 350]], 'F2', { width: 3 }); lbl(1378, 420, 'USB cable', C.F2, 'start');
-  wire([[1200, 400], [1245, 400], [1245, 641], [1270, 641]], 'E', { dash: '5 3' });
-  wire([[1270, 751], [1255, 751], [1255, 360], [1200, 360]], 'D', { dash: '5 3' });
+  wire([[1200, 400], [1240, 400], [1240, 600], [1270, 600]], 'E', { dash: '5 3' });
+  wire([[1270, 700], [1252, 700], [1252, 370], [1200, 370]], 'D', { dash: '5 3' });
+  wire([[1200, 470], [1230, 470], [1230, 660], [1060, 660], [1060, 680]], 'W', { dash: '5 3' }); lbl(1140, 655, 'DISPLAY', C.W);
+  wire([[1200, 745], [1270, 800]], 'W');
   return g.done();
 }
